@@ -1,0 +1,128 @@
+﻿# Card review: categorise each card as N (new vocabulary), K (already known), or J (name or junk)
+
+  1. exclusive        
+  2. findings         
+  3. bolster          
+  4. negotiate        
+  5. wary             
+  6. andy             
+  7. burnham's        
+  8. preference       
+  9. rejoin           
+ 10. european         
+ 11. voters           
+ 12. megapoll         
+ 13. cabinet          
+ 14. reopening        
+ 15. brexit           
+ 16. privately        
+ 17. proceed          
+ 18. caution          
+ 19. poll             
+ 20. messina          
+ 21. tmg              
+ 22. renegotiating    
+ 23. uk's             
+ 24. boost            
+ 25. labour's         
+ 26. referendum       
+ 27. bloc             
+ 28. said             
+ 29. felt             
+ 30. mandate          
+ 31. sufficient       
+ 32. proportion       
+ 33. parliament       
+ 34. lifetime         
+ 35. tuesday          
+ 36. britain's        
+ 37. europe           
+ 38. subsequently     
+ 39. mps              
+ 40. constituencies   
+ 41. fraught          
+ 42. reform           
+ 43. louise           
+ 44. haigh            
+ 45. chancellor       
+ 46. john             
+ 47. healey           
+ 48. miliband         
+ 49. publicly         
+ 50. lucy             
+ 51. powell           
+ 52. deputy           
+ 53. defence          
+ 54. going            
+ 55. reset            
+ 56. inherited        
+ 57. keir             
+ 58. starmer          
+ 59. desirable        
+ 60. tears            
+ 61. videothe         
+ 62. jonathan         
+ 63. reynolds         
+ 64. constitutional   
+ 65. uncertainty      
+ 66. shabana          
+ 67. mahmood          
+ 68. straightforward  
+ 69. unacceptable     
+ 70. anxiety          
+ 71. told             
+ 72. guardian         
+ 73. kept             
+ 74. restoke          
+ 75. second           
+ 76. clarity          
+ 77. cooperation      
+ 78. higher           
+ 79. constituents     
+ 80. cautious         
+ 81. awareness        
+ 82. number           
+ 83. differ           
+ 84. genuine          
+ 85. sceptical        
+ 86. closer           
+ 87. september        
+ 88. favour           
+ 89. came             
+ 90. versus           
+ 91. membership       
+ 92. virtually        
+ 93. respondents      
+ 94. respectively     
+ 95. seventh          
+ 96. plurality        
+ 97. went             
+ 98. scenarios        
+ 99. lib              
+100. dems             
+101. china            
+102. echr             
+103. immigration      
+104. sovereignty      
+105. resonated        
+106. thinktanks       
+107. pollsters        
+108. revive           
+109. nigel            
+110. farage           
+111. thursday         
+112. given            
+113. biggest          
+114. ben              
+115. judah            
+116. chatham          
+117. adviser          
+118. david            
+119. lammy            
+120. validation       
+121. boldness         
+122. consensus        
+123. swing            
+124. bolder           
+125. stance           
+126. bigger           
