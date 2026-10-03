@@ -1,0 +1,110 @@
+﻿# Card review (real list + irregular verbs): categorise each card as N (new vocabulary), K (already known), or J (name or junk)
+
+  1. findings         
+  2. entry            
+  3. andy             
+  4. burnham's        
+  5. european         
+  6. almost           
+  7. voters           
+  8. megapoll         
+  9. although         
+ 10. cabinet          
+ 11. ministers        
+ 12. brexit           
+ 13. messina          
+ 14. tmg              
+ 15. uk's             
+ 16. could            
+ 17. labour's         
+ 18. referendum       
+ 19. bloc             
+ 20. would            
+ 21. mandate          
+ 22. parliament       
+ 23. decision         
+ 24. case             
+ 25. lifetime         
+ 26. leader           
+ 27. tuesday          
+ 28. britain's        
+ 29. europe           
+ 30. however          
+ 31. among            
+ 32. mps              
+ 33. constituencies   
+ 34. fraught          
+ 35. secretary        
+ 36. louise           
+ 37. haigh            
+ 38. chancellor       
+ 39. john             
+ 40. healey           
+ 41. miliband         
+ 42. lucy             
+ 43. powell           
+ 44. deputy           
+ 45. defence          
+ 46. going            
+ 47. beyond           
+ 48. keir             
+ 49. starmer          
+ 50. dad              
+ 51. videothe         
+ 52. jonathan         
+ 53. reynolds         
+ 54. shabana          
+ 55. mahmood          
+ 56. thing            
+ 57. might            
+ 58. rather           
+ 59. restoke          
+ 60. division         
+ 61. higher           
+ 62. agenda           
+ 63. ago              
+ 64. whether          
+ 65. constituents     
+ 66. across           
+ 67. there's          
+ 68. sceptical        
+ 69. people's         
+ 70. context          
+ 71. cannot           
+ 72. without          
+ 73. closer           
+ 74. weighted         
+ 75. september        
+ 76. favour           
+ 77. morning          
+ 78. email            
+ 79. customs          
+ 80. versus           
+ 81. neck             
+ 82. decade           
+ 83. also             
+ 84. messaging        
+ 85. percentage       
+ 86. scenarios        
+ 87. lib              
+ 88. dems             
+ 89. china            
+ 90. echr             
+ 91. sovereignty      
+ 92. resonated        
+ 93. thinktanks       
+ 94. pollsters        
+ 95. fortunes         
+ 96. nigel            
+ 97. farage           
+ 98. thursday         
+ 99. ben              
+100. judah            
+101. fellow           
+102. chatham          
+103. adviser          
+104. david            
+105. lammy            
+106. consensus        
+107. bolder           
+108. towards          
