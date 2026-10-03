@@ -45,6 +45,11 @@ inside a sentence I actually read. Words I already made cards for last week
 come back as new next time, so I paste the words from that line into
 `known.txt` myself.
 
+`known.txt` should hold my own vocabulary, not a general word list. In the
+spike (see `spike/`), a 3000-word Oxford list left 77 of 126 cards on a
+Guardian article as words I already knew, while only 16 were actually new to
+me. Names and junk (33 of 126) are not filtered yet, so expect them as cards.
+
 ## 2. The shape
 
 ```
