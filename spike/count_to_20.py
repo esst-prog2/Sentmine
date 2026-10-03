@@ -6,13 +6,14 @@ by actually re-running sentmine with that many card words added to known.txt.
 """
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 here = Path(__file__).parent
 root = here.parent
 article = here / "article.txt"
-known = here / "known.txt"
-known_plus = here / "known_plus_to_20.txt"
+known = here / (sys.argv[1] if len(sys.argv) > 1 else "known.txt")
+known_plus = known.with_name(known.stem + "_plus_to_20.txt")
 deck = here / "article.apkg"
 
 

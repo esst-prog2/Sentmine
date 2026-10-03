@@ -1,11 +1,17 @@
-"""Pull the headwords out of the Oxford 3000 PDF into known.txt, one per line."""
+"""Pull the headwords out of an Oxford word-list PDF into a known file, one per line.
+
+usage: extract_known.py [PDF] [OUT]   (defaults: American_Oxford_3000.pdf -> known.txt)
+"""
 import re
+import sys
 from pathlib import Path
 
 from pypdf import PdfReader
 
 here = Path(__file__).parent
-reader = PdfReader(str(here / "American_Oxford_3000.pdf"))
+pdf = Path(sys.argv[1]) if len(sys.argv) > 1 else here / "American_Oxford_3000.pdf"
+out = Path(sys.argv[2]) if len(sys.argv) > 2 else here / "known.txt"
+reader = PdfReader(str(pdf))
 STOP_AT = {"definite", "indefinite", "article", "modal", "number", "exclam"}
 
 words = set()
@@ -22,5 +28,5 @@ for page in reader.pages:
             if re.fullmatch(r"[a-z'\-]+", token):
                 words.add(token)
 
-(here / "known.txt").write_text("\n".join(sorted(words)) + "\n", encoding="utf-8")
+out.write_text("\n".join(sorted(words)) + "\n", encoding="utf-8")
 print(entries, "entries,", len(words), "distinct headwords")
