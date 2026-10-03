@@ -1,6 +1,6 @@
 # Common English words that sentmine ignores.
 # Source: the NLTK English stopwords corpus (nltk_data), which derives from the
-# Snowball English stop word list. 198 words, copied on 2026-09-26.
+# Snowball English stop word list. 198 words copied on 2026-09-26, plus 30 added on 2026-10-04 (see below).
 # One word per line; lines starting with # are comments. Edit freely.
 a
 about
@@ -200,3 +200,34 @@ yours
 yourself
 yourselves
 you've
+# Added 2026-10-04 (user decision): modal verbs and conjunctive adverbs.
+could
+may
+might
+must
+shall
+would
+ought
+accordingly
+additionally
+also
+besides
+consequently
+finally
+furthermore
+hence
+however
+incidentally
+indeed
+instead
+likewise
+meanwhile
+moreover
+namely
+nevertheless
+nonetheless
+otherwise
+similarly
+subsequently
+therefore
+thus
