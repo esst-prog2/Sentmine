@@ -1,0 +1,128 @@
+﻿# Card review: categorise each card as N (new vocabulary), K (already known), or J (name or junk)
+
+  1. exclusive        K
+  2. findings         K
+  3. bolster          N
+  4. negotiate        K
+  5. wary             K
+  6. andy             J
+  7. burnham's        J
+  8. preference       K
+  9. rejoin           K
+ 10. european         K
+ 11. voters           K
+ 12. megapoll         K
+ 13. cabinet          K
+ 14. reopening        K
+ 15. brexit           K
+ 16. privately        K
+ 17. proceed          K
+ 18. caution          K
+ 19. poll             K
+ 20. messina          J
+ 21. tmg              J
+ 22. renegotiating    N
+ 23. uk's             J
+ 24. boost            K
+ 25. labour's         K
+ 26. referendum       N
+ 27. bloc             N
+ 28. said             K
+ 29. felt             K
+ 30. mandate          N
+ 31. sufficient       K
+ 32. proportion       K
+ 33. parliament       K
+ 34. lifetime         K
+ 35. tuesday          K
+ 36. britain's        J
+ 37. europe           J
+ 38. subsequently     K
+ 39. mps              J
+ 40. constituencies  N 
+ 41. fraught         N 
+ 42. reform          K 
+ 43. louise           J 
+ 44. haigh            J
+ 45. chancellor       N
+ 46. john            K 
+ 47. healey         J  
+ 48. miliband     J    
+ 49. publicly     K    
+ 50. lucy        J     
+ 51. powell      J     
+ 52. deputy     K      
+ 53. defence     K     
+ 54. going      K      
+ 55. reset     K       
+ 56. inherited       K 
+ 57. keir          J   
+ 58. starmer       J   
+ 59. desirable      K  
+ 60. tears         K   
+ 61. videothe      J   
+ 62. jonathan     J    
+ 63. reynolds     J    
+ 64. constitutional   K
+ 65. uncertainty     K 
+ 66. shabana       J   
+ 67. mahmood      J    
+ 68. straightforward  K
+ 69. unacceptable     K
+ 70. anxiety      K    
+ 71. told        K     
+ 72. guardian    K     
+ 73. kept       K      
+ 74. restoke    N      
+ 75. second     K      
+ 76. clarity    K      
+ 77. cooperation      K
+ 78. higher         K  
+ 79. constituents    N 
+ 80. cautious      K   
+ 81. awareness     K   
+ 82. number        k   
+ 83. differ        K   
+ 84. genuine       K   
+ 85. sceptical     K   
+ 86. closer       K    
+ 87. september    K    
+ 88. favour     K      
+ 89. came      K       
+ 90. versus          K 
+ 91. membership       K
+ 92. virtually       K 
+ 93. respondents    K  
+ 94. respectively   K  
+ 95. seventh       K   
+ 96. plurality    N    
+ 97. went         K    
+ 98. scenarios    K    
+ 99. lib        J      
+100. dems       J      
+101. china      J      
+102. echr    J         
+103. immigration      K
+104. sovereignty     N
+105. resonated      N  
+106. thinktanks     K  
+107. pollsters     K   
+108. revive       K    
+109. nigel        J    
+110. farage      J     
+111. thursday   K      
+112. given      K      
+113. biggest    K      
+114. ben       J       
+115. judah     J       
+116. chatham   J       
+117. adviser   K       
+118. david     J       
+119. lammy     J       
+120. validation      K 
+121. boldness       N  
+122. consensus      K  
+123. swing         K   
+124. bolder      N     
+125. stance      N     
+126. bigger      J     
