@@ -1,171 +1,159 @@
 # sentmine
 
-A tiny command-line tool that reads an English passage I just finished,
-finds the words that are new to me, and makes an Anki card for each one -
-showing that word inside the real sentence it appeared in.
+A small reading app that runs on my own computer. I paste a text I am
+reading and turn parts of it into Anki flashcards as I go: a new word
+inside its real sentence, or a term with its definition.
 
 ## 1. The demo
 
-I am learning English by reading. I finish an article, copy the text into
-a file called `passage.txt`, and it looks like this:
+I type `sentmine` in a terminal and the reading page opens in my browser.
+I paste a paragraph from this week's statistics notes:
 
 ```
-The stubborn old dog refused to move. Its owner sighed.
-She was resilient, but the dog was equally stubborn.
+The standard deviation measures how spread out a set of values is.
+It is the square root of the variance. Outliers can skew it
+considerably.
 ```
 
-I already keep a file, `known.txt`, of words I have learned before, one
-per line - it contains `dog`, `old`, `move`, `owner`. Common words like
-"the", "was", "to" I never bother listing, because the tool ignores them
-by default. I type:
+The text appears as a page I can read. I need to learn the term, so I
+switch to Definition, select `standard deviation`, and drag over the
+first two sentences. A card appears in the preview on the right:
 
 ```
-sentmine passage.txt --known known.txt --deck new.apkg
+front:  standard deviation
+back:   The standard deviation measures how spread out a set of values
+        is. It is the square root of the variance.
 ```
 
-In under a second it prints one line:
+I do not know the English word `skew`, so I switch to Word and click it.
+It turns yellow and a second card appears:
 
 ```
-Read 3 sentences, 19 words. 8 common words ignored, 5 already-known skipped, 1 repeat collapsed. Wrote 5 new cards to new.apkg: stubborn, refused, sighed, resilient, equally.
+front:  Outliers can skew it considerably.   (skew in bold)
+back:   skew
 ```
 
-Every word in the passage is counted exactly once, so the numbers add up:
-8 common + 5 already-known + 1 repeat + 5 cards = 19 words. `stubborn`
-appears twice, so it is collapsed to one card using its FIRST sentence. The
-five words are listed in the order they first appear. For `stubborn`, the
-card's front is the real sentence with the word in bold:
+The header says `2 cards`. In the preview I shorten the back of the first
+card. I click `skew` again by mistake and its card disappears, so I click
+it once more. Then I press Download and get `new.apkg` with two cards. I
+import it into Anki and both are there, in the words of the text I read.
 
-```
-front:  The stubborn old dog refused to move.   (stubborn in bold)
-back:   stubborn
-```
-
-I import `new.apkg` into Anki, and my new cards are there - each word living
-inside a sentence I actually read. Words I already made cards for last week
-come back as new next time, so I paste the words from that line into
-`known.txt` myself.
-
-`known.txt` should hold my own vocabulary, not a general word list. In the
-spike (see `spike/`), a 3000-word Oxford list left 77 of 126 cards on a
-Guardian article as words I already knew, while only 16 were actually new to
-me. Names and junk (33 of 126) are not filtered yet, so expect them as cards.
+Why this replaced the first design: the earlier version guessed my new
+words from a list of words I know. I measured it on a real Guardian
+article (see `spike/`): of 103 cards it made, 4 were really new to me, 64
+were words I knew and 35 were names or junk. I still had to sort them by
+hand, so now I choose what becomes a card myself, while reading.
 
 ## 2. The shape
 
 ```
-in       passage.txt   a plain-text English passage (UTF-8), any length
-         --known FILE   an optional file of words I already know, one
-                        per line; matched case-insensitively and by a
-                        simple stem, so `sigh` also covers `sighed`
-         --min-len N    optional: ignore words shorter than N letters
-                        (default 3), on top of the built-in common-word
-                        list (198 words)
-         --deck FILE    optional: where to write the deck (default: the
-                        passage name with .apkg, in the current folder)
-         --force        optional: replace the deck if it already exists
-out      new.apkg      an Anki-importable deck, one card per NEW word;
-                        front = the sentence containing it with the word
-                        in bold, back = the word as it appeared in the
-                        sentence, lower-cased
-         stdout        one summary line: sentences and words read,
-                        counts for common-ignored, already-known,
-                        repeats-collapsed, and the cards written with
-                        their words
-on disk  the deck sits where I asked; passage.txt and known.txt are
-         never modified
-exit     0 when at least one card is written; 2 when nothing is written,
-         with a message on stderr naming the problem: the passage or
-         known file is missing or unreadable, no new word remains, the
-         deck already exists (and no --force) or cannot be written, or
-         an option is invalid
+in         a text, pasted into the page (plain text, any length)
+out        new.apkg   an Anki-importable deck with two kinds of card:
+                      word card        front = the sentence with the word
+                                       in bold, back = the word
+                      definition card  front = the term, back = the
+                                       passage I marked, of any length
+on screen  the text on the left; in Word mode a click picks a word and a
+           second click unpicks it; in Definition mode I select a term,
+           then drag over its definition; the header counts the cards;
+           the preview on the right shows each card and lets me edit or
+           delete it; Download writes the deck
+on disk    nothing is saved until I press Download; the app runs only on
+           my own computer and sends the text nowhere
 ```
 
 ## 3. The size
 
 **First useful version**
 
-- read a plain-text English passage from a file
-- split it into sentences (on `.`, `!`, `?`) and into words (on spaces
-  and punctuation) - trivial for English because words are space-separated
-- lower-case and strip punctuation from each word; compare words by a
-  simple stem for common endings (plural -s, past -ed, -ing) so "sighed"
-  and "sigh" are not two cards. The stem is only used for matching - the
-  card shows the word as it appeared
-- decide "new": a word is new unless it is in the built-in common-word
-  (stopword) list, is shorter than `--min-len`, contains a digit, or
-  appears in `--known`
-- collapse repeats: if a new word occurs more than once, keep one card and
-  use the FIRST sentence it appeared in
-- build one Anki card per new word: front is that sentence with the word
-  wrapped in bold, back is the word as it appeared, lower-cased
-- build a valid `.apkg` deck from those cards
-- print a one-line summary with each count and the words that got cards
-- never modify passage.txt or known.txt; refuse to overwrite an existing
-  `.apkg` unless `--force` is given
+- start the app with one command and open the reading page in the browser
+- paste a text; tidy it with simple rules (join lines broken inside a
+  sentence, remove extra spaces and blank lines)
+- Word mode: click a word to make a card from its sentence; click again
+  to remove it
+- Definition mode: select a term of one or more words, then mark the
+  passage that defines it - one sentence, several, or a whole paragraph;
+  line breaks inside the passage are kept
+- one card per word or term: picking the same one again tells me so and
+  makes no second card
+- a preview of every card, where I can edit the front and the back or
+  delete the card
+- a count of the cards so far
+- download a valid `.apkg` deck of the cards as they appear in the preview
 
-**Not this term**
+**Not this term** (the first four are the planned next changes, in order)
 
-- any non-English language, especially Chinese or Japanese, because those
-  need word-segmentation (no spaces between words) - a hard, separate
-  problem; English's spaces are exactly what makes this tool feasible now
-- looking up or generating a definition/translation for the word - the
-  card teaches through context (the sentence), which is the whole point;
-  adding meanings would need a dictionary or AI and is deferred
-- real lemmatization or part-of-speech analysis (e.g. "ran" → "run",
-  "better" → "good"); the first version handles only simple -s/-ed/-ing
-  endings and accepts it will occasionally keep two forms of one word
-- the `clean.html` report (each new word, its sentence, and every ignored
-  or skipped word with the reason) - planned for the next change
-- skipping proper names: a name becomes a card like any other word, and I
-  add it to `known.txt`
-- remembering the words I already made cards for: I paste them into
-  `known.txt` myself for now
-- audio, images, phonetics, or example sentences beyond the one mined
-- editing, merging, or reading existing `.apkg` decks
-- a GUI, AnkiConnect, AnkiWeb sync, or reading PDFs/EPUBs directly
-  (I paste plain text; extracting text from documents is out of scope)
+- loading a PDF that contains text, such as lecture slides
+- suggesting with AI the meaning of a word, or the passage that defines a
+  term, to accept or edit in the preview
+- reading scanned PDF pages with AI
+- loading an article from a web link
+- sending cards straight into Anki (AnkiConnect), without the download
+- a browser extension for picking words on the original website
+- remembering between sessions which cards I already made
+- highlighting words that are probably new to me, from a known-words list
+  (the first design's filter)
+- languages written without spaces between words, such as Chinese or
+  Japanese
+- audio, images, formulas, or a phone app
 
 ## 4. How we would know it works
 
-- Given the three-sentence passage above with `known.txt` holding
-  `dog, old, move, owner`, exactly five cards are written - `stubborn`,
-  `refused`, `sighed`, `resilient`, `equally`, in that order - and the
-  summary counts are 3 sentences, 19 words, 8 common, 5 known, 1 repeat,
-  5 cards, which add up: 8 + 5 + 1 + 5 = 19.
-- Given `stubborn` appearing in two sentences, only one card is written
-  and its front is the FIRST sentence; the summary says `1 repeat
-  collapsed`.
-- Given the word `stubborn` as a new word, its card front is the exact
-  source sentence with `stubborn` in bold and nothing else altered (apart
-  from escaping `<`, `>` and `&`, and a line break inside the sentence
-  becoming one space); the back is `stubborn`.
-- Given `sighed` in the text and `sigh` already in `known.txt` (or vice
-  versa), the stem matching means no card is written for it and it
-  counts as already-known.
-- Given only common words and known words in a passage, no deck is written
-  and the run exits 2 with a message; the counts are still printed.
-- Given `--min-len 5`, the word `dog` is ignored as too short even if it
-  is not in known.txt.
-- Given a missing or unreadable input file, the run exits 2 with a clear
-  message and writes nothing.
-- Given an existing output path, the run refuses and exits 2 unless
-  `--force`; passage.txt and known.txt are unchanged in every case.
-- Given the produced `.apkg`, importing it into Anki succeeds and the card
-  count matches `Wrote N new cards`.
+- Given the paragraph above, clicking `skew` in Word mode makes a card
+  whose front is exactly `Outliers can skew it considerably.` with `skew`
+  in bold, and whose back is `skew`.
+- Given the term `standard deviation` selected and the first two
+  sentences marked, the card's front is `standard deviation` and its back
+  is exactly those two sentences, joined across the line break.
+- Given a marked passage that spans two paragraphs, the back keeps the
+  break between them.
+- Given a word or term that already has a card, picking it again makes no
+  new card and the count stays the same.
+- Given a picked word, clicking it again removes its card and the count
+  goes down by one.
+- Given a card edited in the preview, the downloaded deck contains the
+  edited text, not the original.
+- Given no cards, Download writes no file and says why.
+- Given the downloaded `.apkg`, importing it into Anki succeeds and the
+  number of cards matches the header.
 
 ## 5. What could stop this
 
-No network, account, or API. The tool handles no personal data. It reads and writes only local files, and the common-word list ships within the tool itself. It needs one Python library, `genanki`, to write the deck.
+Pasted text is messy. Text copied from slides or a website brings titles,
+page numbers and broken lines with it, and a damaged sentence makes a
+damaged card. The simple tidy-up rules will not catch everything. The
+preview is the defence: I see every card before it is saved and can fix
+it. Formulas and tables do not survive copying at all, so a definition
+that depends on one will be incomplete.
 
-The core design is the choice of English. Chinese would first require segmenting words with no spaces between them - a hard, error-prone problem. English separates words with spaces, making the split reliable and reducing this from a research project to a weekend tool. The cost, stated above, is the absence of real lemmatization: "run" and "ran" may produce two cards. This is mitigated by tests covering the common -s/-ed/-ing cases; a stray duplicate is a minor, visible flaw, not a failure. The stem rules can also join two real words that differ only by a final "e" (`hop` and `hope`), which would hide a new word behind a known one - rare, and the price of keeping the rules simple.
+It may not be faster than making cards by hand. The claim is that a click
+or a drag beats copying text into Anki, but pasting the text first is an
+extra step. I will measure it: ten cards made by hand against ten made in
+the app, from the same text.
 
-The .apkg format is the second risk: producing a file that Anki silently rejects. This is defended by the final test above - a genuine import into Anki must succeed, verified by hand and against the genanki library's round-trip.
+Two kinds of card in one page could make both awkward. If switching
+between Word and Definition mode gets in the way of reading, the first
+version keeps Definition mode and Word mode moves to a later change.
 
-The deeper risk is that the code is thin. Splitting text and packaging an .apkg is modest work that an AI largely automates. The value lies instead in the fit to how I study: I learn English by reading, I meet new words in real sentences, and a word recalled within its sentence is retained far better than one in isolation. The --known file prevents the tool from burying me in words I already have. Should the cards prove no more useful than plain word lists, the premise was wrong — but sentence mining is a method serious learners already rely on.
+Similar tools exist for vocabulary: Readlang lets a reader click a word
+to save a flashcard. It is built around translating foreign words. Mine
+also makes cards from the definitions in my own course material, stays on
+my computer, and puts everything in the Anki deck I already use.
+
+A web page is new ground for this project. The first version was a
+command-line tool; the sentence splitting and the deck writing carry over
+and are already tested, but the page itself is new work.
+
+The first version needs no network, account or API, and handles no
+personal data. Course material may be copyrighted, so the demo uses a
+short text I wrote myself. The planned AI features will need an API key
+and will send text to an outside service, so they stay switched off
+unless a key is present, and the app must work fully without them.
 
 ## 6. Install and run
 
-Needs Python 3.10 or newer.
+The reading page is not built yet. Until it is, the repository contains
+the first design, a command-line tool. Needs Python 3.10 or newer.
 
 ```
 pip install .                        # installs sentmine and genanki
