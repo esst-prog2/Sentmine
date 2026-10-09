@@ -60,11 +60,16 @@ def deck_id_for(name: str) -> int:
 
 
 def write_deck(cards: Sequence[Card], path: Path) -> None:
-    """Write the cards to `path`; the file appears only once it is complete."""
+    """Write one word card per card to `path`."""
+    write_notes([(card_front(card.sentence, card.word), card_back(card.word)) for card in cards], path)
+
+
+def write_notes(notes: Sequence[tuple[str, str]], path: Path) -> None:
+    """Write (front, back) pairs of HTML to `path`; the file appears only once it is complete."""
     path = Path(path)
     deck = genanki.Deck(deck_id_for(path.stem), path.stem)
-    for card in cards:
-        deck.add_note(_Note(model=MODEL, fields=[card_front(card.sentence, card.word), card_back(card.word)]))
+    for front, back in notes:
+        deck.add_note(_Note(model=MODEL, fields=[front, back]))
     partial = path.with_name(path.name + ".part")
     try:
         genanki.Package(deck).write_to_file(str(partial))

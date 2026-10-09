@@ -1,0 +1,49 @@
+changed line 6 of src/sentmine/sentences.py: the sentence-ending marks
+  were: [.!?]
+  now:  [.!?,]
+
+$ python -m pytest tests/test_real_article.py
+============================= test session starts =============================
+platform win32 -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\User\OneDrive - elte.hu\Dokumentumok\Dev Projects\Sentmine
+configfile: pyproject.toml
+plugins: anyio-4.13.0
+collected 5 items
+
+tests\test_real_article.py .FF..                                         [100%]
+
+================================== FAILURES ===================================
+___________ test_each_card_shows_the_whole_sentence_i_read[mandate] ___________
+
+reading = <sentmine.reading.Session object at 0x0000016B6EEC0050>
+word = 'mandate'
+
+    @pytest.mark.parametrize("word", list(CHOSEN))
+    def test_each_card_shows_the_whole_sentence_i_read(reading, word):
+        card = next(card for card in reading.cards if card.back == word)
+>       assert card.front == CHOSEN[word]
+E       AssertionError: assert 'while more t...e sufficient,' == 'Almost a thi...the decision.'
+E         
+E         - Almost a third of voters said an in-out referendum would be needed first, while more than one in six felt that a general election mandate would be sufficient, and the same proportion thought parliament could make the decision.
+E         + while more than one in six felt that a general election mandate would be sufficient,
+
+tests\test_real_article.py:65: AssertionError
+_______ test_each_card_shows_the_whole_sentence_i_read[constituencies] ________
+
+reading = <sentmine.reading.Session object at 0x0000016B6EEC0190>
+word = 'constituencies'
+
+    @pytest.mark.parametrize("word", list(CHOSEN))
+    def test_each_card_shows_the_whole_sentence_i_read(reading, word):
+        card = next(card for card in reading.cards if card.back == word)
+>       assert card.front == CHOSEN[word]
+E       AssertionError: assert 'especially t...d for Brexit,' == 'However, the...st to Reform.'
+E         
+E         - However, there are nerves among some Labour MPs, especially those with constituencies that voted for Brexit, that even testing out public support for the move would be fraught with political risk and a potential boost to Reform.
+E         + especially those with constituencies that voted for Brexit,
+
+tests\test_real_article.py:65: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_real_article.py::test_each_card_shows_the_whole_sentence_i_read[mandate]
+FAILED tests/test_real_article.py::test_each_card_shows_the_whole_sentence_i_read[constituencies]
+========================= 2 failed, 3 passed in 0.33s =========================

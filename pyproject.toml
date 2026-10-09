@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sentmine"
 version = "0.1.0"
-description = "Turn an English passage into an Anki deck of new words, each inside its own sentence."
+description = "Turn what you read into Anki flashcards: a word inside its sentence, or a term with its definition."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["genanki"]
+dependencies = ["genanki", "flask"]
 
 [project.optional-dependencies]
 dev = ["pytest"]
@@ -20,7 +20,7 @@ sentmine = "sentmine.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-sentmine = ["data/*.txt"]
+sentmine = ["data/*.txt", "web/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -53,7 +53,15 @@ def test_there_is_no_report_option(capsys):
     assert stop.value.code == 2
 
 
-def test_missing_passage_argument_exits_with_2(capsys):
+def test_no_arguments_starts_the_reading_app(monkeypatch):
+    started = []
+    monkeypatch.setattr("sentmine.app.serve", lambda: started.append(True) or 0)
+    assert main([]) == 0
+    assert started == [True]
+
+
+def test_an_option_without_a_passage_exits_with_2(monkeypatch, capsys):
+    monkeypatch.setattr("sentmine.app.serve", lambda: pytest.fail("the reading app must not start"))
     with pytest.raises(SystemExit) as stop:
-        main([])
+        main(["--force"])
     assert stop.value.code == 2
