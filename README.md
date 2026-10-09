@@ -152,12 +152,19 @@ unless a key is present, and the app must work fully without them.
 
 ## 6. Install and run
 
-The reading page is not built yet. Until it is, the repository contains
-the first design, a command-line tool. Needs Python 3.10 or newer.
+Needs Python 3.10 or newer.
 
 ```
-pip install .                        # installs sentmine and genanki
-sentmine passage.txt --known known.txt --deck new.apkg
+pip install .        # installs sentmine with genanki and Flask
+sentmine             # starts the reading app and opens it in the browser
 ```
+
+The page is at http://127.0.0.1:8000 and is served only to this computer.
+Stop the app with Ctrl+C in the terminal. Nothing is kept between runs:
+download the deck before closing.
+
+The first design, a command-line tool that picks the words from a
+known-words list, still works: `sentmine passage.txt --known known.txt
+--deck new.apkg`.
 
 To work on it and run the tests: `pip install -e ".[dev]"`, then `pytest`.

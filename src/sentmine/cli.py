@@ -26,7 +26,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sentmine",
         description="Make an Anki deck of the new words in an English passage, "
-        "each word inside the sentence it appeared in.",
+        "each word inside the sentence it appeared in. "
+        "Run with no arguments to open the reading app in the browser instead.",
     )
     parser.add_argument("passage", help="plain-text file with the passage")
     parser.add_argument(
@@ -115,6 +116,10 @@ def _tolerate_any_character() -> None:
 
 def main(argv: list[str] | None = None) -> int:
     _tolerate_any_character()
+    if not (sys.argv[1:] if argv is None else argv):
+        from sentmine.app import serve  # no arguments at all: the reading app
+
+        return serve()
     args = build_parser().parse_args(argv)  # exits with 2 on invalid arguments
     passage = Path(args.passage)
     known = Path(args.known) if args.known else None
