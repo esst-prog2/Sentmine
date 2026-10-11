@@ -5,8 +5,14 @@ a card I chose did not show the whole sentence I read.
 
 The expected values below were not produced by running sentmine. The four words
 are the ones the reader marked as really new by hand in the Homework 4 spike
-(spike/marked_cards_real_irregular.txt). The four sentences were given by the
-reader as the sentences of the Guardian article. See PLANNING_LOG.md, 2026-10-09.
+(spike/marked_cards_real_irregular.txt). See PLANNING_LOG.md, 2026-10-09 and
+2026-10-11.
+
+The sentences for `mandate` and `constituencies` were given by the reader on
+2026-10-09, after seeing the app's preview of them. The wording for `restoke`
+and `constituents`, which lie inside quoted speech, was fixed on 2026-10-11
+before the program could produce it: the whole quote with the words that
+introduce it, copied from the article text.
 """
 
 from pathlib import Path
@@ -17,7 +23,7 @@ from sentmine.reading import ADDED, Session
 
 ARTICLE = Path(__file__).parent.parent / "spike" / "article.txt"
 
-# word the reader chose -> the sentence the reader read it in
+# word the reader chose -> what the reader read it in
 CHOSEN = {
     "mandate": (
         "Almost a third of voters said an in-out referendum would be needed first, while more than one "
@@ -29,8 +35,18 @@ CHOSEN = {
         "voted for Brexit, that even testing out public support for the move would be fraught with "
         "political risk and a potential boost to Reform."
     ),
-    "restoke": "But he definitely needs to proceed with caution because we don’t want to restoke division”.",
-    "constituents": "My constituents will be cautious.”",
+    "restoke": (
+        "One cabinet minister told the Guardian: “Brexit clearly hasn’t worked and the promises made "
+        "haven’t been kept so Andy is right to open up the question of what the future relationship "
+        "looks like. But he definitely needs to proceed with caution because we don’t want to restoke "
+        "division”."
+    ),
+    "constituents": (
+        "A second said: “Andy is right to say we need some clarity around our long-term relationship. "
+        "Security and trade cooperation are higher up the agenda than they were 10 years ago. But "
+        "whether that adds up to a real desire for big change in the population I don’t know. My "
+        "constituents will be cautious.”"
+    ),
 }
 
 
