@@ -1,0 +1,46 @@
+# Homework 5 repair: the test with the whole-quote wording, run against the program as it was (no code changed)
+$ python -m pytest tests/test_real_article.py
+============================= test session starts =============================
+platform win32 -- Python 3.14.4, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\User\OneDrive - elte.hu\Dokumentumok\Dev Projects\Sentmine
+configfile: pyproject.toml
+plugins: anyio-4.13.0
+collected 5 items
+
+tests\test_real_article.py ...FF                                         [100%]
+
+================================== FAILURES ===================================
+___________ test_each_card_shows_the_whole_sentence_i_read[restoke] ___________
+
+reading = <sentmine.reading.Session object at 0x00000250C57FE8B0>
+word = 'restoke'
+
+    @pytest.mark.parametrize("word", list(CHOSEN))
+    def test_each_card_shows_the_whole_sentence_i_read(reading, word):
+        card = next(card for card in reading.cards if card.back == word)
+>       assert card.front == CHOSEN[word]
+E       AssertionError: assert 'But he defin...ke division”.' == 'One cabinet ...ke division”.'
+E         
+E         - One cabinet minister told the Guardian: “Brexit clearly hasn’t worked and the promises made haven’t been kept so Andy is right to open up the question of what the future relationship looks like. But he definitely needs to proceed with caution because we don’t want to restoke division”.
+E         + But he definitely needs to proceed with caution because we don’t want to restoke division”.
+
+tests\test_real_article.py:81: AssertionError
+________ test_each_card_shows_the_whole_sentence_i_read[constituents] _________
+
+reading = <sentmine.reading.Session object at 0x00000250C5902B10>
+word = 'constituents'
+
+    @pytest.mark.parametrize("word", list(CHOSEN))
+    def test_each_card_shows_the_whole_sentence_i_read(reading, word):
+        card = next(card for card in reading.cards if card.back == word)
+>       assert card.front == CHOSEN[word]
+E       AssertionError: assert 'My constitue...be cautious.”' == 'A second sai...be cautious.”'
+E         
+E         - A second said: “Andy is right to say we need some clarity around our long-term relationship. Security and trade cooperation are higher up the agenda than they were 10 years ago. But whether that adds up to a real desire for big change in the population I don’t know. My constituents will be cautious.”
+E         + My constituents will be cautious.”
+
+tests\test_real_article.py:81: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_real_article.py::test_each_card_shows_the_whole_sentence_i_read[restoke]
+FAILED tests/test_real_article.py::test_each_card_shows_the_whole_sentence_i_read[constituents]
+========================= 2 failed, 3 passed in 0.53s =========================

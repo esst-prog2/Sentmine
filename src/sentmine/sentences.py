@@ -10,6 +10,9 @@ _LINE_BREAK = re.compile(r"\s*\n\s*")
 # A full stop after one of these does not end a sentence.
 ABBREVIATIONS = frozenset({"mr.", "mrs.", "ms.", "dr.", "st.", "vs.", "etc.", "e.g.", "i.e."})
 _OPENING = "\"'“‘(["
+# Quotation marks that come in pairs. ‘ and ’ are left out: ’ is also the apostrophe.
+_OPENING_QUOTES = "“«"
+_CLOSING_QUOTES = "”»"
 
 
 def _is_abbreviation(paragraph: str, end_mark: re.Match) -> bool:
@@ -27,6 +30,13 @@ def _continues_in_lowercase(paragraph: str, end_mark: re.Match) -> bool:
     return paragraph[end_mark.end() :].lstrip()[:1].islower()
 
 
+def _inside_a_quotation(so_far: str) -> bool:
+    """True when `so_far`, the sentence up to and including the mark, leaves quoted speech open."""
+    opened = sum(so_far.count(mark) for mark in _OPENING_QUOTES)
+    closed = sum(so_far.count(mark) for mark in _CLOSING_QUOTES)
+    return opened > closed or so_far.count('"') % 2 == 1
+
+
 def split_sentences(text: str) -> list[str]:
     sentences: list[str] = []
     for paragraph in _PARAGRAPH_BREAK.split(text.replace("\r\n", "\n").replace("\r", "\n")):
@@ -37,6 +47,8 @@ def split_sentences(text: str) -> list[str]:
         for end_mark in _END.finditer(paragraph):
             if _is_abbreviation(paragraph, end_mark) or _continues_in_lowercase(paragraph, end_mark):
                 continue
+            if _inside_a_quotation(paragraph[start : end_mark.end()]):
+                continue  # the quote is kept whole, with the words that introduce it
             sentences.append(paragraph[start : end_mark.end()].strip())
             start = end_mark.end()
         rest = paragraph[start:].strip()
