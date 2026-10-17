@@ -1,8 +1,10 @@
 import pytest
 from apkg_helper import read_notes
+from reading_helper import place_of
 from test_reading import DEFINITION, NOTES
 
-from sentmine.app import HOST, count_text, create_app, deck_file_name
+from sentmine.app import HOST, create_app, deck_file_name
+from sentmine.words import plural
 
 
 @pytest.fixture
@@ -11,12 +13,8 @@ def client():
 
 
 def word_place(state, word):
-    for paragraph in state["paragraphs"]:
-        for sentence in paragraph:
-            for piece in sentence["pieces"]:
-                if piece.get("word") is not None and piece["text"].lower() == word:
-                    return {"sentence": sentence["sentence"], "word": piece["word"]}
-    raise AssertionError(f"{word!r} is not a clickable word")
+    sentence, number = place_of(state["paragraphs"], word)
+    return {"sentence": sentence, "word": number}
 
 
 def test_the_page_is_served(client):
@@ -33,7 +31,7 @@ def test_a_new_app_has_no_text_and_no_cards(client):
 
 @pytest.mark.parametrize("number, text", [(0, "0 cards"), (1, "1 card"), (2, "2 cards")])
 def test_singular_and_plural_agree_with_the_number(number, text):
-    assert count_text(number) == text
+    assert plural(number, "card") == text
 
 
 def test_the_readme_demo_from_paste_to_deck(client, tmp_path):

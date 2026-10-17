@@ -1,5 +1,6 @@
 import pytest
 from apkg_helper import read_notes
+from reading_helper import place_of
 
 from sentmine.reading import ADDED, DUPLICATE, REMOVED, Problem, Session, tidy
 
@@ -21,18 +22,6 @@ def session():
     reading = Session()
     reading.load(NOTES)
     return reading
-
-
-def place_of(session, word, nth=0):
-    """(sentence, word) numbers of the nth clickable `word` in the text, as the page would send them."""
-    places = [
-        (sentence["sentence"], piece["word"])
-        for paragraph in session.layout()
-        for sentence in paragraph
-        for piece in sentence["pieces"]
-        if "word" in piece and piece["text"].lower() == word
-    ]
-    return places[nth]
 
 
 # --- tidying -----------------------------------------------------------------

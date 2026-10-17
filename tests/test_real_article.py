@@ -18,6 +18,7 @@ introduce it, copied from the article text.
 from pathlib import Path
 
 import pytest
+from reading_helper import place_of
 
 from sentmine.reading import ADDED, Session
 
@@ -52,12 +53,7 @@ CHOSEN = {
 
 def click(session, word):
     """Click the first `word` in the text, as the reader would on the page."""
-    for paragraph in session.layout():
-        for sentence in paragraph:
-            for piece in sentence["pieces"]:
-                if "word" in piece and piece["text"].lower() == word:
-                    return session.pick_word(sentence["sentence"], piece["word"])
-    raise AssertionError(f"{word!r} is not a clickable word of the article")
+    return session.pick_word(*place_of(session, word))
 
 
 @pytest.fixture

@@ -10,6 +10,7 @@ from pathlib import Path
 from flask import Flask, Response, jsonify, request
 
 from sentmine.reading import ADDED, DUPLICATE, REMOVED, Flashcard, Problem, Session
+from sentmine.words import plural
 
 HOST = "127.0.0.1"  # this computer only
 FIRST_PORT = 8000
@@ -27,10 +28,6 @@ def deck_file_name(name: str) -> str:
     """A safe file name for the deck the reader named."""
     stem = " ".join(_NOT_IN_A_FILE_NAME.sub(" ", name or "").split())
     return (stem or DEFAULT_DECK_NAME) + ".apkg"
-
-
-def count_text(number: int) -> str:
-    return f"{number} card" if number == 1 else f"{number} cards"
 
 
 def _card_json(card: Flashcard) -> dict:
@@ -62,7 +59,7 @@ def create_app(session: Session | None = None) -> Flask:
             paragraphs=reading.layout(),
             cards=[_card_json(card) for card in reading.cards],
             count=len(reading.cards),
-            count_text=count_text(len(reading.cards)),
+            count_text=plural(len(reading.cards), "card"),
             message=message,
             result=result,
         )

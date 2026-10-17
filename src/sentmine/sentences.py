@@ -47,12 +47,19 @@ def _inside_a_quotation(so_far: str) -> bool:
     return opened > closed or so_far.count('"') % 2 == 1
 
 
-def split_sentences(text: str) -> list[str]:
-    sentences: list[str] = []
+def paragraphs(text: str) -> list[str]:
+    """The paragraphs of a text: split at blank lines, each joined onto one line, empty ones dropped."""
+    found = []
     for paragraph in _PARAGRAPH_BREAK.split(text.replace("\r\n", "\n").replace("\r", "\n")):
         paragraph = _LINE_BREAK.sub(" ", paragraph.strip())
-        if not paragraph:
-            continue
+        if paragraph:
+            found.append(paragraph)
+    return found
+
+
+def split_sentences(text: str) -> list[str]:
+    sentences: list[str] = []
+    for paragraph in paragraphs(text):
         start = 0
         for end_mark in _END.finditer(paragraph):
             if _is_abbreviation(paragraph, end_mark) or _continues_in_lowercase(paragraph, end_mark):
