@@ -4,3 +4,8 @@ __pycache__/
 build/
 dist/
 *.apkg
+
+# Secrets: the planned AI features will need an API key. It goes in a local .env, never in git.
+.env
+.env.*
+*.key

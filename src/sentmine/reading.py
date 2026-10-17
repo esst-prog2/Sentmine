@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from sentmine.deck import card_back, card_front, write_notes
-from sentmine.sentences import split_sentences
+from sentmine.sentences import paragraphs, split_sentences
 from sentmine.stem import stem
 from sentmine.words import Word, find_words
 
@@ -17,8 +17,6 @@ ADDED = "added"
 REMOVED = "removed"
 DUPLICATE = "duplicate"
 
-_PARAGRAPH_BREAK = re.compile(r"\n\s*\n")
-_LINE_BREAK = re.compile(r"\s*\n\s*")
 _SPACES = re.compile(r"[^\S\n]+")  # spaces and tabs, but not line breaks
 _NEWLINES = re.compile(r"\s*\n\s*")
 
@@ -54,12 +52,7 @@ def _plain_html(text: str) -> str:
 
 def tidy(text: str) -> str:
     """Paragraphs separated by one blank line; a line break inside a paragraph becomes a space."""
-    paragraphs = []
-    for paragraph in _PARAGRAPH_BREAK.split(text.replace("\r\n", "\n").replace("\r", "\n")):
-        paragraph = _SPACES.sub(" ", _LINE_BREAK.sub(" ", paragraph.strip()))
-        if paragraph:
-            paragraphs.append(paragraph)
-    return "\n\n".join(paragraphs)
+    return "\n\n".join(_SPACES.sub(" ", paragraph) for paragraph in paragraphs(text))
 
 
 def tidy_selection(text: str) -> str:

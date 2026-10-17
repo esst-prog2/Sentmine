@@ -1,4 +1,4 @@
-from sentmine.analyse import known_stems, parse_known
+from sentmine.analyse import known_stems
 from sentmine.stem import stem
 
 
@@ -20,20 +20,20 @@ def test_known_words_match_case_insensitively():
 
 
 def test_blank_lines_and_surrounding_whitespace_are_ignored():
-    stems = parse_known("dog\n\n   old  \n\t\n")
+    stems = known_stems("dog\n\n   old  \n\t\n".splitlines())
     assert stems == frozenset({"dog", "old"})
 
 
 def test_windows_line_endings_are_fine():
-    assert parse_known("dog\r\nold\r\n") == frozenset({"dog", "old"})
+    assert known_stems("dog\r\nold\r\n".splitlines()) == frozenset({"dog", "old"})
 
 
 def test_an_empty_file_knows_nothing():
-    assert parse_known("") == frozenset()
+    assert known_stems("".splitlines()) == frozenset()
 
 
 def test_a_line_with_a_digit_is_not_a_known_word():
-    assert parse_known("2026\n") == frozenset()
+    assert known_stems("2026\n".splitlines()) == frozenset()
 
 
 def test_demo_known_words(demo_known):

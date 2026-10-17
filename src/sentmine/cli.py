@@ -1,13 +1,14 @@
 """Command-line entry point."""
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
-from sentmine.analyse import Analysis, analyse
+from sentmine.analyse import DEFAULT_MIN_LEN, Analysis, analyse
 from sentmine.deck import write_deck
+from sentmine.words import plural
 
-DEFAULT_MIN_LEN = 3
 EXIT_OK = 0
 EXIT_PROBLEM = 2  # nothing was written; a message on stderr names the problem
 
@@ -75,22 +76,18 @@ def _read_text(path: Path, what: str) -> str:
         raise InputProblem(f"cannot read the {what} file '{path}': {error.strerror or error}") from None
 
 
-def _count(number: int, noun: str) -> str:
-    return f"{number} {noun}" if number == 1 else f"{number} {noun}s"
-
-
 def counts_summary(result: Analysis) -> str:
     return (
-        f"Read {_count(result.sentences, 'sentence')}, {_count(result.words, 'word')}. "
-        f"{_count(result.common, 'common word')} ignored, "
+        f"Read {plural(result.sentences, 'sentence')}, {plural(result.words, 'word')}. "
+        f"{plural(result.common, 'common word')} ignored, "
         f"{result.known} already-known skipped, "
-        f"{_count(result.repeats, 'repeat')} collapsed."
+        f"{plural(result.repeats, 'repeat')} collapsed."
     )
 
 
 def summary(result: Analysis, deck: Path) -> str:
     words = ", ".join(card.word for card in result.cards)
-    return f"{counts_summary(result)} Wrote {_count(len(result.cards), 'new card')} to {deck}: {words}."
+    return f"{counts_summary(result)} Wrote {plural(len(result.cards), 'new card')} to {deck}: {words}."
 
 
 def _fail(message: str) -> int:
@@ -102,7 +99,9 @@ def _same_file(a: Path, b: Path) -> bool:
     try:
         return a.resolve() == b.resolve()
     except OSError:
-        return False
+        # The paths cannot be fully resolved; compare them as written rather than assume they differ,
+        # so that an input file is still protected.
+        return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
 
 
 def _tolerate_any_character() -> None:

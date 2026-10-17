@@ -16,6 +16,11 @@ class Word:
     ignored: bool = False  # a token with a digit: counted, but never a real word
 
 
+def plural(number: int, noun: str) -> str:
+    """`1 card`, `2 cards`: the count with the noun agreeing with it."""
+    return f"{number} {noun}" if number == 1 else f"{number} {noun}s"
+
+
 def find_words(sentence: str) -> list[Word]:
     """Words of a sentence in order; a token containing a digit comes back as one ignored word."""
     found: list[Word] = []
