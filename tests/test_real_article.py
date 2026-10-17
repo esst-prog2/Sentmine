@@ -68,10 +68,10 @@ def reading():
 
 def test_only_the_words_i_chose_become_cards(reading):
     assert len(reading.cards) == 4
-    assert [card.back for card in reading.cards] == list(CHOSEN)
+    assert [card.word for card in reading.cards] == list(CHOSEN)
 
 
 @pytest.mark.parametrize("word", list(CHOSEN))
 def test_each_card_shows_the_whole_sentence_i_read(reading, word):
-    card = next(card for card in reading.cards if card.back == word)
+    card = next(card for card in reading.cards if card.word == word)
     assert card.front == CHOSEN[word]

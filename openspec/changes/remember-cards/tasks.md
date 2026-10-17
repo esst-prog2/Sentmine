@@ -9,9 +9,9 @@
 
 ## 3. The reading session
 
-- [ ] 3.1 Use base forms as the key of word cards and show the base form on the back when it differs; update the tests that expected the back to be the word alone; verify tests for "A word whose base form differs" and "An irregular form of a word"
-- [ ] 3.2 Give `Session` an optional history; `pick_word` and `add_definition` answer `earlier` with the earlier entry, and with `anyway=True` make the card with a "made before" date; verify tests for "A word with an earlier card", "Made anyway", and the same for a definition card
-- [ ] 3.3 `Session.export` returns the cards it wrote, and a session with a history adds them to it; verify tests for "Deleted before download", "Edited text is what is downloaded" and "No cards"
+- [x] 3.1 Use base forms as the key of word cards and show the base form on the back when it differs; update the tests that expected the back to be the word alone; verify tests for "A word whose base form differs" and "An irregular form of a word"
+- [x] 3.2 Give `Session` an optional history; `pick_word` and `add_definition` answer `earlier` with the earlier entry, and with `anyway=True` make the card with a "made before" date; verify tests for "A word with an earlier card", "Made anyway", and the same for a definition card
+- [x] 3.3 `Session.export` returns the cards it wrote, and a session with a history adds them to it; verify tests for "Deleted before download", "Edited text is what is downloaded" and "No cards"
 
 ## 4. The app and the page
 
