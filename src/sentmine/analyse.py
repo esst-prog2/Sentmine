@@ -9,6 +9,9 @@ from sentmine.sentences import split_sentences
 from sentmine.stem import stem
 from sentmine.words import find_words
 
+# Words shorter than this many letters are common (spec: command-line, "Command and options").
+DEFAULT_MIN_LEN = 3
+
 
 @lru_cache(maxsize=1)
 def load_stopwords() -> frozenset[str]:
@@ -50,7 +53,7 @@ class Analysis:
     cards: tuple[Card, ...]  # in order of first appearance
 
 
-def analyse(text: str, known_words: Iterable[str] = (), min_len: int = 3) -> Analysis:
+def analyse(text: str, known_words: Iterable[str] = (), min_len: int = DEFAULT_MIN_LEN) -> Analysis:
     """Sort every word occurrence of the passage into common, known, repeat or card."""
     stopwords = load_stopwords()
     known = known_stems(known_words)

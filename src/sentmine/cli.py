@@ -5,11 +5,10 @@ import os
 import sys
 from pathlib import Path
 
-from sentmine.analyse import Analysis, analyse
+from sentmine.analyse import DEFAULT_MIN_LEN, Analysis, analyse
 from sentmine.deck import write_deck
 from sentmine.words import plural
 
-DEFAULT_MIN_LEN = 3
 EXIT_OK = 0
 EXIT_PROBLEM = 2  # nothing was written; a message on stderr names the problem
 
