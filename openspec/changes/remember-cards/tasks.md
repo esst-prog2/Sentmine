@@ -1,11 +1,11 @@
 ## 1. Base forms
 
-- [ ] 1.1 Add `simplemma==2.0.0` to `pyproject.toml` and write `lemma.base_form(word)`; verify tests that `sighed` gives `sigh`, `ran` gives `run`, `children` gives `child`, and that `hoped` and `hopped` give different base forms
+- [x] 1.1 Add `simplemma==2.0.0` to `pyproject.toml` and write `lemma.base_form(word)`; verify tests that `sighed` gives `sigh`, `ran` gives `run`, `children` gives `child`, and that `hoped` and `hopped` give different base forms
 
 ## 2. The history file
 
-- [ ] 2.1 Write `history.History` (read a JSON Lines file, find by kind and key, append on add, skip entries already there) and `default_history_path()` (`SENTMINE_HISTORY`, `%APPDATA%`, `~/.local/share`); verify tests for each scenario of "Where the history is kept", "What an entry holds", "Finding an earlier card" and the twice-downloaded deck
-- [ ] 2.2 Make a history that cannot be read report why, find nothing, add nothing and leave the file unchanged; verify a test for "A damaged file"
+- [x] 2.1 Write `history.History` (read a JSON Lines file, find by kind and key, append on add, skip entries already there) and `default_history_path()` (`SENTMINE_HISTORY`, `%APPDATA%`, `~/.local/share`); verify tests for each scenario of "Where the history is kept", "What an entry holds", "Finding an earlier card" and the twice-downloaded deck
+- [x] 2.2 Make a history that cannot be read report why, find nothing, add nothing and leave the file unchanged; verify a test for "A damaged file"
 
 ## 3. The reading session
 
