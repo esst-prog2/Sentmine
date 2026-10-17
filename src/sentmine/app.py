@@ -15,6 +15,9 @@ HOST = "127.0.0.1"  # this computer only
 FIRST_PORT = 8000
 LAST_PORT = 8010
 DEFAULT_DECK_NAME = "new"
+# The browser is opened a moment after the server starts, so the first page request finds it running.
+# 0.8 seconds was chosen by guess, not measured; on a slow computer the page may need a reload.
+BROWSER_DELAY_SECONDS = 0.8
 
 _PAGE = Path(__file__).parent / "web" / "index.html"
 _NOT_IN_A_FILE_NAME = re.compile(r"[^\w \-]+")
@@ -139,6 +142,6 @@ def serve(open_browser: bool = True) -> int:
     address = f"http://{HOST}:{port}"
     print(f"sentmine reading app: {address}  (Ctrl+C to stop)")
     if open_browser:
-        threading.Timer(0.8, webbrowser.open, args=(address,)).start()
+        threading.Timer(BROWSER_DELAY_SECONDS, webbrowser.open, args=(address,)).start()
     create_app().run(host=HOST, port=port)
     return 0
