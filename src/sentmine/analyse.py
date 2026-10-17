@@ -32,11 +32,6 @@ def known_stems(lines: Iterable[str]) -> frozenset[str]:
     return frozenset(stems)
 
 
-def parse_known(text: str) -> frozenset[str]:
-    """Stems of the known words in the text of a known-words file."""
-    return known_stems(text.splitlines())
-
-
 @dataclass(frozen=True)
 class Card:
     word: str  # the word as it first appeared, lower-cased
@@ -53,10 +48,6 @@ class Analysis:
     known: int
     repeats: int
     cards: tuple[Card, ...]  # in order of first appearance
-
-    @property
-    def new_words(self) -> int:
-        return len(self.cards)
 
 
 def analyse(text: str, known_words: Iterable[str] = (), min_len: int = 3) -> Analysis:
