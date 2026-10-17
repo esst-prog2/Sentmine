@@ -1,4 +1,14 @@
-"""Split a passage into sentences."""
+"""Split a passage into sentences.
+
+The whole rule, as in openspec/specs/passage-analysis ("Sentence splitting"):
+a sentence ends at `.`, `!` or `?` (with any closing quotation marks or
+brackets after it) that is followed by whitespace or the end of the paragraph,
+unless
+  1. it is the full stop of an abbreviation in ABBREVIATIONS (`Dr.`), or
+  2. it is a `!` or `?` followed by a lowercase word (`"Stop!" she said.`), or
+  3. a quotation opened in this sentence is still open (the quote is kept whole).
+A blank line always ends a sentence.
+"""
 
 import re
 
