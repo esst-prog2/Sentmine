@@ -15,7 +15,7 @@
 
 ## 4. The app and the page
 
-- [ ] 4.1 `serve()` opens the reader's history; the state carries the earlier card and a history warning; the download adds to the history and sends a warning header if adding fails; verify with the test client, using a temporary history file
+- [x] 4.1 `serve()` opens the reader's history; the state carries the earlier card and a history warning; the download adds to the history and sends a warning header if adding fails; verify with the test client, using a temporary history file
 - [ ] 4.2 The page shows the earlier card with Skip and Make it anyway, the "made before" note in the preview, and any history warning; verify the page script has no syntax error
 
 ## 5. Wrap-up
