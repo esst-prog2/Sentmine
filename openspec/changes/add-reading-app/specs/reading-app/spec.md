@@ -68,7 +68,11 @@ The app SHALL NOT make a second card for a word or term that already has one, an
 - **THEN** no card is made
 
 ### Requirement: Preview, edit and delete
-The page SHALL show every card, front and back, in the order the cards were made. The reader SHALL be able to change the front and the back of any card and to delete any card. An edited word card SHALL still show its word in bold wherever the word occurs in the edited front.
+The page SHALL show every card, front and back, in the order the cards were made. The reader SHALL be able to change the front and the back of any card and to delete any card. An edited word card SHALL still show its word in bold wherever the word occurs in the edited front. An edit that leaves the front or the back empty SHALL be refused with a message and SHALL leave the card as it was; deleting is the way to remove a card.
+
+#### Scenario: Emptying a side
+- **WHEN** the reader saves a card with an empty back
+- **THEN** the card keeps its old front and back and a message says a card needs both sides
 
 #### Scenario: Editing a card
 - **WHEN** the reader changes the back of a card
@@ -86,7 +90,11 @@ The page SHALL show the number of cards at all times, with singular and plural a
 - **THEN** the header says `2 cards`
 
 ### Requirement: Download
-Download SHALL give the reader an `.apkg` deck holding the cards exactly as the preview shows them, in the same order. The file name SHALL be the deck name the reader gave, `new` by default, with `.apkg`. With no cards, Download SHALL give no file and SHALL say why.
+Download SHALL give the reader an `.apkg` deck holding the cards exactly as the preview shows them, in the same order. The file name SHALL be the deck name the reader gave, `new` by default, with `.apkg`. Every character of the name other than letters, digits, spaces, `-` and `_` SHALL become a space, runs of spaces SHALL become one, and a name left empty SHALL become `new`. With no cards, Download SHALL give no file and SHALL say why.
+
+#### Scenario: A deck name that is not a safe file name
+- **WHEN** the reader names the deck `../../evil`
+- **THEN** the file is `evil.apkg`
 
 #### Scenario: Edited text is what is downloaded
 - **WHEN** a card was edited in the preview and the deck is downloaded
