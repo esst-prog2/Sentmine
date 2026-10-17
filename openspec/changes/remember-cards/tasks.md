@@ -16,9 +16,9 @@
 ## 4. The app and the page
 
 - [x] 4.1 `serve()` opens the reader's history; the state carries the earlier card and a history warning; the download adds to the history and sends a warning header if adding fails; verify with the test client, using a temporary history file
-- [ ] 4.2 The page shows the earlier card with Skip and Make it anyway, the "made before" note in the preview, and any history warning; verify the page script has no syntax error
+- [x] 4.2 The page shows the earlier card with Skip and Make it anyway, the "made before" note in the preview, and any history warning; verify the page script has no syntax error
 
 ## 5. Wrap-up
 
-- [ ] 5.1 Run the whole suite and `openspec validate remember-cards --strict`; verify both pass and the first design still writes 103 cards from the spike article
+- [x] 5.1 Run the whole suite and `openspec validate remember-cards --strict`; verify both pass and the first design still writes 103 cards from the spike article
 - [ ] 5.2 Try it in the browser: make and download a card, start the app again, pick the same word in another form, and see the earlier card (needs the reader)

@@ -160,8 +160,15 @@ sentmine             # starts the reading app and opens it in the browser
 ```
 
 The page is at http://127.0.0.1:8000 and is served only to this computer.
-Stop the app with Ctrl+C in the terminal. Nothing is kept between runs:
-download the deck before closing.
+Stop the app with Ctrl+C in the terminal. The text and cards on the page
+are not kept between runs, so download the deck before closing.
+
+Every card you download is remembered in your card history, a small file
+in your own user folder (on Windows `%APPDATA%\sentmine\history.jsonl`;
+the terminal prints where it is). When you pick a word or term that already
+has a card, the page shows the earlier card and lets you skip it or make
+it anyway. Different forms of a word count as the same word (`ran` and
+`run`). To use another history file, set `SENTMINE_HISTORY` to its path.
 
 The first design, a command-line tool that picks the words from a
 known-words list, still works: `sentmine passage.txt --known known.txt
