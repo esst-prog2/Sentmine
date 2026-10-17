@@ -149,9 +149,15 @@ async function call(method, url, body) {
       headers: body === undefined ? {} : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    data = await response.json();
   } catch (error) {
     say("The app is not answering. Is `sentmine` still running in the terminal?", true);
+    return null;
+  }
+  try {
+    data = await response.json();
+  } catch (error) {
+    // The app answered, but not with JSON: an error inside the app, not a lost connection.
+    say("The app ran into an error (" + response.status + "). The terminal running `sentmine` shows what happened.", true);
     return null;
   }
   if (!response.ok) {

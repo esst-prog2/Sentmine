@@ -1,6 +1,7 @@
 """Command-line entry point."""
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -99,7 +100,9 @@ def _same_file(a: Path, b: Path) -> bool:
     try:
         return a.resolve() == b.resolve()
     except OSError:
-        return False
+        # The paths cannot be fully resolved; compare them as written rather than assume they differ,
+        # so that an input file is still protected.
+        return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
 
 
 def _tolerate_any_character() -> None:

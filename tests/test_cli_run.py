@@ -175,6 +175,18 @@ def test_deck_path_is_the_known_file(demo_files, capsys):
     assert demo_files.known.read_bytes() == original
 
 
+def test_input_file_is_protected_even_when_paths_cannot_be_resolved(demo_files, capsys, monkeypatch):
+    # Review 5 (Homework 6): this check used to answer "not the same file" when resolving failed.
+    def cannot_resolve(self, strict=False):
+        raise OSError("cannot resolve")
+
+    monkeypatch.setattr(type(demo_files.passage), "resolve", cannot_resolve)
+    original = demo_files.passage.read_bytes()
+    code, _, err = run(capsys, demo_files.passage, "--deck", demo_files.passage, "--force")
+    assert code == 2 and "is an input file" in err
+    assert demo_files.passage.read_bytes() == original
+
+
 # --- 6.4: input files are never modified; --force replaces --------------------------------------
 
 
