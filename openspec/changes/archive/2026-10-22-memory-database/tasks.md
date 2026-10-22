@@ -18,4 +18,6 @@
 
 - [x] 4.1 Run the whole suite and `openspec validate memory-database --strict`; verify both pass and the first design still writes 103 cards from the spike article
 - [x] 4.2 Start the app for real with a temporary folder holding an old `history.jsonl`; verify over HTTP that its cards are in the database and on `/api/memory`
-- [ ] 4.3 Try the My cards page in the browser: search, progress, delete one card, and pick its word again (needs the reader)
+- [x] 4.3 Try the My cards page in the browser: search, progress, delete one card, and pick its word again (needs the reader)
+
+  Done by the reader on 2026-10-22: progress, search, deleting a card, and picking its word again without an earlier card (the reader's report).

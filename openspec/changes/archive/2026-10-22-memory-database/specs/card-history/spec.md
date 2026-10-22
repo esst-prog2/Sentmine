@@ -17,7 +17,7 @@ Each remembered card SHALL have a number of its own and SHALL record: whether it
 ### Requirement: A history that cannot be read
 If the database cannot be opened, is not a database, or was made by a newer version of the app, the app SHALL tell the reader why and SHALL go on working without a memory: no earlier card is found, downloads still work, and the reader is told that the cards were not remembered. The app SHALL NOT overwrite, repair or delete the file.
 
-#### Scenario: A damaged database
+#### Scenario: A damaged file
 - **WHEN** the database file is not a SQLite database
 - **THEN** the page says the memory could not be opened, picking words still makes cards, downloads still work, and the file is unchanged
 
