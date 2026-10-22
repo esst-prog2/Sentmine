@@ -7,8 +7,9 @@ from datetime import date
 from pathlib import Path
 
 from sentmine.deck import card_back, card_front, write_notes
-from sentmine.history import Entry, History, HistoryProblem
+from sentmine.history import Entry
 from sentmine.lemma import base_form
+from sentmine.memory import CardMemory, MemoryProblem
 from sentmine.sentences import paragraphs, split_sentences
 from sentmine.words import Word, find_words
 
@@ -18,7 +19,7 @@ DEFINITION = "definition"
 ADDED = "added"
 REMOVED = "removed"
 DUPLICATE = "duplicate"
-EARLIER = "earlier"  # no card made: the history has one; the reader may make it anyway
+EARLIER = "earlier"  # no card made: the memory has one; the reader may make it anyway
 
 _SPACES = re.compile(r"[^\S\n]+")  # spaces and tabs, but not line breaks
 _NEWLINES = re.compile(r"\s*\n\s*")
@@ -37,7 +38,7 @@ class Flashcard:
     key: str  # two cards with the same key are the same card
     word: str = ""  # word cards: the word shown in bold on the front
     place: tuple[int, int] | None = None  # word cards: the sentence and word that were clicked
-    earlier: str = ""  # made anyway: the date of the earlier card in the history
+    earlier: str = ""  # made anyway: the date of the earlier card in the memory
 
     @property
     def history_key(self) -> str:
@@ -56,7 +57,7 @@ class Flashcard:
 
 
 def entry_card(entry: Entry) -> Flashcard:
-    """An earlier card from the history, as a card the page can show."""
+    """An earlier card from the memory, as a card the page can show."""
     return Flashcard(0, entry.kind, entry.front, entry.back, "", word=entry.word)
 
 
@@ -88,10 +89,10 @@ def clickable_words(sentence: str) -> list[Word]:
 class Session:
     """One text and its cards, kept in memory for one reader."""
 
-    def __init__(self, history: History | None = None) -> None:
+    def __init__(self, memory: CardMemory | None = None) -> None:
         self.paragraphs: list[list[str]] = []  # each paragraph is a list of sentences
         self.cards: list[Flashcard] = []
-        self.history = history  # None: the session remembers nothing between runs
+        self.memory = memory  # None: the session remembers nothing between runs
         self._next_id = 1
 
     @property
@@ -137,7 +138,7 @@ class Session:
     def pick_word(self, sentence: int, word: int, anyway: bool = False) -> tuple[str, Flashcard | Entry]:
         """A click on a word: make its card, or remove the card this very word made.
 
-        If the history already has a card for the word, no card is made and the earlier
+        If the memory already has a card for the word, no card is made and the earlier
         entry comes back, unless `anyway` is true.
         """
         sentences = self.sentences
@@ -165,7 +166,7 @@ class Session:
         return DUPLICATE, existing
 
     def add_definition(self, term: str, passage: str, anyway: bool = False) -> tuple[str, Flashcard | Entry]:
-        """A term and the passage the reader marked as its definition; the history is checked as for words."""
+        """A term and the passage the reader marked as its definition; the memory is checked as for words."""
         term = " ".join(term.split())
         passage = tidy_selection(passage)
         if not term:
@@ -193,22 +194,22 @@ class Session:
         self.cards.remove(self._card(card_id))
 
     def export(self, path: Path, day: str | None = None) -> str:
-        """Write the cards, as the preview shows them, to an .apkg deck, then add them to the history.
+        """Write the cards, as the preview shows them, to an .apkg deck, then add them to the memory.
 
         Returns a warning if the deck was written but the cards could not be remembered, else "".
         """
         if not self.cards:
             raise Problem("There are no cards yet: pick a word or mark a definition first.")
         write_notes([(card.front_html, card.back_html) for card in self.cards], path)
-        if self.history is None:
+        if self.memory is None:
             return ""
         day = day or date.today().isoformat()
         entries = [
             Entry(card.kind, card.history_key, card.front, card.back, card.word, day) for card in self.cards
         ]
         try:
-            self.history.add(entries)
-        except HistoryProblem as error:
+            self.memory.add(entries)
+        except MemoryProblem as error:
             return f"The deck was made, but these cards were not remembered. {error}"
         return ""
 
@@ -225,7 +226,7 @@ class Session:
         raise Problem("That card no longer exists.")
 
     def _earlier(self, kind: str, key: str) -> Entry | None:
-        return self.history.find(kind, key) if self.history is not None else None
+        return self.memory.find(kind, key) if self.memory is not None else None
 
     def _card_with_key(self, key: str) -> Flashcard | None:
         for card in self.cards:

@@ -7,7 +7,8 @@ from reading_helper import place_of
 
 from sentmine import app as app_module
 from sentmine.app import create_app
-from sentmine.history import Entry, History
+from sentmine.history import Entry
+from sentmine.memory import CardMemory
 from sentmine.reading import Session
 
 SKEW_9_OCT = Entry("word", "skew", "Outliers can skew it considerably.", "skew", "skew", "2026-10-09")
@@ -15,7 +16,7 @@ SKEW_9_OCT = Entry("word", "skew", "Outliers can skew it considerably.", "skew",
 
 @pytest.fixture
 def history(tmp_path):
-    return History(tmp_path / "history.jsonl")
+    return CardMemory(tmp_path / "cards.db")
 
 
 def client_with(history, text):
@@ -76,23 +77,23 @@ def test_the_download_remembers_the_cards(history):
     response = client.get("/api/deck?name=new")
     assert response.status_code == 200
     assert "X-Sentmine-Warning" not in response.headers
-    assert [entry.back for entry in History(history.path).entries] == ["sighed (sigh)"]
+    assert [entry.back for entry in CardMemory(history.path).entries] == ["sighed (sigh)"]
 
 
 def test_a_new_session_finds_the_card_downloaded_in_an_earlier_one(history):
     first = client_with(history, "Its owner sighed.")
     first.post("/api/word", json=click_body(first, "sighed"))
     first.get("/api/deck?name=new")
-    later = client_with(History(history.path), "A long sigh.")  # the app started again
+    later = client_with(CardMemory(history.path), "A long sigh.")  # the app started again
     state = later.post("/api/word", json=click_body(later, "sigh")).get_json()
     assert state["result"] == "earlier"
 
 
 def test_a_damaged_history_is_shown_and_the_deck_still_downloads(tmp_path):
-    path = tmp_path / "history.jsonl"
+    path = tmp_path / "cards.db"
     path.write_text("damaged\n", encoding="utf-8")
-    client = client_with(History(path), "Its owner sighed.")
-    assert "could not be read" in client.get("/api/state").get_json()["history_warning"]
+    client = client_with(CardMemory(path), "Its owner sighed.")
+    assert "could not be opened" in client.get("/api/state").get_json()["memory_warning"]
     client.post("/api/word", json=click_body(client, "sighed"))
     response = client.get("/api/deck?name=new")
     assert response.status_code == 200 and len(response.data) > 0
@@ -102,12 +103,12 @@ def test_a_damaged_history_is_shown_and_the_deck_still_downloads(tmp_path):
 
 def test_without_a_history_there_is_no_warning():
     state = create_app().test_client().get("/api/state").get_json()
-    assert state["history_warning"] == "" and state["earlier"] is None
+    assert state["memory_warning"] == "" and state["earlier"] is None
 
 
 def test_the_real_command_opens_the_history_named_by_the_environment(monkeypatch, tmp_path):
-    path = tmp_path / "mine.jsonl"
-    monkeypatch.setenv("SENTMINE_HISTORY", str(path))
+    path = tmp_path / "mine.db"
+    monkeypatch.setenv("SENTMINE_DATABASE", str(path))
     started = {}
 
     class FakeApp:
@@ -115,11 +116,11 @@ def test_the_real_command_opens_the_history_named_by_the_environment(monkeypatch
             started["run"] = (host, port)
 
     def fake_create_app(session):
-        started["history"] = session.history
+        started["memory"] = session.memory
         return FakeApp()
 
     monkeypatch.setattr(app_module, "create_app", fake_create_app)
     monkeypatch.setattr(app_module, "free_port", lambda: 8123)
     assert app_module.serve(open_browser=False) == 0
-    assert started["history"].path == path
+    assert started["memory"].path == path
     assert started["run"] == ("127.0.0.1", 8123)

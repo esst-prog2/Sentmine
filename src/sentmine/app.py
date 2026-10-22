@@ -10,7 +10,8 @@ from urllib.parse import quote
 
 from flask import Flask, Response, jsonify, request
 
-from sentmine.history import Entry, History, default_history_path
+from sentmine.history import Entry
+from sentmine.memory import CardMemory, MemoryProblem, RememberedCard, default_memory_path
 from sentmine.reading import DUPLICATE, EARLIER, REMOVED, Flashcard, Problem, Session, entry_card
 from sentmine.words import plural
 
@@ -23,6 +24,7 @@ DEFAULT_DECK_NAME = "new"
 BROWSER_DELAY_SECONDS = 0.8
 
 _PAGE = Path(__file__).parent / "web" / "index.html"
+_CARDS_PAGE = Path(__file__).parent / "web" / "cards.html"
 _NOT_IN_A_FILE_NAME = re.compile(r"[^\w \-]+")
 
 
@@ -49,6 +51,17 @@ def _earlier_json(entry: Entry) -> dict:
     return {"kind": entry.kind, "front_html": card.front_html, "back_html": card.back_html, "date": entry.date}
 
 
+def _remembered_json(card: RememberedCard) -> dict:
+    shown = entry_card(card.entry)
+    return {
+        "id": card.id,
+        "kind": card.entry.kind,
+        "front_html": shown.front_html,
+        "back_html": shown.back_html,
+        "date": card.entry.date,
+    }
+
+
 def _message(result: str, card: Flashcard | Entry) -> str:
     name = card.word or card.front
     if result == EARLIER:
@@ -73,7 +86,7 @@ def create_app(session: Session | None = None) -> Flask:
             message=message,
             result=result,
             earlier=_earlier_json(earlier) if earlier is not None else None,
-            history_warning=reading.history.problem if reading.history is not None else "",
+            memory_warning=reading.memory.problem if reading.memory is not None else "",
         )
 
     def answer(result: str, card: Flashcard | Entry):
@@ -93,12 +106,38 @@ def create_app(session: Session | None = None) -> Flask:
         return value
 
     @app.errorhandler(Problem)
-    def problem(error: Problem):
+    @app.errorhandler(MemoryProblem)
+    def problem(error: Exception):
         return jsonify(error=str(error)), 400
 
     @app.get("/")
     def page():
         return Response(_PAGE.read_text(encoding="utf-8"), mimetype="text/html")
+
+    @app.get("/cards")
+    def cards_page():
+        return Response(_CARDS_PAGE.read_text(encoding="utf-8"), mimetype="text/html")
+
+    @app.get("/api/memory")
+    def remembered():
+        memory = reading.memory
+        if memory is None:
+            return jsonify(cards=[], total=0, total_text=plural(0, "card"), progress=None, memory_warning="This app has no card memory.")
+        cards, total = memory.search(request.args.get("q", ""))
+        return jsonify(
+            cards=[_remembered_json(card) for card in cards],
+            total=total,
+            total_text=plural(total, "card"),
+            progress=memory.progress(),
+            memory_warning=memory.problem,
+        )
+
+    @app.delete("/api/memory/<int:card_id>")
+    def forget(card_id: int):
+        if reading.memory is None:
+            raise Problem("This app has no card memory.")
+        reading.memory.delete(card_id)
+        return remembered()
 
     @app.get("/api/state")
     def get_state():
@@ -159,12 +198,15 @@ def serve(open_browser: bool = True) -> int:
     """Run the reading app until it is stopped with Ctrl+C."""
     port = free_port()
     address = f"http://{HOST}:{port}"
-    history = History(default_history_path())
+    memory = CardMemory(default_memory_path())
     print(f"sentmine reading app: {address}  (Ctrl+C to stop)")
-    print(f"card history: {history.path} ({plural(len(history.entries), 'card')})")
-    if history.problem:
-        print(f"warning: {history.problem}")
+    if memory.notice:
+        print(memory.notice)
+    if memory.problem:
+        print(f"warning: {memory.problem}")
+    else:
+        print(f"card memory: {memory.path} ({plural(memory.count(), 'card')})")
     if open_browser:
         threading.Timer(BROWSER_DELAY_SECONDS, webbrowser.open, args=(address,)).start()
-    create_app(Session(history)).run(host=HOST, port=port)
+    create_app(Session(memory)).run(host=HOST, port=port)
     return 0
