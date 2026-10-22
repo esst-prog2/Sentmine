@@ -8,14 +8,14 @@
 ## 2. The reading app on the database
 
 - [x] 2.1 `history.py` keeps only reading the old file; the session and `serve()` use `CardMemory`; verify every earlier test of remembering cards passes on the database
-- [ ] 2.2 `GET /api/memory?q=` and `DELETE /api/memory/<id>`; verify with the test client, including "Deleting" (no earlier card afterwards) and the damaged database
+- [x] 2.2 `GET /api/memory?q=` and `DELETE /api/memory/<id>`; verify with the test client, including "Deleting" (no earlier card afterwards) and the damaged database
 
 ## 3. The My cards page
 
-- [ ] 3.1 Write `web/cards.html` (list, search as you type, progress, delete with confirmation, the memory warning) and link it from the reading page and back; verify both pages are served and their scripts have no syntax error
+- [x] 3.1 Write `web/cards.html` (list, search as you type, progress, delete with confirmation, the memory warning) and link it from the reading page and back; verify both pages are served and their scripts have no syntax error
 
 ## 4. Wrap-up
 
-- [ ] 4.1 Run the whole suite and `openspec validate memory-database --strict`; verify both pass and the first design still writes 103 cards from the spike article
-- [ ] 4.2 Start the app for real with a temporary folder holding an old `history.jsonl`; verify over HTTP that its cards are in the database and on `/api/memory`
+- [x] 4.1 Run the whole suite and `openspec validate memory-database --strict`; verify both pass and the first design still writes 103 cards from the spike article
+- [x] 4.2 Start the app for real with a temporary folder holding an old `history.jsonl`; verify over HTTP that its cards are in the database and on `/api/memory`
 - [ ] 4.3 Try the My cards page in the browser: search, progress, delete one card, and pick its word again (needs the reader)

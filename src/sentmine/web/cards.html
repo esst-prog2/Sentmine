@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My cards · sentmine</title>
+<style>
+  :root {
+    --page: #f6f5f1; --panel: #ffffff; --ink: #1f2328; --soft: #5c6470; --line: #d9d6cd;
+    --accent: #1f6feb; --warn: #b3261e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #16181c; --panel: #1f2227; --ink: #e8e6e1; --soft: #a2a8b3; --line: #343841;
+      --accent: #6ea8ff; --warn: #ff8a80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 16px/1.5 system-ui, "Segoe UI", sans-serif; }
+  header {
+    position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+    padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  h1 { margin: 0; font-size: 1.15rem; }
+  h2 { margin: 0 0 10px; font-size: 1rem; }
+  a.nav { color: var(--accent); text-decoration: none; font-weight: 600; }
+  a.nav:hover { text-decoration: underline; }
+  .here { font-weight: 600; }
+  main { max-width: 60rem; margin: 0 auto; padding: 20px; display: grid; gap: 20px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  #warning { color: var(--warn); }
+  #warning:empty { display: none; }
+  .numbers { display: flex; flex-wrap: wrap; gap: 12px 32px; }
+  .number strong { display: block; font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+  .number span { color: var(--soft); font-size: 0.9rem; }
+  #months { margin-top: 14px; color: var(--soft); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+  #months b { color: var(--ink); }
+  input[type=search] {
+    font: inherit; color: inherit; background: var(--page); border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 10px; width: 100%; max-width: 24rem;
+  }
+  #shown { color: var(--soft); margin: 10px 0 0; }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-top: 12px; }
+  .card .meta { display: flex; gap: 12px; font-size: 0.8rem; color: var(--soft); text-transform: uppercase; letter-spacing: 0.05em; }
+  .card .back { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
+  .card .front { margin-top: 4px; }
+  button {
+    font: inherit; font-size: 0.9rem; color: inherit; background: var(--page); border: 1px solid var(--line);
+    border-radius: 6px; padding: 2px 10px; cursor: pointer; margin-top: 8px;
+  }
+  #empty { color: var(--soft); margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>sentmine</h1>
+  <a href="/" class="nav">Read</a>
+  <span class="here">My cards</span>
+</header>
+
+<main>
+  <p id="warning" role="alert"></p>
+
+  <section aria-labelledby="progress-title">
+    <h2 id="progress-title">Progress</h2>
+    <div class="numbers">
+      <div class="number"><strong id="total">0</strong><span id="kinds">cards</span></div>
+      <div class="number"><strong id="week">0</strong><span>this week</span></div>
+    </div>
+    <div id="months"></div>
+  </section>
+
+  <section aria-labelledby="cards-title">
+    <h2 id="cards-title">Remembered cards</h2>
+    <label for="search" class="number"><span>Search a word, term, sentence or meaning</span></label><br>
+    <input type="search" id="search" autocomplete="off">
+    <p id="shown"></p>
+    <div id="cards"></div>
+    <p id="empty" hidden>No cards yet. Cards appear here once you download a deck on the reading page.</p>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+let searchTimer = null;
+
+function element(tag, className, text) {
+  const made = document.createElement(tag);
+  if (className) made.className = className;
+  if (text !== undefined) made.textContent = text;
+  return made;
+}
+
+async function ask(method, url) {
+  let response, data;
+  try {
+    response = await fetch(url, { method });
+  } catch (error) {
+    $("warning").textContent = "The app is not answering. Is `sentmine` still running in the terminal?";
+    return null;
+  }
+  try {
+    data = await response.json();
+  } catch (error) {
+    $("warning").textContent = "The app ran into an error (" + response.status + "). The terminal running `sentmine` shows what happened.";
+    return null;
+  }
+  if (!response.ok) {
+    $("warning").textContent = data.error || "Something went wrong.";
+    return null;
+  }
+  return data;
+}
+
+function drawProgress(progress) {
+  if (!progress) return;
+  $("total").textContent = progress.total;
+  $("kinds").textContent = (progress.total === 1 ? "card" : "cards") +
+    ": " + progress.words + " word, " + progress.definitions + " definition";
+  $("week").textContent = progress.this_week;
+  const months = $("months");
+  months.replaceChildren("Per month: ");
+  progress.months.forEach((item, index) => {
+    if (index > 0) months.append(" · ");
+    const [year, month] = item.month.split("-");
+    months.append(MONTH_NAMES[Number(month) - 1] + " " + year + " ", element("b", "", String(item.cards)));
+  });
+}
+
+function drawCard(card) {
+  const box = element("div", "card");
+  const meta = element("div", "meta");
+  meta.append(element("span", "", card.kind === "word" ? "Word" : "Definition"), element("span", "", card.date));
+  const front = element("div", "front");
+  front.innerHTML = card.front_html;   // escaped by the server; only <b> and <br> are real tags
+  const back = element("div", "back");
+  back.innerHTML = card.back_html;
+  const remove = element("button", "", "Delete");
+  remove.addEventListener("click", async () => {
+    if (!window.confirm("Forget this card? sentmine will no longer warn that you already have it. " +
+                        "Your decks and Anki are not changed.")) return;
+    const data = await ask("DELETE", "/api/memory/" + card.id + "?q=" + encodeURIComponent($("search").value));
+    if (data) draw(data);
+  });
+  box.append(meta, front, back, remove);
+  return box;
+}
+
+function draw(data) {
+  $("warning").textContent = data.memory_warning || "";
+  drawProgress(data.progress);
+  $("cards").replaceChildren(...data.cards.map(drawCard));
+  const searching = $("search").value.trim() !== "";
+  $("empty").hidden = data.total > 0 || searching;
+  if (data.total === 0) {
+    $("shown").textContent = searching ? "No card matches." : "";
+  } else if (data.cards.length < data.total) {
+    $("shown").textContent = "Showing the newest " + data.cards.length + " of " + data.total_text + ".";
+  } else {
+    $("shown").textContent = data.total_text + (searching ? " match." : ".");
+  }
+}
+
+async function load() {
+  const data = await ask("GET", "/api/memory?q=" + encodeURIComponent($("search").value));
+  if (data) draw(data);
+}
+
+$("search").addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(load, 200);
+});
+
+load();
+</script>
+</body>
+</html>

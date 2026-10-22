@@ -31,6 +31,8 @@
   .modes label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
   #count { font-weight: 600; font-variant-numeric: tabular-nums; }
   .spacer { flex: 1; }
+  a.nav { color: var(--accent); text-decoration: none; font-weight: 600; }
+  a.nav:hover { text-decoration: underline; }
   .deck { display: flex; align-items: center; gap: 8px; }
   input[type=text], textarea {
     font: inherit; color: inherit; background: var(--page); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
@@ -83,6 +85,7 @@
     <label><input type="radio" name="mode" value="definition"><span>Definition</span></label>
   </div>
   <span id="count">0 cards</span>
+  <a href="/cards" class="nav">My cards</a>
   <span class="spacer"></span>
   <div class="deck">
     <label for="deck-name">Deck name</label>
@@ -354,13 +357,13 @@ $("download").addEventListener("click", async () => {
   if (warning) {
     say("Downloaded " + link.download + ". " + decodeURIComponent(warning), true);
   } else {
-    say("Downloaded " + link.download + " with " + state.count_text + ". They are now in your card history.");
+    say("Downloaded " + link.download + " with " + state.count_text + ". They are now in My cards.");
   }
 });
 
 call("GET", "/api/state").then((loaded) => {
-  if (loaded && loaded.history_warning) {
-    say(loaded.history_warning + " Earlier cards will not be found, and new ones will not be remembered.", true);
+  if (loaded && loaded.memory_warning) {
+    say(loaded.memory_warning + " Earlier cards will not be found, and new ones will not be remembered.", true);
   }
   if (loaded && loaded.paragraphs.length > 0) {
     $("paste-box").open = false;
