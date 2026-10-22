@@ -33,5 +33,7 @@
 
 - [x] 7.1 Run the whole test suite and `openspec validate add-reading-app --strict`; verify both pass
 - [x] 7.2 Start `sentmine` for real and fetch the page and the state over HTTP; verify both answer
-- [ ] 7.3 Try the page by hand in a browser with the README paragraph: one definition card, one word card, an edit, a download, and an import into Anki (needs the reader; the agent cannot click in a browser)
+- [x] 7.3 Try the page by hand in a browser with the README paragraph: one definition card, one word card, an edit, a download, and an import into Anki (needs the reader; the agent cannot click in a browser)
 - [x] 7.4 Update README section 6 (install and run) for the reading app; verify the commands in it work
+
+  Done by the reader: Word mode on 2026-10-09 (cards made, deck downloaded and imported into Anki); Definition mode on 2026-10-17 (the reader reports it works; an Anki import of a definition card was not reported separately).

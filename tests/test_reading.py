@@ -101,7 +101,7 @@ def test_picking_a_word_makes_a_card_from_its_sentence(session):
 
 def test_the_back_is_lower_cased_and_the_front_keeps_its_capital(session):
     _, card = session.pick_word(*place_of(session, "outliers"))
-    assert card.back == "outliers"
+    assert card.back == "outliers (outlier)"  # the base form follows when it differs
     assert card.front_html.startswith("<b>Outliers</b> can")
 
 
@@ -142,7 +142,7 @@ def test_another_form_of_the_word_makes_no_second_card():
     reading.pick_word(*place_of(reading, "sighed"))
     result, _ = reading.pick_word(*place_of(reading, "sigh"))
     assert result == DUPLICATE
-    assert [card.back for card in reading.cards] == ["sighed"]
+    assert [card.back for card in reading.cards] == ["sighed (sigh)"]
 
 
 @pytest.mark.parametrize("place", [(99, 0), (-1, 0), (0, 99), (0, -1)])

@@ -7,7 +7,7 @@ Defines how the `sentmine` command is run, what it prints, when it succeeds or f
 ## Requirements
 
 ### Requirement: Command and options
-The tool SHALL be run as `sentmine PASSAGE [--known FILE] [--deck FILE] [--min-len N] [--force]`. `PASSAGE` is required and is a plain-text file. `--known` is optional. `--deck` is optional and defaults to the passage file name with the extension `.apkg`, in the current folder (`passage.txt` gives `passage.apkg`). `--min-len` is optional, defaults to 3, and SHALL be a whole number of at least 1. `--force` allows replacing an existing deck file. The tool SHALL have no `--report` option in this version.
+The tool SHALL be run as `sentmine [PASSAGE] [--known FILE] [--deck FILE] [--min-len N] [--force]`. Run with no arguments at all, `sentmine` SHALL start the reading app, print its address, and open it in the browser; it SHALL use port 8000, or the next free port up to 8010. With `PASSAGE`, a plain-text file, it SHALL run as the command-line tool. `--known` is optional. `--deck` is optional and defaults to the passage file name with the extension `.apkg`, in the current folder (`passage.txt` gives `passage.apkg`). `--min-len` is optional, defaults to 3, and SHALL be a whole number of at least 1. `--force` allows replacing an existing deck file. An option given without `PASSAGE` SHALL be an invalid argument. The tool SHALL have no `--report` option in this version.
 
 #### Scenario: Default deck name
 - **WHEN** `sentmine passage.txt` is run without `--deck`
@@ -16,6 +16,14 @@ The tool SHALL be run as `sentmine PASSAGE [--known FILE] [--deck FILE] [--min-l
 #### Scenario: Invalid minimum length
 - **WHEN** `--min-len abc` is given
 - **THEN** the run exits with code 2, prints a message naming the problem, and writes nothing
+
+#### Scenario: No arguments
+- **WHEN** `sentmine` is run with no arguments
+- **THEN** the reading app starts and its address is printed
+
+#### Scenario: Options without a passage
+- **WHEN** `sentmine --force` is run
+- **THEN** the run exits with code 2 and the reading app does not start
 
 ### Requirement: Summary
 On a run that finds at least one new word the tool SHALL print a summary to standard output with, in this order: the number of sentences and words read; the number of common words ignored; the number of already-known words skipped; the number of repeats collapsed; the number of cards written, the deck path, and the words that got cards in order of first appearance. Singular and plural SHALL agree with the counts.

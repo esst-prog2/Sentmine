@@ -68,6 +68,10 @@
   .card textarea { width: 100%; min-height: 4.5em; resize: vertical; }
   .card .buttons { display: flex; gap: 8px; margin-top: 8px; }
   #no-cards { color: var(--soft); }
+  #status.earlier { flex-direction: column; align-items: flex-start; color: var(--ink); }
+  .earlier-card { border: 1px dashed var(--line); border-radius: 8px; padding: 8px 12px; max-width: 60em; }
+  .earlier-card .back { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
+  .made-before { font-size: 0.8rem; color: var(--soft); margin-top: 4px; }
 </style>
 </head>
 <body data-mode="word">
@@ -119,6 +123,7 @@ let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let mode = "word";
 let term = null;       // Definition mode: the term chosen, while its definition is still to be marked
 let editing = null;    // the id of the card being edited
+let lastPick = null;   // the last word click or definition sent, so "Make it anyway" can send it again
 
 function element(tag, className, text) {
   const made = document.createElement(tag);
@@ -130,6 +135,7 @@ function element(tag, className, text) {
 function say(message, warn) {
   const status = $("status");
   status.replaceChildren();
+  status.classList.remove("earlier");
   status.classList.toggle("warn", Boolean(warn));
   if (mode === "definition" && term !== null && !warn) {
     status.append("Term: ", element("span", "term", term), " Now drag over its definition.");
@@ -139,6 +145,32 @@ function say(message, warn) {
     return;
   }
   status.textContent = message || HINTS[mode];
+}
+
+function showEarlier(data) {
+  const status = $("status");
+  status.replaceChildren();
+  status.classList.remove("warn");
+  status.classList.add("earlier");
+  const card = element("div", "earlier-card");
+  const front = element("div", "front");
+  front.innerHTML = data.earlier.front_html;   // escaped by the server; only <b> and <br> are real tags
+  const back = element("div", "back");
+  back.innerHTML = data.earlier.back_html;
+  card.append(front, back);
+  const skip = element("button", "small", "Skip");
+  skip.addEventListener("click", () => say("Skipped: no new card."));
+  const anyway = element("button", "main small", "Make it anyway");
+  const request = lastPick;
+  anyway.addEventListener("click", () => call("POST", request.url, { ...request.body, anyway: true }));
+  const buttons = element("div", "buttons");
+  buttons.append(skip, anyway);
+  status.append(element("span", "", data.message), card, buttons);
+}
+
+function pick(url, body) {
+  lastPick = { url, body };
+  return call("POST", url, body);
 }
 
 async function call(method, url, body) {
@@ -166,7 +198,11 @@ async function call(method, url, body) {
   }
   state = data;
   draw();
-  say(data.message, data.result === "duplicate");
+  if (data.result === "earlier") {
+    showEarlier(data);
+  } else {
+    say(data.message, data.result === "duplicate");
+  }
   return data;
 }
 
@@ -223,6 +259,7 @@ function drawCard(card) {
   front.innerHTML = card.front_html;   // escaped by the server; only <b> and <br> are real tags
   const back = element("div", "back");
   back.innerHTML = card.back_html;
+  if (card.earlier) box.append(element("div", "made-before", "Made before, on " + card.earlier + "."));
   const edit = element("button", "small", "Edit");
   edit.addEventListener("click", () => { editing = card.id; draw(); });
   const remove = element("button", "small", "Delete");
@@ -255,7 +292,7 @@ for (const radio of document.querySelectorAll("input[name=mode]")) {
 $("text").addEventListener("click", (event) => {
   if (mode !== "word" || !event.target.classList.contains("w")) return;
   if (!window.getSelection().isCollapsed) return;   // the reader was selecting, not clicking
-  call("POST", "/api/word", {
+  pick("/api/word", {
     sentence: Number(event.target.dataset.sentence),
     word: Number(event.target.dataset.word),
   });
@@ -274,7 +311,7 @@ document.addEventListener("mouseup", () => {   // on the document: a drag may en
   }
   const chosen = term;
   term = null;
-  call("POST", "/api/definition", { term: chosen, passage: selected });
+  pick("/api/definition", { term: chosen, passage: selected });
 });
 
 $("load").addEventListener("click", async () => {
@@ -313,10 +350,18 @@ $("download").addEventListener("click", async () => {
   link.click();
   link.remove();
   URL.revokeObjectURL(link.href);
-  say("Downloaded " + link.download + " with " + state.count_text + ".");
+  const warning = response.headers.get("X-Sentmine-Warning");
+  if (warning) {
+    say("Downloaded " + link.download + ". " + decodeURIComponent(warning), true);
+  } else {
+    say("Downloaded " + link.download + " with " + state.count_text + ". They are now in your card history.");
+  }
 });
 
 call("GET", "/api/state").then((loaded) => {
+  if (loaded && loaded.history_warning) {
+    say(loaded.history_warning + " Earlier cards will not be found, and new ones will not be remembered.", true);
+  }
   if (loaded && loaded.paragraphs.length > 0) {
     $("paste-box").open = false;
     $("paste-box").querySelector("summary").textContent = "Paste another text";
