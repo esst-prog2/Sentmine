@@ -21,4 +21,6 @@
 ## 5. Wrap-up
 
 - [x] 5.1 Run the whole suite and `openspec validate remember-cards --strict`; verify both pass and the first design still writes 103 cards from the spike article
-- [ ] 5.2 Try it in the browser: make and download a card, start the app again, pick the same word in another form, and see the earlier card (needs the reader)
+- [x] 5.2 Try it in the browser: make and download a card, start the app again, pick the same word in another form, and see the earlier card (needs the reader)
+
+  Done by the reader on 2026-10-22: a card downloaded, the app started again, another form of the word picked, and the earlier card shown with Skip and Make it anyway (the reader's report).
