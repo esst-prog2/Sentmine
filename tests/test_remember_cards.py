@@ -3,7 +3,8 @@
 import pytest
 from reading_helper import place_of
 
-from sentmine.history import Entry, History
+from sentmine.history import Entry
+from sentmine.memory import CardMemory
 from sentmine.reading import ADDED, DUPLICATE, EARLIER, Session
 
 SKEW_9_OCT = Entry("word", "skew", "Outliers can skew it considerably.", "skew", "skew", "2026-10-09")
@@ -12,7 +13,7 @@ SD_9_OCT = Entry("definition", "standard deviation", "standard deviation", "How 
 
 @pytest.fixture
 def history(tmp_path):
-    return History(tmp_path / "history.jsonl")
+    return CardMemory(tmp_path / "cards.db")
 
 
 def session_with(history, text):
@@ -124,7 +125,7 @@ def test_no_cards_no_deck_and_the_history_is_unchanged(history, tmp_path):
     reading = session_with(history, "Outliers can skew it considerably.")
     with pytest.raises(Exception, match="no cards"):
         reading.export(tmp_path / "new.apkg")
-    assert history.entries == [] and not history.path.exists()
+    assert history.entries == []
 
 
 def test_the_same_deck_downloaded_twice_is_remembered_once(history, tmp_path):
@@ -139,18 +140,18 @@ def test_a_definition_card_is_remembered_by_its_term(history, tmp_path):
     reading = session_with(history, "Some notes.")
     reading.add_definition("Standard Deviation", "The square root of the variance.")
     reading.export(tmp_path / "new.apkg", day="2026-10-17")
-    assert History(history.path).find("definition", "standard deviation") is not None
+    assert CardMemory(history.path).find("definition", "standard deviation") is not None
 
 
 # --- a history that cannot be read --------------------------------------------------------
 
 
 def test_a_damaged_history_still_lets_the_reader_work_and_download(tmp_path):
-    path = tmp_path / "history.jsonl"
+    path = tmp_path / "cards.db"
     path.write_text("damaged\n", encoding="utf-8")
-    reading = session_with(History(path), "Outliers can skew it considerably.")
+    reading = session_with(CardMemory(path), "Outliers can skew it considerably.")
     assert reading.pick_word(*place_of(reading, "skew"))[0] == ADDED
     warning = reading.export(tmp_path / "new.apkg")
-    assert "not remembered" in warning and "could not be read" in warning
+    assert "not remembered" in warning and "could not be opened" in warning
     assert (tmp_path / "new.apkg").exists()
     assert path.read_text(encoding="utf-8") == "damaged\n"

@@ -1,13 +1,13 @@
 ## 1. The database
 
-- [ ] 1.1 Write `memory.CardMemory` on SQLite: open or create `cards.db`, schema version 1 (table and index), `find`, `add` (once per card), and `default_memory_path()` (`SENTMINE_DATABASE`, `%APPDATA%`, `~/.local/share`); verify tests for "First use", "What an entry holds", finding by kind and key, and the same card stored once
-- [ ] 1.2 Schema version 2: copy `history.jsonl` once in one transaction, leave it unchanged, retry next start if it cannot be read; refuse a newer version; verify tests for each scenario of "Moving the old history file into the database" and "A newer database"
-- [ ] 1.3 A database that cannot be opened: report why, find nothing, refuse to add, leave the file unchanged; verify a test for "A damaged database"
-- [ ] 1.4 `search(text)`, `progress(today)` and `delete(id)`; verify tests for "Searching", "This week" and deleting
+- [x] 1.1 Write `memory.CardMemory` on SQLite: open or create `cards.db`, schema version 1 (table and index), `find`, `add` (once per card), and `default_memory_path()` (`SENTMINE_DATABASE`, `%APPDATA%`, `~/.local/share`); verify tests for "First use", "What an entry holds", finding by kind and key, and the same card stored once
+- [x] 1.2 Schema version 2: copy `history.jsonl` once in one transaction, leave it unchanged, retry next start if it cannot be read; refuse a newer version; verify tests for each scenario of "Moving the old history file into the database" and "A newer database"
+- [x] 1.3 A database that cannot be opened: report why, find nothing, refuse to add, leave the file unchanged; verify a test for "A damaged database"
+- [x] 1.4 `search(text)`, `progress(today)` and `delete(id)`; verify tests for "Searching", "This week" and deleting
 
 ## 2. The reading app on the database
 
-- [ ] 2.1 `history.py` keeps only reading the old file; the session and `serve()` use `CardMemory`; verify every earlier test of remembering cards passes on the database
+- [x] 2.1 `history.py` keeps only reading the old file; the session and `serve()` use `CardMemory`; verify every earlier test of remembering cards passes on the database
 - [ ] 2.2 `GET /api/memory?q=` and `DELETE /api/memory/<id>`; verify with the test client, including "Deleting" (no earlier card afterwards) and the damaged database
 
 ## 3. The My cards page
