@@ -1,7 +1,7 @@
 """Spike: ask two small OpenAI models for the meaning of each word, and save everything.
 
 Run from the repository root: python spike/meanings/ask_models.py
-Reads OPENAI_API_KEY from .env (never committed). Writes:
+Uses the same API key as the app (never committed). Writes:
   answers.json     every raw answer with its model and token counts (no key in it)
   to_judge.txt     the answers for the reader to mark, model names hidden, order shuffled
   key.json         which answer came from which model: do not open before judging
@@ -12,6 +12,8 @@ import random
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+from sentmine.meaning import find_api_key
 
 MODELS = ["gpt-5-nano", "gpt-5-mini"]  # both priced on developers.openai.com/api/docs/pricing, 2026-10-17
 SEED = 20261102  # fixed, so the shuffle can be repeated
@@ -24,11 +26,6 @@ PROMPT = (
 FOLDER = Path("spike/meanings")
 
 
-def api_key():
-    for line in Path(".env").read_text(encoding="utf-8-sig").splitlines():
-        if line.startswith("OPENAI_API_KEY="):
-            return line.split("=", 1)[1].strip()
-    raise SystemExit("no OPENAI_API_KEY in .env")
 
 
 def ask(model, word, key):
@@ -57,7 +54,9 @@ def ask(model, word, key):
     }
 
 
-key = api_key()
+key = find_api_key()
+if not key:
+    raise SystemExit("no API key: see README")
 words = json.loads((FOLDER / "words.json").read_text(encoding="utf-8"))
 answers = [ask(model, word, key) for word in words for model in MODELS]
 (FOLDER / "answers.json").write_text(json.dumps(answers, ensure_ascii=False, indent=1), encoding="utf-8")

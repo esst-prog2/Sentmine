@@ -5,12 +5,15 @@ import socket
 import tempfile
 import threading
 import webbrowser
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from urllib.parse import quote
 
 from flask import Flask, Response, jsonify, request
 
 from sentmine.history import Entry
+from sentmine.meaning import MeaningProblem, find_api_key, suggest_meaning
 from sentmine.memory import CardMemory, MemoryProblem, RememberedCard, default_memory_path
 from sentmine.reading import DUPLICATE, EARLIER, REMOVED, Flashcard, Problem, Session, entry_card
 from sentmine.words import plural
@@ -73,7 +76,8 @@ def _message(result: str, card: Flashcard | Entry) -> str:
     return f"Made a card for '{name}'."
 
 
-def create_app(session: Session | None = None) -> Flask:
+def create_app(session: Session | None = None, ask: Callable[[str, str], str] | None = None) -> Flask:
+    """`ask(word, sentence)` gives a meaning; without it the page shows no Suggest meaning button."""
     app = Flask(__name__, static_folder=None)
     reading = session if session is not None else Session()
 
@@ -87,6 +91,7 @@ def create_app(session: Session | None = None) -> Flask:
             result=result,
             earlier=_earlier_json(earlier) if earlier is not None else None,
             memory_warning=reading.memory.problem if reading.memory is not None else "",
+            can_suggest=ask is not None,
         )
 
     def answer(result: str, card: Flashcard | Entry):
@@ -107,6 +112,7 @@ def create_app(session: Session | None = None) -> Flask:
 
     @app.errorhandler(Problem)
     @app.errorhandler(MemoryProblem)
+    @app.errorhandler(MeaningProblem)
     def problem(error: Exception):
         return jsonify(error=str(error)), 400
 
@@ -166,6 +172,13 @@ def create_app(session: Session | None = None) -> Flask:
         reading.delete(card_id)
         return state("Card deleted.")
 
+    @app.post("/api/cards/<int:card_id>/meaning")
+    def suggest_card_meaning(card_id: int):
+        if ask is None:
+            raise Problem("Suggesting a meaning needs an API key.")
+        reading.suggest(card_id, ask)
+        return state("Meaning suggested. Check it, and edit it if you like.")
+
     @app.get("/api/deck")
     def download_deck():
         name = deck_file_name(request.args.get("name", ""))
@@ -208,5 +221,14 @@ def serve(open_browser: bool = True) -> int:
         print(f"card memory: {memory.path} ({plural(memory.count(), 'card')})")
     if open_browser:
         threading.Timer(BROWSER_DELAY_SECONDS, webbrowser.open, args=(address,)).start()
-    create_app(Session(memory)).run(host=HOST, port=port)
+    ask = None
+    try:
+        key = find_api_key()
+    except MeaningProblem as error:
+        key = ""
+        print(f"warning: {error}")
+    if key:
+        ask = partial(suggest_meaning, key=key)
+    print(f"AI meanings: {'on' if ask else 'off (no API key)'}")
+    create_app(Session(memory), ask).run(host=HOST, port=port)
     return 0

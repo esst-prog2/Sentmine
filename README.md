@@ -172,6 +172,13 @@ it anyway. Different forms of a word count as the same word (`ran` and
 shows your progress, and lets you forget a card. To use another database,
 set `SENTMINE_DATABASE` to its path. A backup is a copy of that one file.
 
+With an OpenAI API key, each word card gets a **Suggest meaning** button: it
+sends that word and its sentence to the small model `gpt-5-nano` and puts a
+short English explanation on the back, for you to check and edit. Put the key
+in `.env` in the same user folder, as the line `OPENAI_API_KEY=...`, or in the
+variable of that name. Without a key the button is not shown and everything
+else works. Keep the key out of this repository and out of OneDrive.
+
 The first design, a command-line tool that picks the words from a
 known-words list, still works: `sentmine passage.txt --known known.txt
 --deck new.apkg`.
