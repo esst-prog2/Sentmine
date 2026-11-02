@@ -6,11 +6,11 @@ Lets a reader paste a text, choose while reading what becomes a flashcard, check
 ## Requirements
 
 ### Requirement: The app runs on the reader's own computer
-The reading app SHALL be a web page served only on the reader's own computer (address `127.0.0.1`). It SHALL NOT send the text or the cards to any other machine, and SHALL NOT need an account or an external service. It SHALL keep one text and its cards in memory. It SHALL write only two kinds of file: the deck the browser downloads, and the history of downloaded cards described by the `card-history` capability.
+The reading app SHALL be a web page served only on the reader's own computer (address `127.0.0.1`). It SHALL NOT send the text or the cards to any other machine, with one exception: when the reader presses Suggest meaning, the word and its sentence are sent as the `ai-meanings` capability describes. It SHALL NOT need an account or an external service for anything else. It SHALL keep one text and its cards in memory. It SHALL write only two kinds of file: the deck the browser downloads, and the history of downloaded cards described by the `card-history` capability.
 
 #### Scenario: Offline
 - **WHEN** the machine has no network connection
-- **THEN** the page opens and every feature works
+- **THEN** the page opens and every feature works except suggesting a meaning, which says OpenAI could not be reached
 
 ### Requirement: Pasting and tidying a text
 The app SHALL accept a pasted plain text of any length. It SHALL tidy the text before showing it: paragraphs are the parts separated by one or more blank lines; a single line break inside a paragraph becomes one space; runs of spaces and tabs become one space; empty paragraphs are dropped. Loading a text SHALL discard the text and cards loaded before it. An empty text, or one with only spaces and line breaks, SHALL be refused with a message and SHALL leave the current text and cards as they are.

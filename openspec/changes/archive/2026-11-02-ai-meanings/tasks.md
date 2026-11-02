@@ -15,4 +15,6 @@
 
 - [x] 4.1 Run the whole suite and `openspec validate ai-meanings --strict`; verify both pass, the tests make no network request, and the first design still writes 103 cards
 - [x] 4.2 One real request through `suggest_meaning`; verify it returns a short explanation
-- [ ] 4.3 Try the button in the browser: suggest a meaning, edit it, download, import into Anki, and find it in My cards (needs the reader)
+- [x] 4.3 Try the button in the browser: suggest a meaning, edit it, download, import into Anki, and find it in My cards (needs the reader)
+
+  Done by the reader on 2026-11-02: a meaning suggested for `applications`, downloaded, and imported into Anki (screenshots), and the card checked in the database. Editing a meaning before download is covered by a test; the reader did not report trying it.
