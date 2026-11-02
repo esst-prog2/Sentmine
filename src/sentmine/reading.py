@@ -2,6 +2,7 @@
 
 import html
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -39,6 +40,7 @@ class Flashcard:
     word: str = ""  # word cards: the word shown in bold on the front
     place: tuple[int, int] | None = None  # word cards: the sentence and word that were clicked
     earlier: str = ""  # made anyway: the date of the earlier card in the memory
+    heading: str = ""  # word cards: the first line of the back; a suggested meaning goes under it
 
     @property
     def history_key(self) -> str:
@@ -155,9 +157,10 @@ class Session:
             earlier = self._earlier(WORD, base)
             if earlier is not None and not anyway:
                 return EARLIER, earlier
+            back = word_back(text, base)
             card = Flashcard(
-                0, WORD, sentences[sentence], word_back(text, base), key, word=text, place=(sentence, word),
-                earlier=earlier.date if earlier else "",
+                0, WORD, sentences[sentence], back, key, word=text, place=(sentence, word),
+                earlier=earlier.date if earlier else "", heading=back,
             )
             return ADDED, self._add(card)
         if existing.place == (sentence, word):
@@ -192,6 +195,14 @@ class Session:
 
     def delete(self, card_id: int) -> None:
         self.cards.remove(self._card(card_id))
+
+    def suggest(self, card_id: int, ask: Callable[[str, str], str]) -> Flashcard:
+        """Put a meaning from `ask(word, sentence)` on the back, under the word, replacing any earlier one."""
+        card = self._card(card_id)
+        if card.kind != WORD:
+            raise Problem("Only word cards get a suggested meaning: the back of this card is the passage you marked.")
+        card.back = f"{card.heading}\n{ask(card.word, card.front)}"
+        return card
 
     def export(self, path: Path, day: str | None = None) -> str:
         """Write the cards, as the preview shows them, to an .apkg deck, then add them to the memory.

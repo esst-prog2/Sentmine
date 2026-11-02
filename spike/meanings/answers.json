@@ -1,0 +1,282 @@
+[
+ {
+  "model": "gpt-5-nano",
+  "word": "paraphrasing",
+  "answer": "Paraphrasing means rewriting someone’s words in your own words without changing the meaning.",
+  "input_tokens": 76,
+  "output_tokens": 27
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "paraphrasing",
+  "answer": "Paraphrasing means saying the same idea using different words that keep the original meaning.",
+  "input_tokens": 76,
+  "output_tokens": 27
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "paraphraser",
+  "answer": "A paraphraser is a tool that rewrites text to express the same meaning in different words.",
+  "input_tokens": 74,
+  "output_tokens": 29
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "paraphraser",
+  "answer": "A paraphraser is a tool that rewrites text in different words while keeping the same meaning.",
+  "input_tokens": 74,
+  "output_tokens": 29
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "signed",
+  "answer": "In this sentence, signed means that a word can be used as a verb or an adjective depending on context.",
+  "input_tokens": 70,
+  "output_tokens": 31
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "signed",
+  "answer": "Marked with a signature to show approval, agreement, or identity.",
+  "input_tokens": 70,
+  "output_tokens": 22
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "mandate",
+  "answer": "A mandate means official permission or authority to do something.",
+  "input_tokens": 93,
+  "output_tokens": 20
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "mandate",
+  "answer": "A mandate here means clear permission from a general election showing voters want that specific action.",
+  "input_tokens": 93,
+  "output_tokens": 26
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "constituencies",
+  "answer": "Constituencies are the areas represented by MPs; here, where voters chose Brexit, they influence MPs' political risk.",
+  "input_tokens": 95,
+  "output_tokens": 34
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "constituencies",
+  "answer": "Constituencies here means the local areas and voters represented by those Members of Parliament.",
+  "input_tokens": 95,
+  "output_tokens": 27
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "restoke",
+  "answer": "To restoke means to revive or rekindle, especially anger or conflict.",
+  "input_tokens": 109,
+  "output_tokens": 24
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "restoke",
+  "answer": "to cause old disagreements or anger to start again",
+  "input_tokens": 109,
+  "output_tokens": 18
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "constituents",
+  "answer": "People who vote for him or are represented by him.",
+  "input_tokens": 114,
+  "output_tokens": 20
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "constituents",
+  "answer": "The people in his local area who vote for him and whom he represents.",
+  "input_tokens": 114,
+  "output_tokens": 24
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "seats",
+  "answer": "Seats means parliamentary constituencies or positions that they hold in Parliament.",
+  "input_tokens": 104,
+  "output_tokens": 22
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "seats",
+  "answer": "Places in Parliament that the named politicians were elected to represent.",
+  "input_tokens": 104,
+  "output_tokens": 21
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "backed",
+  "answer": "supported or voted for Brexit in the past.",
+  "input_tokens": 104,
+  "output_tokens": 18
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "backed",
+  "answer": "Supported or voted for Brexit.",
+  "input_tokens": 104,
+  "output_tokens": 15
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "swing",
+  "answer": "In this sentence, \"swing\" refers to voters who can shift support between parties, especially to Labour.",
+  "input_tokens": 96,
+  "output_tokens": 31
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "swing",
+  "answer": "Swing voters are people who can change their vote between parties and are not loyal to one party.",
+  "input_tokens": 96,
+  "output_tokens": 28
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "shifted",
+  "answer": "Public opinion has changed or moved to a different position than before.",
+  "input_tokens": 58,
+  "output_tokens": 22
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "shifted",
+  "answer": "The people's views or feelings have changed from one position to a different one.",
+  "input_tokens": 58,
+  "output_tokens": 24
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "boost",
+  "answer": "To boost means to increase or raise something, here: to increase Labour’s vote share.",
+  "input_tokens": 107,
+  "output_tokens": 27
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "boost",
+  "answer": "increase or raise (Labour’s vote share) by up to seven percentage points.",
+  "input_tokens": 107,
+  "output_tokens": 26
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "divides",
+  "answer": "Divides means causes people to disagree or have different opinions on a topic.",
+  "input_tokens": 100,
+  "output_tokens": 24
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "divides",
+  "answer": "strong disagreements or differences of opinion between people or groups about Brexit",
+  "input_tokens": 100,
+  "output_tokens": 21
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "stance",
+  "answer": "a firm position or attitude on a particular issue (here: how strongly they support rejoining).",
+  "input_tokens": 96,
+  "output_tokens": 28
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "stance",
+  "answer": "\"Stance\" here means a public position or attitude someone or a political party takes on an issue.",
+  "input_tokens": 96,
+  "output_tokens": 30
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "bolster",
+  "answer": "To strengthen or support those in No 10 who want to negotiate on re-entry.",
+  "input_tokens": 75,
+  "output_tokens": 26
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "bolster",
+  "answer": "help or support an idea or group so they feel more confident to act",
+  "input_tokens": 75,
+  "output_tokens": 23
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "wary",
+  "answer": "careful and cautious about possible danger or problems",
+  "input_tokens": 75,
+  "output_tokens": 19
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "wary",
+  "answer": "careful and cautious because they are worried about possible risks or problems.",
+  "input_tokens": 75,
+  "output_tokens": 23
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "fraught",
+  "answer": "Full of or loaded with worry or difficulty; risky and problematic.",
+  "input_tokens": 95,
+  "output_tokens": 22
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "fraught",
+  "answer": "Likely to cause problems or danger, making the situation risky and tense.",
+  "input_tokens": 95,
+  "output_tokens": 24
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "sovereignty",
+  "answer": "the power of a country to govern itself without outside control",
+  "input_tokens": 68,
+  "output_tokens": 20
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "sovereignty",
+  "answer": "Here, \"sovereignty\" means the country's ability to make its own laws and control its own borders.",
+  "input_tokens": 68,
+  "output_tokens": 31
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "resonated",
+  "answer": "It means they strongly echoed or connected with people’s feelings or beliefs.",
+  "input_tokens": 69,
+  "output_tokens": 23
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "resonated",
+  "answer": "It means those Brexit arguments continued to strongly connect with and influence people's feelings or beliefs.",
+  "input_tokens": 69,
+  "output_tokens": 26
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "skew",
+  "answer": "Skew means to distort or tilt the results away from the true value.",
+  "input_tokens": 58,
+  "output_tokens": 24
+ },
+ {
+  "model": "gpt-5-mini",
+  "word": "skew",
+  "answer": "Change or pull it away from the usual value so the result is not accurate.",
+  "input_tokens": 58,
+  "output_tokens": 25
+ }
+]

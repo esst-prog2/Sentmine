@@ -269,6 +269,19 @@ function drawCard(card) {
   remove.addEventListener("click", () => call("DELETE", "/api/cards/" + card.id));
   const buttons = element("div", "buttons");
   buttons.append(edit, remove);
+  if (card.kind === "word" && state.can_suggest) {
+    const suggest = element("button", "small", "Suggest meaning");
+    suggest.addEventListener("click", async () => {
+      suggest.disabled = true;
+      suggest.textContent = "Asking…";
+      const done = await call("POST", "/api/cards/" + card.id + "/meaning");
+      if (!done) {   // the message says why; the card has not changed
+        suggest.disabled = false;
+        suggest.textContent = "Suggest meaning";
+      }
+    });
+    buttons.append(suggest);
+  }
   box.append(front, back, buttons);
   return box;
 }
@@ -357,7 +370,7 @@ $("download").addEventListener("click", async () => {
   if (warning) {
     say("Downloaded " + link.download + ". " + decodeURIComponent(warning), true);
   } else {
-    say("Downloaded " + link.download + " with " + state.count_text + ". They are now in My cards.");
+    say("Downloaded " + link.download + " (" + state.count_text + "). Now in My cards too.");
   }
 });
 

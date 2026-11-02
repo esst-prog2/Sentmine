@@ -115,7 +115,7 @@ def test_the_real_command_opens_the_history_named_by_the_environment(monkeypatch
         def run(self, host, port):
             started["run"] = (host, port)
 
-    def fake_create_app(session):
+    def fake_create_app(session, ask=None):
         started["memory"] = session.memory
         return FakeApp()
 
