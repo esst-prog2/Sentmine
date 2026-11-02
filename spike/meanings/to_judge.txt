@@ -3,100 +3,100 @@ Write the letter at the start of the line, in place of the _.
 
 1. paraphrasing
    Sentence: Paraphrasing is rewriting a passage, sentence, or thought in your own words while keeping the original meaning.
-_ 1a: Paraphrasing means saying the same idea using different words that keep the original meaning.
-_ 1b: Paraphrasing means rewriting someone’s words in your own words without changing the meaning.
+R 1a: Paraphrasing means saying the same idea using different words that keep the original meaning.
+R 1b: Paraphrasing means rewriting someone’s words in your own words without changing the meaning.
 
 2. paraphraser
    Sentence: • ZeroGPT AI Paraphraser: Features quick and deep-thinking rephrasing with multilingual support.
-_ 2a: A paraphraser is a tool that rewrites text to express the same meaning in different words.
-_ 2b: A paraphraser is a tool that rewrites text in different words while keeping the same meaning.
+R 2a: A paraphraser is a tool that rewrites text to express the same meaning in different words.
+R 2b: A paraphraser is a tool that rewrites text in different words while keeping the same meaning.
 
 3. signed
    Sentence: The word signed can be a verb or an adjective with several different meanings depending on the context:
-_ 3a: Marked with a signature to show approval, agreement, or identity.
-_ 3b: In this sentence, signed means that a word can be used as a verb or an adjective depending on context.
+W 3a: Marked with a signature to show approval, agreement, or identity.
+W 3b: In this sentence, signed means that a word can be used as a verb or an adjective depending on context.
 
 4. mandate
    Sentence: Almost a third of voters said an in-out referendum would be needed first, while more than one in six felt that a general election mandate would be sufficient, and the same proportion thought parliament could make the decision.
-_ 4a: A mandate here means clear permission from a general election showing voters want that specific action.
-_ 4b: A mandate means official permission or authority to do something.
+R 4a: A mandate here means clear permission from a general election showing voters want that specific action.
+R 4b: A mandate means official permission or authority to do something.
 
 5. constituencies
    Sentence: However, there are nerves among some Labour MPs, especially those with constituencies that voted for Brexit, that even testing out public support for the move would be fraught with political risk and a potential boost to Reform.
-_ 5a: Constituencies are the areas represented by MPs; here, where voters chose Brexit, they influence MPs' political risk.
-_ 5b: Constituencies here means the local areas and voters represented by those Members of Parliament.
+R 5a: Constituencies are the areas represented by MPs; here, where voters chose Brexit, they influence MPs' political risk.
+R 5b: Constituencies here means the local areas and voters represented by those Members of Parliament.
 
 6. restoke
    Sentence: One cabinet minister told the Guardian: “Brexit clearly hasn’t worked and the promises made haven’t been kept so Andy is right to open up the question of what the future relationship looks like. But he definitely needs to proceed with caution because we don’t want to restoke division”.
-_ 6a: to cause old disagreements or anger to start again
-_ 6b: To restoke means to revive or rekindle, especially anger or conflict.
+R 6a: to cause old disagreements or anger to start again
+R 6b: To restoke means to revive or rekindle, especially anger or conflict.
 
 7. constituents
    Sentence: A second said: “Andy is right to say we need some clarity around our long-term relationship. Security and trade cooperation are higher up the agenda than they were 10 years ago. But whether that adds up to a real desire for big change in the population I don’t know. My constituents will be cautious.”
-_ 7a: The people in his local area who vote for him and whom he represents.
-_ 7b: People who vote for him or are represented by him.
+R 7a: The people in his local area who vote for him and whom he represents.
+R 7b: People who vote for him or are represented by him.
 
 8. seats
    Sentence: Two-thirds of cabinet ministers, including Burnham himself, his first secretary, Louise Haigh, chancellor, John Healey, and foreign secretary, Ed Miliband, represent seats that backed Brexit, and previously said they would respect the 2016 vote.
-_ 8a: Seats means parliamentary constituencies or positions that they hold in Parliament.
-_ 8b: Places in Parliament that the named politicians were elected to represent.
+R 8a: Seats means parliamentary constituencies or positions that they hold in Parliament.
+R 8b: Places in Parliament that the named politicians were elected to represent.
 
 9. backed
    Sentence: Two-thirds of cabinet ministers, including Burnham himself, his first secretary, Louise Haigh, chancellor, John Healey, and foreign secretary, Ed Miliband, represent seats that backed Brexit, and previously said they would respect the 2016 vote.
-_ 9a: supported or voted for Brexit in the past.
-_ 9b: Supported or voted for Brexit.
+R 9a: supported or voted for Brexit in the past.
+R 9b: Supported or voted for Brexit.
 
 10. swing
    Sentence: “Against this background these results show that Europe as an issue has a unique ability to unite the left and grow the Labour vote share among swing voters. The bolder the stance towards rejoin, the bigger Labour’s reward.”
-_ 10a: Swing voters are people who can change their vote between parties and are not loyal to one party.
-_ 10b: In this sentence, "swing" refers to voters who can shift support between parties, especially to Labour.
+R 10a: Swing voters are people who can change their vote between parties and are not loyal to one party.
+R 10b: In this sentence, "swing" refers to voters who can shift support between parties, especially to Labour.
 
 11. shifted
    Sentence: However, public opinion has shifted.
-_ 11a: The people's views or feelings have changed from one position to a different one.
-_ 11b: Public opinion has changed or moved to a different position than before.
+R 11a: The people's views or feelings have changed from one position to a different one.
+R 11b: Public opinion has changed or moved to a different position than before.
 
 12. boost
    Sentence: The poll by the Messina Group (TMG) found that renegotiating the UK’s relationship with the EU could boost Labour’s vote share by as much as seven points, if the prime minister offered a fresh referendum in which he campaigned to re-enter the bloc.
-_ 12a: To boost means to increase or raise something, here: to increase Labour’s vote share.
-_ 12b: increase or raise (Labour’s vote share) by up to seven percentage points.
+R 12a: To boost means to increase or raise something, here: to increase Labour’s vote share.
+R 12b: increase or raise (Labour’s vote share) by up to seven percentage points.
 
 13. divides
    Sentence: Andy Burnham’s personal preference to rejoin the European Union after the next election is supported by almost half of all voters, a new megapoll has found, although cabinet ministers concerned about reopening Brexit divides are privately urging him to proceed with caution.
-_ 13a: Divides means causes people to disagree or have different opinions on a topic.
-_ 13b: strong disagreements or differences of opinion between people or groups about Brexit
+R 13a: Divides means causes people to disagree or have different opinions on a topic.
+R 13b: strong disagreements or differences of opinion between people or groups about Brexit
 
 14. stance
    Sentence: “Against this background these results show that Europe as an issue has a unique ability to unite the left and grow the Labour vote share among swing voters. The bolder the stance towards rejoin, the bigger Labour’s reward.”
-_ 14a: a firm position or attitude on a particular issue (here: how strongly they support rejoining).
-_ 14b: "Stance" here means a public position or attitude someone or a political party takes on an issue.
+R 14a: a firm position or attitude on a particular issue (here: how strongly they support rejoining).
+R 14b: "Stance" here means a public position or attitude someone or a political party takes on an issue.
 
 15. bolster
    Sentence: Exclusive: Findings will bolster those in No 10 who want to negotiate on re-entry but some senior figures remain wary
-_ 15a: help or support an idea or group so they feel more confident to act
-_ 15b: To strengthen or support those in No 10 who want to negotiate on re-entry.
+R 15a: help or support an idea or group so they feel more confident to act
+R 15b: To strengthen or support those in No 10 who want to negotiate on re-entry.
 
 16. wary
    Sentence: Exclusive: Findings will bolster those in No 10 who want to negotiate on re-entry but some senior figures remain wary
-_ 16a: careful and cautious because they are worried about possible risks or problems.
-_ 16b: careful and cautious about possible danger or problems
+R 16a: careful and cautious because they are worried about possible risks or problems.
+R 16b: careful and cautious about possible danger or problems
 
 17. fraught
    Sentence: However, there are nerves among some Labour MPs, especially those with constituencies that voted for Brexit, that even testing out public support for the move would be fraught with political risk and a potential boost to Reform.
-_ 17a: Likely to cause problems or danger, making the situation risky and tense.
-_ 17b: Full of or loaded with worry or difficulty; risky and problematic.
+R 17a: Likely to cause problems or danger, making the situation risky and tense.
+R 17b: Full of or loaded with worry or difficulty; risky and problematic.
 
 18. sovereignty
    Sentence: However, it also found that Brexit arguments over immigration control and sovereignty still resonated.
-_ 18a: Here, "sovereignty" means the country's ability to make its own laws and control its own borders.
-_ 18b: the power of a country to govern itself without outside control
+R 18a: Here, "sovereignty" means the country's ability to make its own laws and control its own borders.
+R 18b: the power of a country to govern itself without outside control
 
 19. resonated
    Sentence: However, it also found that Brexit arguments over immigration control and sovereignty still resonated.
-_ 19a: It means those Brexit arguments continued to strongly connect with and influence people's feelings or beliefs.
-_ 19b: It means they strongly echoed or connected with people’s feelings or beliefs.
+R 19a: It means those Brexit arguments continued to strongly connect with and influence people's feelings or beliefs.
+R 19b: It means they strongly echoed or connected with people’s feelings or beliefs.
 
 20. skew
    Sentence: Outliers can skew it considerably.
-_ 20a: Change or pull it away from the usual value so the result is not accurate.
-_ 20b: Skew means to distort or tilt the results away from the true value.
+R 20a: Change or pull it away from the usual value so the result is not accurate.
+R 20b: Skew means to distort or tilt the results away from the true value.
