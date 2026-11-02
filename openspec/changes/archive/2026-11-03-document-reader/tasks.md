@@ -15,4 +15,6 @@
 
 - [x] 4.1 Run the whole suite and `openspec validate document-reader --strict`; verify both pass and the first design still writes 103 cards
 - [x] 4.2 Load the real 42-page PDF through the code; verify the running heads are gone, hyphenated words are rejoined, and measure how long a click takes on the server
-- [ ] 4.3 Try it in the browser with a real PDF: load, pick a word, Suggest meaning, download (needs the reader)
+- [x] 4.3 Try it in the browser with a real PDF: load, pick a word, Suggest meaning, download (needs the reader)
+
+  Done by the reader on 2026-11-03: the 42-page PDF loaded in the browser and the spaces are right on the pages that were glued before (the reader's report). Picking a word, Suggest meaning and Download on a loaded PDF share their code with pasted text, are covered by tests, and were not reported separately.
