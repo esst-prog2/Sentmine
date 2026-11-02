@@ -4,7 +4,7 @@
 
 ## 2. Reading files
 
-- [x] 2.1 Add `pypdf==6.21.4`; write `tests/pdf_helper.py`, `read_pdf(data)` and `read_file(name, data)`; verify tests for "A PDF with text", "A text file" and each case of "Files that cannot be read"
+- [x] 2.1 Add `pypdfium2==5.14.0`; write `tests/pdf_helper.py`, `read_pdf(data)` and `read_file(name, data)`; verify tests for "A PDF with text", "A text file" and each case of "Files that cannot be read"
 
 ## 3. The app and the page
 

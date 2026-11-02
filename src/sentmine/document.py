@@ -4,15 +4,12 @@ clean_pages() holds the rules and knows nothing about PDFs; read_pdf() only gets
 text of each page out of the file. The rules are in openspec/specs/document-reader.
 """
 
-import io
-import logging
 import re
 import statistics
 from collections import Counter
 from pathlib import Path
 
-from pypdf import PdfReader
-from pypdf.errors import FileNotDecryptedError, PdfReadError, PyPdfError
+import pypdfium2
 
 MOST_BYTES = 50 * 1024 * 1024
 EDGE_LINES = 3  # how many lines at the top and bottom of a page may be running heads
@@ -23,7 +20,7 @@ _ENDS_A_SENTENCE = re.compile(r"[.!?:][\"'”’)\]»]*$")
 _BROKEN_WORD = re.compile(r"[^\W\d_]-$")
 _DIGITS = re.compile(r"\d+")
 
-logging.getLogger("pypdf").setLevel(logging.ERROR)  # font warnings say nothing the reader can act on
+SOFT_HYPHEN = "\x02"  # how pypdfium2 marks a word it found broken at a line end
 
 
 class DocumentProblem(ValueError):
@@ -69,6 +66,7 @@ def _join_page(lines: list[str]) -> str:
 
 def clean_pages(pages: list[str]) -> str:
     """The text of a document, from the text of its pages."""
+    pages = [page.replace(SOFT_HYPHEN, "") for page in pages]
     split = [[line.strip() for line in page.splitlines() if line.strip()] for page in pages]
     kept = split
     while True:  # removing marks can bring a running head into the top lines, so go on until nothing changes
@@ -91,19 +89,31 @@ def clean_pages(pages: list[str]) -> str:
     return text
 
 
+def _pages_of(data: bytes) -> list[str]:
+    """The text of each page of a PDF. pypdfium2 also opens PDFs locked with an empty password."""
+    try:
+        document = pypdfium2.PdfDocument(data)
+    except pypdfium2.PdfiumError as error:
+        if "password" in str(error).lower():
+            raise DocumentProblem("This PDF is locked with a password, so it cannot be read.") from None
+        raise DocumentProblem("The file could not be read as a PDF. It may be damaged.") from None
+    try:
+        pages = []
+        for page in document:
+            text_page = page.get_textpage()
+            pages.append(text_page.get_text_bounded())
+            text_page.close()
+            page.close()
+        return pages
+    except pypdfium2.PdfiumError:
+        raise DocumentProblem("The file could not be read as a PDF. It may be damaged.") from None
+    finally:
+        document.close()
+
+
 def read_pdf(data: bytes) -> tuple[str, int, int]:
     """The clean text of a PDF, how many pages it has, and how many of them have no text."""
-    try:
-        reader = PdfReader(io.BytesIO(data))
-        if reader.is_encrypted and not reader.decrypt(""):
-            raise DocumentProblem("This PDF is locked with a password, so it cannot be read.")
-        pages = [page.extract_text() or "" for page in reader.pages]
-    except FileNotDecryptedError:
-        raise DocumentProblem("This PDF is locked with a password, so it cannot be read.") from None
-    except (PdfReadError, PyPdfError, ValueError, KeyError, TypeError, IndexError, OSError) as error:
-        if isinstance(error, DocumentProblem):
-            raise
-        raise DocumentProblem("The file could not be read as a PDF. It may be damaged.") from None
+    pages = _pages_of(data)
     empty = sum(1 for page in pages if not page.strip())
     text = clean_pages(pages)
     if not text.strip():

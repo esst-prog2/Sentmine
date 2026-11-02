@@ -60,6 +60,10 @@ def test_a_hyphenated_word_is_rejoined():
     assert "significantly more likely" in clean_pages(["women are signifi-\ncantly more likely to take it."])
 
 
+def test_the_mark_for_a_word_broken_at_a_line_end_is_removed():
+    assert "significantly more" in clean_pages(["women are signifi\x02cantly more likely."])
+
+
 def test_a_hyphen_before_a_capital_stays():
     assert "post-\nBrexit" in clean_pages(["the post-\nBrexit years are long."])
 
@@ -138,6 +142,14 @@ def test_a_text_file():
 def test_files_that_cannot_be_read(name, data, words):
     with pytest.raises(DocumentProblem, match=words):
         read_file(name, data)
+
+
+def test_a_pdf_locked_with_an_empty_password_can_be_read():
+    writer = PdfWriter(clone_from=io.BytesIO(make_pdf([["Open to any reader."]])))
+    writer.encrypt("", "an-owner-password")
+    locked = io.BytesIO()
+    writer.write(locked)
+    assert read_pdf(locked.getvalue())[0] == "Open to any reader."
 
 
 def test_a_pdf_locked_with_a_password():

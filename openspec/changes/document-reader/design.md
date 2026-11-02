@@ -10,9 +10,9 @@ The session takes plain text in `Session.load`; everything after that is shared.
 
 ## Decisions
 
-**`document.py` has two parts.** `clean_pages(pages)` takes the text of each page and returns clean text; it knows nothing about PDFs, so its rules are tested with text invented by hand. `read_pdf(data)` calls `pypdf` and hands the pages over. `read_file(name, data)` chooses by file extension.
+**`document.py` has two parts.** `clean_pages(pages)` takes the text of each page and returns clean text; it knows nothing about PDFs, so its rules are tested with text invented by hand. `read_pdf(data)` calls `pypdfium2` and hands the pages over. `read_file(name, data)` chooses by file extension.
 
-**pypdf, not pdfplumber.** Measured on the real file: pdfplumber lost the spaces in much of the text. The same file gave 900 x "the" with pypdf and 336 with pdfplumber.
+**pypdfium2, chosen by measuring.** On the real file, pypdf glued the words together on 9 of 42 pages, seen by the reader in the browser, and pdfplumber lost spaces too. pypdfium2 and pdfminer glued nothing; pypdfium2 is about 19 times faster than pdfminer, needs no other package and opens empty-password PDFs by itself. Words glued together are counted as lower-case words of 16 letters or more.
 
 **Repeated lines are found by comparing pages.** A line near the top or bottom of a page, with digits removed, counts as a running head if at least three pages have it. Comparing pages needs no knowledge of the book, and it also catches the stray `k k` marks at the top of every page of this file.
 

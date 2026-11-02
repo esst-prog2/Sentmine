@@ -9,7 +9,7 @@ To read a course document in the app I have to open it, select the text, copy it
 - A PDF with no text in it (a scan), a locked PDF, and a file that is not a PDF are refused with a message saying so.
 - The message after loading says how many pages were read and how many had no text.
 - The file is read on the reader's computer and is not kept or sent anywhere. Word cards, definition cards, AI meanings and My cards work on it as on pasted text.
-- New dependency: `pypdf`.
+- New dependency: `pypdfium2`.
 
 Not in this change: scanned pages read by AI; PowerPoint slides; showing the original PDF page; recognising formulas and tables; choosing a page range.
 
@@ -25,5 +25,5 @@ None. Loading replaces the text and cards as pasting does.
 ## Impact
 
 - New: `src/sentmine/document.py`; a route `POST /api/file`; a file button in `web/index.html`; `tests/pdf_helper.py`, which builds small PDFs for tests.
-- `pyproject.toml`: adds `pypdf==6.21.4`.
+- `pyproject.toml`: adds `pypdfium2==5.14.0`, and `pypdf==6.21.4` for tests only.
 - The reader's books are copyrighted, so no real PDF goes into the repository.
