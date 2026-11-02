@@ -172,6 +172,10 @@ it anyway. Different forms of a word count as the same word (`ran` and
 shows your progress, and lets you forget a card. To use another database,
 set `SENTMINE_DATABASE` to its path. A backup is a copy of that one file.
 
+Instead of pasting, you can open a PDF that contains text, or a `.txt` file.
+Running heads and page numbers are removed and hyphenated words rejoined;
+formulas and tables come out as they are, and scanned PDFs cannot be read yet.
+
 With an OpenAI API key, each word card gets a **Suggest meaning** button: it
 sends that word and its sentence to the small model `gpt-5-nano` and puts a
 short English explanation on the back, for you to check and edit. Put the key
