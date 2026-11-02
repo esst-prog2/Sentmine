@@ -11,7 +11,9 @@ from pathlib import Path
 from urllib.parse import quote
 
 from flask import Flask, Response, jsonify, request
+from werkzeug.exceptions import RequestEntityTooLarge
 
+from sentmine.document import MOST_BYTES, DocumentProblem, read_file
 from sentmine.history import Entry
 from sentmine.meaning import MeaningProblem, find_api_key, suggest_meaning
 from sentmine.memory import CardMemory, MemoryProblem, RememberedCard, default_memory_path
@@ -79,6 +81,7 @@ def _message(result: str, card: Flashcard | Entry) -> str:
 def create_app(session: Session | None = None, ask: Callable[[str, str], str] | None = None) -> Flask:
     """`ask(word, sentence)` gives a meaning; without it the page shows no Suggest meaning button."""
     app = Flask(__name__, static_folder=None)
+    app.config["MAX_CONTENT_LENGTH"] = MOST_BYTES
     reading = session if session is not None else Session()
 
     def state(message: str = "", result: str = "", earlier: Entry | None = None):
@@ -113,8 +116,13 @@ def create_app(session: Session | None = None, ask: Callable[[str, str], str] | 
     @app.errorhandler(Problem)
     @app.errorhandler(MemoryProblem)
     @app.errorhandler(MeaningProblem)
+    @app.errorhandler(DocumentProblem)
     def problem(error: Exception):
         return jsonify(error=str(error)), 400
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def too_large(error: RequestEntityTooLarge):
+        return jsonify(error="This file is larger than 50 MB, so it cannot be read."), 413
 
     @app.get("/")
     def page():
@@ -153,6 +161,15 @@ def create_app(session: Session | None = None, ask: Callable[[str, str], str] | 
     def load_text():
         reading.load(sent("text"))
         return state("Text loaded.")
+
+    @app.post("/api/file")
+    def load_file():
+        upload = request.files.get("file")
+        if upload is None:
+            raise Problem("No file was sent.")
+        text, message = read_file(upload.filename or "", upload.read())
+        reading.load(text)
+        return state(message)
 
     @app.post("/api/word")
     def pick_word():

@@ -54,6 +54,7 @@
   @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
   section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
   details summary { cursor: pointer; color: var(--soft); }
+  .file { margin-left: 12px; color: var(--soft); }
   #paste { width: 100%; min-height: 9em; margin: 10px 0; resize: vertical; }
   #text { margin-top: 14px; font: 1.1rem/1.8 Georgia, "Times New Roman", serif; }
   #text p { margin: 0 0 1em; }
@@ -99,9 +100,12 @@
 <main>
   <section>
     <details id="paste-box" open>
-      <summary>Paste a text</summary>
+      <summary>Paste a text or open a file</summary>
       <textarea id="paste" placeholder="Paste the text you are reading here."></textarea>
       <button class="main" id="load">Read this text</button>
+      <label class="file">or open a PDF or text file:
+        <input type="file" id="file" accept=".pdf,.txt">
+      </label>
     </details>
     <div id="text" class="empty">No text yet.</div>
   </section>
@@ -181,8 +185,8 @@ async function call(method, url, body) {
   try {
     response = await fetch(url, {
       method,
-      headers: body === undefined ? {} : { "Content-Type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: body === undefined || body instanceof FormData ? {} : { "Content-Type": "application/json" },
+      body: body === undefined || body instanceof FormData ? body : JSON.stringify(body),
     });
   } catch (error) {
     say("The app is not answering. Is `sentmine` still running in the terminal?", true);
@@ -330,19 +334,33 @@ document.addEventListener("mouseup", () => {   // on the document: a drag may en
   pick("/api/definition", { term: chosen, passage: selected });
 });
 
+function mayReplaceCards() {
+  return state.cards.length === 0 ||
+    window.confirm("Reading a new text removes the " + state.count_text + " you have not downloaded. Continue?");
+}
+
+function textLoaded() {
+  editing = null;
+  term = null;
+  $("paste").value = "";
+  $("paste-box").open = false;
+  $("paste-box").querySelector("summary").textContent = "Paste or open another text";
+}
+
 $("load").addEventListener("click", async () => {
-  if (state.cards.length > 0 &&
-      !window.confirm("Reading a new text removes the " + state.count_text + " you have not downloaded. Continue?")) {
-    return;
+  if (!mayReplaceCards()) return;
+  if (await call("POST", "/api/text", { text: $("paste").value })) textLoaded();
+});
+
+$("file").addEventListener("change", async () => {
+  const chosen = $("file").files[0];
+  if (chosen && mayReplaceCards()) {
+    say("Reading " + chosen.name + "…");
+    const form = new FormData();
+    form.append("file", chosen);
+    if (await call("POST", "/api/file", form)) textLoaded();
   }
-  const done = await call("POST", "/api/text", { text: $("paste").value });
-  if (done) {
-    editing = null;
-    term = null;
-    $("paste").value = "";
-    $("paste-box").open = false;
-    $("paste-box").querySelector("summary").textContent = "Paste another text";
-  }
+  $("file").value = "";   // so that choosing the same file again works
 });
 
 $("download").addEventListener("click", async () => {
@@ -380,7 +398,7 @@ call("GET", "/api/state").then((loaded) => {
   }
   if (loaded && loaded.paragraphs.length > 0) {
     $("paste-box").open = false;
-    $("paste-box").querySelector("summary").textContent = "Paste another text";
+    $("paste-box").querySelector("summary").textContent = "Paste or open another text";
   }
 });
 </script>
