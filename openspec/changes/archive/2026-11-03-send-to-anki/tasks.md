@@ -12,4 +12,6 @@
 
 - [x] 3.1 Run the whole suite and `openspec validate send-to-anki --strict`
 - [x] 3.2 Send cards to the reader's real Anki: a new deck, then the same cards again (needs the reader)
-- [ ] 3.3 Measure with the reader: time from "cards ready" to "cards in Anki" for 10 cards, by Download and import, then by Send to Anki; log both
+- [x] 3.3 Measure with the reader: time from "cards ready" to "cards in Anki" for 10 cards, by Download and import, then by Send to Anki; log both
+
+  Done by the reader on 2026-11-04 with 10 word cards from 2 sentences, timed by hand from "cards ready" to "cards in Anki": Download and import 30 s, Send to Anki 5 s.
