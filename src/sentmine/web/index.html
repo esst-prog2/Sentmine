@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>sentmine</title>
+<script>
+// Set the reader's chosen theme before the page is drawn, so it does not flash.
+try {
+  const chosen = localStorage.getItem("sentmine-theme");
+  if (chosen === "light" || chosen === "dark") document.documentElement.dataset.theme = chosen;
+} catch (error) {}   // no storage: follow the system
+</script>
 <style>
   :root {
     color-scheme: light dark;
@@ -12,12 +19,19 @@
     --picked: #ffe27a; --term: #bfe3c6; --warn: #b3261e;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme=light]) {
       --page: #16181c; --panel: #1f2227; --ink: #e8e6e1; --soft: #a2a8b3; --line: #343841; --hover: #2a2e35;
       --accent: #6ea8ff; --accent-hover: #8fbcff; --on-accent: #0d1117; --selection: #2d4a7a;
       --picked: #7a6410; --term: #235c33; --warn: #ff8a80;
     }
   }
+  :root[data-theme=dark] {
+        --page: #16181c; --panel: #1f2227; --ink: #e8e6e1; --soft: #a2a8b3; --line: #343841; --hover: #2a2e35;
+        --accent: #6ea8ff; --accent-hover: #8fbcff; --on-accent: #0d1117; --selection: #2d4a7a;
+        --picked: #7a6410; --term: #235c33; --warn: #ff8a80;
+  }
+  :root[data-theme=light] { color-scheme: light; }
+  :root[data-theme=dark] { color-scheme: dark; }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--page); color: var(--ink); accent-color: var(--accent);
@@ -68,7 +82,7 @@
   }
   #status.warn { color: var(--warn); }
   #status .term { background: var(--term); color: var(--ink); padding: 1px 6px; border-radius: 4px; }
-  main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; padding: 20px; align-items: start; }
+  main { display: grid; grid-template-columns: minmax(0, min(50rem, 60%)) minmax(0, 1fr); gap: 20px; padding: 20px; align-items: start; }
   section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
   details summary { cursor: pointer; color: var(--soft); width: fit-content; }
   details summary:hover { color: var(--ink); }
@@ -127,6 +141,7 @@
     <input type="text" id="deck-name" value="new">
     <button class="main" id="download">Download</button>
   </div>
+  <button type="button" id="theme" class="small">Dark mode</button>
 </header>
 
 <div id="status" role="status"></div>
@@ -155,6 +170,24 @@
 "use strict";
 
 const $ = (id) => document.getElementById(id);
+
+function theme() {
+  return document.documentElement.dataset.theme ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+}
+
+function drawThemeButton() {
+  $("theme").textContent = theme() === "dark" ? "Light mode" : "Dark mode";
+}
+
+$("theme").addEventListener("click", () => {
+  const next = theme() === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("sentmine-theme", next); } catch (error) {}   // remembered only if the browser allows it
+  drawThemeButton();
+});
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawThemeButton);
+drawThemeButton();
 const HINTS = {
   word: "Word mode: click a word to make a card from its sentence. Click it again to remove the card.",
   definition: "Definition mode: select the term first, then drag over the text that defines it.",
