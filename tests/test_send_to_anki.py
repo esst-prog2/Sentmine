@@ -279,5 +279,16 @@ def test_anki_closed_comes_back_as_a_message_and_the_cards_stay():
     assert client.get("/api/state").get_json()["count"] == 1
 
 
+def test_one_card_already_there_is_said_in_the_singular():
+    fake = FakeAnki()
+    client = create_app(send=via(fake)).test_client()
+    client.post("/api/text", json={"text": TEXT})
+    sentence, number = place_of(client.get("/api/state").get_json()["paragraphs"], "skew")
+    client.post("/api/word", json={"sentence": sentence, "word": number})
+    client.post("/api/send", json={"deck": "stats"})
+    again = client.post("/api/send", json={"deck": "stats"}).get_json()["message"]
+    assert again == "The card was already in the deck 'stats' in Anki."
+
+
 def test_a_request_without_a_deck_name_is_refused():
     assert client_with_cards(FakeAnki()).post("/api/send", json={}).status_code == 400

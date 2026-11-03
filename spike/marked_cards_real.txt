@@ -1,29 +1,29 @@
 ﻿# Card review (real list): categorise each card as N (new vocabulary), K (already known), or J (name or junk)
 
-  1. findings         
-  2. entry            
-  3. andy             
-  4. burnham's        
-  5. european         
-  6. almost           
-  7. voters           
-  8. megapoll         
-  9. although         
- 10. cabinet          
- 11. ministers        
- 12. brexit           
- 13. messina          
- 14. tmg              
- 15. uk's             
- 16. could            
- 17. labour's         
- 18. referendum       
- 19. bloc             
- 20. said             
- 21. would            
- 22. felt             
- 23. mandate          
- 24. parliament       
+  1. findings         K
+  2. entry            K
+  3. andy             J
+  4. burnham's       J 
+  5. european        J 
+  6. almost          K 
+  7. voters          K 
+  8. megapoll        K 
+  9. although      K   
+ 10. cabinet       K   
+ 11. ministers     K   
+ 12. brexit       J    
+ 13. messina      J    
+ 14. tmg         J     
+ 15. uk's        J     
+ 16. could       K     
+ 17. labour's     J    
+ 18. referendum   N    
+ 19. bloc        K     
+ 20. said        K     
+ 21. would       K     
+ 22. felt       K      
+ 23. mandate     N     
+ 24. parliament     K  
  25. decision         
  26. case             
  27. lifetime         

@@ -85,6 +85,8 @@ def _message(result: str, card: Flashcard | Entry) -> str:
 
 def _sent_message(deck: str, added: int, already: int) -> str:
     if added == 0:
+        if already == 1:
+            return f"The card was already in the deck '{deck}' in Anki."
         return f"All {plural(already, 'card')} were already in the deck '{deck}' in Anki."
     message = f"Sent to the deck '{deck}' in Anki: {plural(added, 'card')} added"
     if already:
