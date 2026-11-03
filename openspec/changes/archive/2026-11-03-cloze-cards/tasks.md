@@ -15,4 +15,4 @@
 ## 4. Wrap-up
 
 - [x] 4.1 Run the whole suite and `openspec validate cloze-cards --strict`
-- [ ] 4.2 Make a cloze card in the browser, send it to the reader's Anki and study it there (needs the reader)
+- [x] 4.2 Make a cloze card in the browser, send it to the reader's Anki and study it there (needs the reader)
