@@ -15,4 +15,4 @@
 ## 4. Wrap-up
 
 - [x] 4.1 Run the whole suite and `openspec validate polish-interface --strict`; verify both pass
-- [ ] 4.2 Try both pages in a real browser, in light and dark mode and with the keyboard (needs the reader)
+- [x] 4.2 Try both pages in a real browser, in light and dark mode and with the keyboard (needs the reader)
