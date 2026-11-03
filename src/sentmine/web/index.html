@@ -115,8 +115,8 @@ try {
     header, #status { padding-left: 16px; padding-right: 16px; }
     main { padding: 16px; gap: 16px; }
     .spacer { display: none; }
-    .deck { width: 100%; }
-    #deck-name { flex: 1; min-width: 0; }
+    .deck { width: 100%; flex-wrap: wrap; }
+    #deck-name { flex: 1 1 8em; min-width: 0; }
     .file { display: block; margin: 10px 0 0; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -139,7 +139,8 @@ try {
   <div class="deck">
     <label for="deck-name">Deck name</label>
     <input type="text" id="deck-name" value="new">
-    <button class="main" id="download">Download</button>
+    <button id="download">Download</button>
+    <button class="main" id="send">Send to Anki</button>
   </div>
   <button type="button" id="theme" class="small">Dark mode</button>
 </header>
@@ -275,7 +276,7 @@ async function call(method, url, body) {
   if (data.result === "earlier") {
     showEarlier(data);
   } else {
-    say(data.message, data.result === "duplicate");
+    say(data.message, data.result === "duplicate" || data.result === "warning");
   }
   return data;
 }
@@ -450,6 +451,8 @@ $("file").addEventListener("change", async () => {
 });
 
 $("download").addEventListener("click", () => busy($("download"), "Making the deck…", download));
+$("send").addEventListener("click", () =>
+  busy($("send"), "Sending…", () => call("POST", "/api/send", { deck: $("deck-name").value })));
 
 async function download() {
   let response;

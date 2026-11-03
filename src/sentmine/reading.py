@@ -209,9 +209,25 @@ class Session:
 
         Returns a warning if the deck was written but the cards could not be remembered, else "".
         """
+        write_notes(self._notes(), path)
+        return self._remember(day, "The deck was made")
+
+    def send(self, deck: str, send_notes: Callable[[list[tuple[str, str]], str], tuple[int, int]],
+             day: str | None = None) -> tuple[int, int, str]:
+        """Send the cards, as the preview shows them, to Anki, then add them to the memory.
+
+        Returns how many were added, how many were already in the deck, and a warning as export does.
+        Nothing is remembered if sending fails.
+        """
+        added, already = send_notes(self._notes(), deck)
+        return added, already, self._remember(day, "The cards are in Anki")
+
+    def _notes(self) -> list[tuple[str, str]]:
         if not self.cards:
             raise Problem("There are no cards yet: pick a word or mark a definition first.")
-        write_notes([(card.front_html, card.back_html) for card in self.cards], path)
+        return [(card.front_html, card.back_html) for card in self.cards]
+
+    def _remember(self, day: str | None, done: str) -> str:
         if self.memory is None:
             return ""
         day = day or date.today().isoformat()
@@ -221,7 +237,7 @@ class Session:
         try:
             self.memory.add(entries)
         except MemoryProblem as error:
-            return f"The deck was made, but these cards were not remembered. {error}"
+            return f"{done}, but these cards were not remembered. {error}"
         return ""
 
     def _add(self, card: Flashcard) -> Flashcard:

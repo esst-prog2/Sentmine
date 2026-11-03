@@ -13,6 +13,7 @@ from urllib.parse import quote
 from flask import Flask, Response, jsonify, request
 from werkzeug.exceptions import RequestEntityTooLarge
 
+from sentmine.anki import AnkiProblem, send_notes
 from sentmine.document import MOST_BYTES, DocumentProblem, read_file
 from sentmine.history import Entry
 from sentmine.meaning import MeaningProblem, find_api_key, suggest_meaning
@@ -33,10 +34,14 @@ _CARDS_PAGE = Path(__file__).parent / "web" / "cards.html"
 _NOT_IN_A_FILE_NAME = re.compile(r"[^\w \-]+")
 
 
+def deck_name(name: str) -> str:
+    """The deck name the reader gave, made safe; the same for Download and Send to Anki."""
+    return " ".join(_NOT_IN_A_FILE_NAME.sub(" ", name or "").split()) or DEFAULT_DECK_NAME
+
+
 def deck_file_name(name: str) -> str:
     """A safe file name for the deck the reader named."""
-    stem = " ".join(_NOT_IN_A_FILE_NAME.sub(" ", name or "").split())
-    return (stem or DEFAULT_DECK_NAME) + ".apkg"
+    return deck_name(name) + ".apkg"
 
 
 def _card_json(card: Flashcard) -> dict:
@@ -78,8 +83,24 @@ def _message(result: str, card: Flashcard | Entry) -> str:
     return f"Made a card for '{name}'."
 
 
-def create_app(session: Session | None = None, ask: Callable[[str, str], str] | None = None) -> Flask:
-    """`ask(word, sentence)` gives a meaning; without it the page shows no Suggest meaning button."""
+def _sent_message(deck: str, added: int, already: int) -> str:
+    if added == 0:
+        if already == 1:
+            return f"The card was already in the deck '{deck}' in Anki."
+        return f"All {plural(already, 'card')} were already in the deck '{deck}' in Anki."
+    message = f"Sent to the deck '{deck}' in Anki: {plural(added, 'card')} added"
+    if already:
+        message += f", {already} {'was' if already == 1 else 'were'} already there"
+    return message + ". Now in My cards too."
+
+
+def create_app(
+    session: Session | None = None,
+    ask: Callable[[str, str], str] | None = None,
+    send: Callable[[list[tuple[str, str]], str], tuple[int, int]] = send_notes,
+) -> Flask:
+    """`ask(word, sentence)` gives a meaning; without it the page shows no Suggest meaning button.
+    `send(notes, deck)` adds notes to Anki; tests give a fake one."""
     app = Flask(__name__, static_folder=None)
     app.config["MAX_CONTENT_LENGTH"] = MOST_BYTES
     reading = session if session is not None else Session()
@@ -117,6 +138,7 @@ def create_app(session: Session | None = None, ask: Callable[[str, str], str] | 
     @app.errorhandler(MemoryProblem)
     @app.errorhandler(MeaningProblem)
     @app.errorhandler(DocumentProblem)
+    @app.errorhandler(AnkiProblem)
     def problem(error: Exception):
         return jsonify(error=str(error)), 400
 
@@ -195,6 +217,13 @@ def create_app(session: Session | None = None, ask: Callable[[str, str], str] | 
             raise Problem("Suggesting a meaning needs an API key.")
         reading.suggest(card_id, ask)
         return state("Meaning suggested. Check it, and edit it if you like.")
+
+    @app.post("/api/send")
+    def send_to_anki():
+        deck = deck_name(sent("deck"))
+        added, already, warning = reading.send(deck, send)
+        message = _sent_message(deck, added, already)
+        return state(message + (" " + warning if warning else ""), "warning" if warning else "sent")
 
     @app.get("/api/deck")
     def download_deck():
