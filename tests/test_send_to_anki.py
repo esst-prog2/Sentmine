@@ -10,7 +10,7 @@ from reading_helper import place_of
 from sentmine import anki
 from sentmine.anki import AnkiProblem, send_notes
 from sentmine.app import create_app
-from sentmine.deck import MODEL
+from sentmine.deck import CLOZE_MODEL, MODEL, Note
 from sentmine.memory import CardMemory
 from sentmine.reading import Problem, Session
 
@@ -55,14 +55,15 @@ class FakeAnki:
             deck = re.match(r'"deck:([^"]*)"', params["query"]).group(1)
             return {"result": [[deck, n] for n in range(len(self.decks.get(deck, [])))], "error": None}
         if action == "notesInfo":
-            return {"result": [{"fields": {"Front": {"value": self.decks[d][n]}}} for d, n in params["notes"]],
+            return {"result": [{"fields": {"Front": {"value": self.decks[d][n], "order": 0},
+                                           "Back": {"value": "", "order": 1}}} for d, n in params["notes"]],
                     "error": None}
         if action == "addNotes":
             errors = [self._refusal(note) for note in params["notes"]]
             if any(errors):  # AnkiConnect adds nothing and lists the reasons
                 return {"result": None, "error": [e for e in errors if e]}
             for note in params["notes"]:
-                self.decks[note["deckName"]].append(note["fields"]["Front"])
+                self.decks[note["deckName"]].append(next(iter(note["fields"].values())))
             return {"result": list(range(len(params["notes"]))), "error": None}
         return {"result": None, "error": "unsupported action"}
 
@@ -71,7 +72,7 @@ class FakeAnki:
             return "model was not found: " + note["modelName"]
         if note["options"].get("allowDuplicate"):
             return None
-        plain = re.sub("<[^>]*>", "", note["fields"]["Front"])
+        plain = re.sub("<[^>]*>", "", next(iter(note["fields"].values())))
         if plain in [re.sub("<[^>]*>", "", front) for front in self.decks.get(note["deckName"], [])]:
             return "cannot create note because it is a duplicate"
         return None
@@ -113,6 +114,28 @@ def test_all_cards_already_there_adds_nothing():
     assert "addNotes" not in fake.actions
 
 
+def test_a_cloze_note_makes_the_cloze_note_type_and_is_added():
+    fake = FakeAnki()
+    cloze = Note(("The {{c1::median}} resists outliers.", ""), cloze=True)
+    assert send_notes([cloze, NOTES[0]], "stats", fake) == (2, 0)
+    assert fake.created["modelName"] == CLOZE_MODEL.name
+    assert fake.created["isCloze"] is True
+    assert fake.created["inOrderFields"] == ["Text", "Back Extra"]
+    assert fake.decks["stats"][0] == "The {{c1::median}} resists outliers."
+
+
+def test_only_the_note_types_needed_are_made():
+    fake = FakeAnki(note_types=[])
+    send_notes(NOTES, "stats", fake)
+    assert fake.note_types == [MODEL.name]
+
+
+def test_a_cloze_note_already_there_is_skipped():
+    fake = FakeAnki(notes=[("stats", "The {{c1::median}} resists outliers.")])
+    cloze = Note(("The {{c1::median}} resists outliers.", ""), cloze=True)
+    assert send_notes([cloze], "stats", fake) == (0, 1)
+
+
 def test_an_old_ankiconnect_is_refused_before_anything_is_changed():
     fake = FakeAnki(version=5)
     with pytest.raises(AnkiProblem, match="too old"):
@@ -136,7 +159,7 @@ def test_a_card_from_the_same_sentence_already_there_does_not_block_another_word
 def test_only_the_named_deck_is_searched_without_its_subdecks():
     fake = FakeAnki()
     send_notes(NOTES, "stats", fake)
-    assert fake.queries == [f'"deck:stats" -"deck:stats::*" "note:{MODEL.name}"']
+    assert fake.queries == [f'"deck:stats" -"deck:stats::*" ("note:{MODEL.name}" OR "note:{CLOZE_MODEL.name}")']
 
 
 def test_ankis_reasons_are_said_once_each():

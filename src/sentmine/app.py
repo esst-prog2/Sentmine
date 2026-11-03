@@ -14,6 +14,7 @@ from flask import Flask, Response, jsonify, request
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from sentmine.anki import AnkiProblem, send_notes
+from sentmine.deck import Note
 from sentmine.document import MOST_BYTES, DocumentProblem, read_file
 from sentmine.history import Entry
 from sentmine.meaning import MeaningProblem, find_api_key, suggest_meaning
@@ -53,6 +54,8 @@ def _card_json(card: Flashcard) -> dict:
         "front_html": card.front_html,
         "back_html": card.back_html,
         "earlier": card.earlier,
+        "cloze": card.cloze,
+        "can_cloze": card.can_cloze,
     }
 
 
@@ -97,7 +100,7 @@ def _sent_message(deck: str, added: int, already: int) -> str:
 def create_app(
     session: Session | None = None,
     ask: Callable[[str, str], str] | None = None,
-    send: Callable[[list[tuple[str, str]], str], tuple[int, int]] = send_notes,
+    send: Callable[[list[Note], str], tuple[int, int]] = send_notes,
 ) -> Flask:
     """`ask(word, sentence)` gives a meaning; without it the page shows no Suggest meaning button.
     `send(notes, deck)` adds notes to Anki; tests give a fake one."""
@@ -210,6 +213,16 @@ def create_app(
     def delete_card(card_id: int):
         reading.delete(card_id)
         return state("Card deleted.")
+
+    @app.put("/api/cards/<int:card_id>/cloze")
+    def switch_cloze(card_id: int):
+        cloze = (request.get_json(silent=True) or {}).get("cloze")
+        if not isinstance(cloze, bool):
+            raise Problem("The request has no usable 'cloze'.")
+        card = reading.set_cloze(card_id, cloze)
+        if card.cloze:
+            return state(f"Now a cloze card: '{card.front}' is hidden in the passage.")
+        return state("Now a term → passage card.")
 
     @app.post("/api/cards/<int:card_id>/meaning")
     def suggest_card_meaning(card_id: int):

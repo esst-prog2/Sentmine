@@ -9,7 +9,9 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable, Sequence
 
-from sentmine.deck import MODEL
+import genanki
+
+from sentmine.deck import CLOZE_MODEL, MODEL, Note, as_note
 
 URL = "http://127.0.0.1:8765"  # AnkiConnect's address: this computer only
 VERSION = 6
@@ -51,60 +53,63 @@ def _call(post: Callable[[dict], dict], action: str, **params):
     return answer["result"]
 
 
-def _make_note_type(post: Callable[[dict], dict]) -> None:
+def _make_note_types(post: Callable[[dict], dict], models: Sequence[genanki.Model]) -> None:
+    """Make in Anki each of the sentmine note types that is missing."""
     names = _call(post, "modelNames")
     if not isinstance(names, list):
         raise _not_understood()
-    if MODEL.name in names:
-        return
-    template = MODEL.templates[0]
-    _call(
-        post,
-        "createModel",
-        modelName=MODEL.name,
-        inOrderFields=[field["name"] for field in MODEL.fields],
-        isCloze=False,
-        cardTemplates=[{"Name": template["name"], "Front": template["qfmt"], "Back": template["afmt"]}],
-    )
+    for model in models:
+        if model.name in names:
+            continue
+        template = model.templates[0]
+        _call(
+            post,
+            "createModel",
+            modelName=model.name,
+            inOrderFields=[field["name"] for field in model.fields],
+            isCloze=model.model_type == genanki.Model.CLOZE,
+            cardTemplates=[{"Name": template["name"], "Front": template["qfmt"], "Back": template["afmt"]}],
+        )
 
 
-def _fronts_in(post: Callable[[dict], dict], deck: str) -> set[str]:
-    """The fronts, as HTML, of the sentmine notes already in `deck` (its subdecks left out)."""
-    query = f'"deck:{deck}" -"deck:{deck}::*" "note:{MODEL.name}"'
-    ids = _call(post, "findNotes", query=query)
+def _first_fields_in(post: Callable[[dict], dict], deck: str) -> set[str]:
+    """The first field, as HTML, of each sentmine note of either type already in `deck` (its subdecks left out)."""
+    types = " OR ".join(f'"note:{model.name}"' for model in (MODEL, CLOZE_MODEL))
+    ids = _call(post, "findNotes", query=f'"deck:{deck}" -"deck:{deck}::*" ({types})')
     if not isinstance(ids, list):
         raise _not_understood()
     if not ids:
         return set()
     infos = _call(post, "notesInfo", notes=ids)
     try:
-        return {info["fields"]["Front"]["value"] for info in infos if info}
-    except (TypeError, KeyError):
+        return {min(info["fields"].values(), key=lambda field: field["order"])["value"] for info in infos if info}
+    except (TypeError, KeyError, AttributeError, ValueError):
         raise _not_understood() from None
 
 
-def send_notes(notes: Sequence[tuple[str, str]], deck: str, post: Callable[[dict], dict] = _post) -> tuple[int, int]:
-    """Add (front, back) pairs of HTML to `deck`; returns how many were added and how many were already there.
+def send_notes(notes: Sequence[Note | tuple[str, str]], deck: str, post: Callable[[dict], dict] = _post) -> tuple[int, int]:
+    """Add notes, or (front, back) pairs of HTML, to `deck`; returns how many were added and how many were already there.
 
-    A card is already there if a sentmine note in the deck has exactly the same front, bold included. Anki's own
-    duplicate check is turned off: it compares fronts without their HTML, so two cards for different words of one
-    sentence would look the same to it.
+    A note is already there if a sentmine note in the deck has exactly the same first field, bold included.
+    Anki's own duplicate check is turned off: it compares fields without their HTML, so two cards for different
+    words of one sentence would look the same to it.
     """
+    notes = [as_note(note) for note in notes]
     version = _call(post, "version")
     if not isinstance(version, int) or version < VERSION:
         raise AnkiProblem("This AnkiConnect is too old. Update it in Anki: Tools > Add-ons > Check for Updates.")
-    _make_note_type(post)
+    _make_note_types(post, list({note.model.model_id: note.model for note in notes}.values()))
     _call(post, "createDeck", deck=deck)
-    there = _fronts_in(post, deck)
+    there = _first_fields_in(post, deck)
     new = [
         {
             "deckName": deck,
-            "modelName": MODEL.name,
-            "fields": {"Front": front, "Back": back},
+            "modelName": note.model.name,
+            "fields": {field["name"]: value for field, value in zip(note.model.fields, note.fields)},
             "options": {"allowDuplicate": True},
         }
-        for front, back in notes
-        if front not in there
+        for note in notes
+        if note.fields[0] not in there
     ]
     if new:
         _call(post, "addNotes", notes=new)
