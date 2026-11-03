@@ -1,6 +1,7 @@
 """send-to-anki. A fake AnkiConnect stands in for Anki; no test needs Anki or the network."""
 
 import io
+import re
 import urllib.error
 
 import pytest
@@ -18,7 +19,11 @@ NOTES = [("one <b>a</b>", "a"), ("two <b>b</b>", "b"), ("three <b>c</b>", "c")]
 
 
 class FakeAnki:
-    """Answers AnkiConnect's requests the way AnkiConnect does, keeping notes in memory."""
+    """Answers AnkiConnect's requests the way AnkiConnect does, keeping notes in memory.
+
+    Like Anki, it calls a note a duplicate when its front without HTML matches another in the deck,
+    unless the note allows duplicates.
+    """
 
     def __init__(self, version=6, note_types=(MODEL.name,), notes=()):
         self.version = version
@@ -28,6 +33,7 @@ class FakeAnki:
             self.decks.setdefault(deck, []).append(front)
         self.actions = []
         self.created = None
+        self.queries = []
 
     def __call__(self, body):
         action, params = body["action"], body.get("params", {})
@@ -44,21 +50,31 @@ class FakeAnki:
         if action == "createDeck":
             self.decks.setdefault(params["deck"], [])
             return {"result": 1, "error": None}
-        if action == "canAddNotesWithErrorDetail":
-            return {"result": [self._check(note) for note in params["notes"]], "error": None}
+        if action == "findNotes":
+            self.queries.append(params["query"])
+            deck = re.match(r'"deck:([^"]*)"', params["query"]).group(1)
+            return {"result": [[deck, n] for n in range(len(self.decks.get(deck, [])))], "error": None}
+        if action == "notesInfo":
+            return {"result": [{"fields": {"Front": {"value": self.decks[d][n]}}} for d, n in params["notes"]],
+                    "error": None}
         if action == "addNotes":
+            errors = [self._refusal(note) for note in params["notes"]]
+            if any(errors):  # AnkiConnect adds nothing and lists the reasons
+                return {"result": None, "error": [e for e in errors if e]}
             for note in params["notes"]:
-                assert self._check(note)["canAdd"]
                 self.decks[note["deckName"]].append(note["fields"]["Front"])
             return {"result": list(range(len(params["notes"]))), "error": None}
         return {"result": None, "error": "unsupported action"}
 
-    def _check(self, note):
+    def _refusal(self, note):
         if note["modelName"] not in self.note_types:
-            return {"canAdd": False, "error": "model was not found: " + note["modelName"]}
-        if note["fields"]["Front"] in self.decks.get(note["deckName"], []):
-            return {"canAdd": False, "error": "cannot create note because it is a duplicate"}
-        return {"canAdd": True}
+            return "model was not found: " + note["modelName"]
+        if note["options"].get("allowDuplicate"):
+            return None
+        plain = re.sub("<[^>]*>", "", note["fields"]["Front"])
+        if plain in [re.sub("<[^>]*>", "", front) for front in self.decks.get(note["deckName"], [])]:
+            return "cannot create note because it is a duplicate"
+        return None
 
 
 # --- talking to AnkiConnect --------------------------------------------------------------------
@@ -104,22 +120,32 @@ def test_an_old_ankiconnect_is_refused_before_anything_is_changed():
     assert fake.actions == ["version"]
 
 
-def test_an_ankiconnect_without_the_check_is_called_too_old():
-    def no_check(body):
-        if body["action"] == "canAddNotesWithErrorDetail":
-            return {"result": None, "error": "unsupported action"}
-        return FakeAnki()(body)
-
-    with pytest.raises(AnkiProblem, match="too old"):
-        send_notes(NOTES, "stats", no_check)
-
-
-def test_another_refusal_shows_ankis_reason_and_adds_nothing():
+def test_two_cards_from_one_sentence_are_both_added():
+    """Anki compares fronts without HTML; the bold word is what tells these two cards apart."""
     fake = FakeAnki()
-    fake._check = lambda note: {"canAdd": False, "error": "the field Front is empty"}
-    with pytest.raises(AnkiProblem, match="the field Front is empty"):
+    notes = [("State <b>Management</b>: text.", "management"), ("<b>State</b> Management: text.", "state")]
+    assert send_notes(notes, "stats", fake) == (2, 0)
+    assert len(fake.decks["stats"]) == 2
+
+
+def test_a_card_from_the_same_sentence_already_there_does_not_block_another_word():
+    fake = FakeAnki(notes=[("stats", "<b>State</b> Management: text.")])
+    assert send_notes([("State <b>Management</b>: text.", "management")], "stats", fake) == (1, 0)
+
+
+def test_only_the_named_deck_is_searched_without_its_subdecks():
+    fake = FakeAnki()
+    send_notes(NOTES, "stats", fake)
+    assert fake.queries == [f'"deck:stats" -"deck:stats::*" "note:{MODEL.name}"']
+
+
+def test_ankis_reasons_are_said_once_each():
+    fake = FakeAnki()
+    fake.note_types = [MODEL.name]
+    fake._refusal = lambda note: "the field Front is empty"
+    with pytest.raises(AnkiProblem) as caught:
         send_notes(NOTES, "stats", fake)
-    assert "addNotes" not in fake.actions
+    assert str(caught.value) == "Anki refused the cards: the field Front is empty"
 
 
 def test_an_answer_that_is_not_ankiconnects_is_a_problem():
@@ -127,14 +153,14 @@ def test_an_answer_that_is_not_ankiconnects_is_a_problem():
         send_notes(NOTES, "stats", lambda body: {"something": "else"})
 
 
-def test_a_check_list_of_the_wrong_length_is_a_problem():
-    def short(body):
-        if body["action"] == "canAddNotesWithErrorDetail":
-            return {"result": [{"canAdd": True}], "error": None}
-        return FakeAnki()(body)
+def test_a_notes_answer_of_the_wrong_shape_is_a_problem():
+    def odd(body):
+        if body["action"] == "notesInfo":
+            return {"result": [{"no fields": True}], "error": None}
+        return FakeAnki(notes=[("stats", "old")])(body)
 
     with pytest.raises(AnkiProblem, match="does not understand"):
-        send_notes(NOTES, "stats", short)
+        send_notes(NOTES, "stats", odd)
 
 
 @pytest.mark.parametrize(

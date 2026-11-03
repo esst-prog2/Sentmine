@@ -16,12 +16,12 @@
 1. `version`: AnkiConnect must answer at least 6.
 2. `modelNames`, then `createModel` only if the sentmine note type is missing, with the fields, template and name of `deck.MODEL`.
 3. `createDeck`, which does nothing if the deck exists.
-4. `canAddNotesWithErrorDetail` to find the cards already in the deck.
-5. `addNotes` for the rest.
+4. `findNotes` and `notesInfo` to read the fronts of the sentmine notes already in the deck.
+5. `addNotes` for the rest, with Anki's own duplicate check turned off.
 
-Asking first means one card already in Anki does not stop the others.
+Looking first means one card already in Anki does not stop the others.
 
-**Duplicates are Anki's rule:** the same front in the same deck and note type (`duplicateScope: "deck"`). That is how AnkiConnect checks, and it matches what a reader would call "already there".
+**Duplicates are sentmine's rule, not Anki's:** a card is already there if a sentmine note in the deck has exactly the same front, bold included. Anki compares fronts with their HTML removed, so it took two cards for different words of one sentence as the same card and refused the batch. This was found when the reader sent 10 cards from 2 sentences; the first version had asked Anki (`canAddNotesWithErrorDetail`), which checks each note alone and so did not see it either.
 
 **The same deck name as Download.** The name is cleaned by the same rule as the file name, without `.apkg`, so Download and Send put a deck called `new` in the same place.
 
@@ -31,6 +31,6 @@ Asking first means one card already in Anki does not stop the others.
 
 ## Risks / Trade-offs
 
-- [An old AnkiConnect without `canAddNotesWithErrorDetail`] -> The message asks the reader to update the add-on.
+- [Two notes with the same plain text in one deck, which Anki would have refused] -> Wanted: they are cards for different words. Exact fronts are still never added twice.
 - [The reader renamed or changed the sentmine note type in Anki] -> Its name is still used; if its fields are no longer Front and Back, Anki refuses and the message shows Anki's reason.
 - [Anki shows a window asking to allow the connection on first use] -> AnkiConnect does not ask for requests from the same computer; if it ever does, the reader allows it once.

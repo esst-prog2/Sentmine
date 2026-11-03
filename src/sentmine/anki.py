@@ -45,7 +45,9 @@ def _call(post: Callable[[dict], dict], action: str, **params):
     if answer["error"] is not None:
         if "unsupported action" in str(answer["error"]):
             raise AnkiProblem("This AnkiConnect is too old. Update it in Anki: Tools > Add-ons > Check for Updates.")
-        raise AnkiProblem(f"Anki refused the cards: {answer['error']}")
+        error = answer["error"]
+        reasons = sorted(set(map(str, error))) if isinstance(error, list) else [str(error)]
+        raise AnkiProblem("Anki refused the cards: " + "; ".join(reasons))
     return answer["result"]
 
 
@@ -66,30 +68,44 @@ def _make_note_type(post: Callable[[dict], dict]) -> None:
     )
 
 
+def _fronts_in(post: Callable[[dict], dict], deck: str) -> set[str]:
+    """The fronts, as HTML, of the sentmine notes already in `deck` (its subdecks left out)."""
+    query = f'"deck:{deck}" -"deck:{deck}::*" "note:{MODEL.name}"'
+    ids = _call(post, "findNotes", query=query)
+    if not isinstance(ids, list):
+        raise _not_understood()
+    if not ids:
+        return set()
+    infos = _call(post, "notesInfo", notes=ids)
+    try:
+        return {info["fields"]["Front"]["value"] for info in infos if info}
+    except (TypeError, KeyError):
+        raise _not_understood() from None
+
+
 def send_notes(notes: Sequence[tuple[str, str]], deck: str, post: Callable[[dict], dict] = _post) -> tuple[int, int]:
-    """Add (front, back) pairs of HTML to `deck`; returns how many were added and how many were already there."""
+    """Add (front, back) pairs of HTML to `deck`; returns how many were added and how many were already there.
+
+    A card is already there if a sentmine note in the deck has exactly the same front, bold included. Anki's own
+    duplicate check is turned off: it compares fronts without their HTML, so two cards for different words of one
+    sentence would look the same to it.
+    """
     version = _call(post, "version")
     if not isinstance(version, int) or version < VERSION:
         raise AnkiProblem("This AnkiConnect is too old. Update it in Anki: Tools > Add-ons > Check for Updates.")
     _make_note_type(post)
     _call(post, "createDeck", deck=deck)
-    wanted = [
+    there = _fronts_in(post, deck)
+    new = [
         {
             "deckName": deck,
             "modelName": MODEL.name,
             "fields": {"Front": front, "Back": back},
-            "options": {"allowDuplicate": False, "duplicateScope": "deck"},
+            "options": {"allowDuplicate": True},
         }
         for front, back in notes
+        if front not in there
     ]
-    checks = _call(post, "canAddNotesWithErrorDetail", notes=wanted)
-    if not isinstance(checks, list) or len(checks) != len(wanted) or not all(isinstance(c, dict) for c in checks):
-        raise _not_understood()
-    new = [note for note, check in zip(wanted, checks) if check.get("canAdd")]
-    refused = [check.get("error", "") for check in checks if not check.get("canAdd")]
-    others = [reason for reason in refused if "duplicate" not in reason]
-    if others:
-        raise AnkiProblem(f"Anki refused the cards: {others[0]}")
     if new:
         _call(post, "addNotes", notes=new)
-    return len(new), len(refused)
+    return len(new), len(notes) - len(new)
