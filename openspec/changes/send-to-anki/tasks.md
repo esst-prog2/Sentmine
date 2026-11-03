@@ -11,5 +11,5 @@
 ## 3. Wrap-up
 
 - [x] 3.1 Run the whole suite and `openspec validate send-to-anki --strict`
-- [ ] 3.2 Send cards to the reader's real Anki: a new deck, then the same cards again (needs the reader)
+- [x] 3.2 Send cards to the reader's real Anki: a new deck, then the same cards again (needs the reader)
 - [ ] 3.3 Measure with the reader: time from "cards ready" to "cards in Anki" for 10 cards, by Download and import, then by Send to Anki; log both
