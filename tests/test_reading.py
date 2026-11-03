@@ -159,6 +159,7 @@ def test_a_two_sentence_definition(session):
     result, card = session.add_definition("standard deviation", DEFINITION)
     assert result == ADDED
     assert (card.front, card.back) == ("standard deviation", DEFINITION)
+    session.set_cloze(card.id, False)  # as a term -> passage card; cloze is tested in test_cloze_cards
     assert card.front_html == "standard deviation"  # nothing in bold
     assert card.back_html == DEFINITION
 
@@ -204,6 +205,9 @@ def test_an_empty_term_or_passage_is_refused(session, term, passage, missing):
 
 def test_special_characters_are_escaped_on_both_sides(session):
     _, card = session.add_definition("x < y", "x < y & y > z")
+    assert card.front_html == "[...] &amp; y &gt; z"  # a cloze card: the term is in the passage
+    assert card.note.fields[0] == "{{c1::x &lt; y}} &amp; y &gt; z"
+    session.set_cloze(card.id, False)
     assert card.front_html == "x &lt; y"
     assert card.back_html == "x &lt; y &amp; y &gt; z"
 

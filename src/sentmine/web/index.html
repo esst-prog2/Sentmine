@@ -322,7 +322,8 @@ async function busy(button, label, work) {
 
 function drawCard(card) {
   const box = element("div", "card");
-  const kind = element("span", "kind", card.kind === "word" ? "Word" : "Definition");
+  const kind = element("span", "kind",
+    card.kind === "word" ? "Word" : card.cloze ? "Definition · cloze" : "Definition · term → passage");
 
   if (editing === card.id) {
     const front = element("textarea");
@@ -338,7 +339,8 @@ function drawCard(card) {
     cancel.addEventListener("click", () => { editing = null; draw(); });
     const buttons = element("div", "buttons");
     buttons.append(kind, save, cancel);
-    box.append(element("span", "side-name", "Front"), front, element("span", "side-name", "Back"), back, buttons);
+    const names = card.kind === "word" ? ["Front", "Back"] : ["Term", "Passage"];
+    box.append(element("span", "side-name", names[0]), front, element("span", "side-name", names[1]), back, buttons);
     return box;
   }
 
@@ -353,6 +355,11 @@ function drawCard(card) {
   remove.addEventListener("click", () => call("DELETE", "/api/cards/" + card.id));
   const buttons = element("div", "buttons");
   buttons.append(kind, edit, remove);
+  if (card.kind === "definition" && (card.cloze || card.can_cloze)) {
+    const other = element("button", "small", card.cloze ? "Make it term → passage" : "Make it cloze");
+    other.addEventListener("click", () => call("PUT", "/api/cards/" + card.id + "/cloze", { cloze: !card.cloze }));
+    buttons.append(other);
+  }
   if (card.kind === "word" && state.can_suggest) {
     const suggest = element("button", "small", "Suggest meaning");
     suggest.addEventListener("click", async () => {

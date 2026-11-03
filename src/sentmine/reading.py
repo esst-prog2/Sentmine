@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from sentmine.deck import card_back, card_front, write_notes
+from sentmine.deck import Note, card_back, card_front, write_notes
 from sentmine.history import Entry
 from sentmine.lemma import base_form
 from sentmine.memory import CardMemory, MemoryProblem
@@ -41,6 +41,7 @@ class Flashcard:
     place: tuple[int, int] | None = None  # word cards: the sentence and word that were clicked
     earlier: str = ""  # made anyway: the date of the earlier card in the memory
     heading: str = ""  # word cards: the first line of the back; a suggested meaning goes under it
+    cloze: bool = False  # definition cards: the passage with the term hidden, instead of term -> passage
 
     @property
     def history_key(self) -> str:
@@ -48,14 +49,30 @@ class Flashcard:
         return self.key.split(":", 1)[1]
 
     @property
+    def can_cloze(self) -> bool:
+        """A definition card whose term appears in its passage, so there is something to hide."""
+        return self.kind == DEFINITION and _term_pattern(self.front).search(self.back) is not None
+
+    @property
     def front_html(self) -> str:
         if self.kind == WORD:
             return card_front(self.front, self.word).replace("\n", "<br>")
+        if self.cloze:
+            return _marked_html(self.front, self.back, lambda found: "[...]")
         return _plain_html(self.front)
 
     @property
     def back_html(self) -> str:
+        if self.cloze:
+            return _marked_html(self.front, self.back, lambda found: "<b>" + found + "</b>")
         return _plain_html(self.back)
+
+    @property
+    def note(self) -> Note:
+        """The card as Download and Send to Anki write it."""
+        if self.cloze:
+            return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), ""), cloze=True)
+        return Note((self.front_html, self.back_html))
 
 
 def entry_card(entry: Entry) -> Flashcard:
@@ -70,6 +87,22 @@ def word_back(word: str, base: str) -> str:
 
 def _plain_html(text: str) -> str:
     return html.escape(text, quote=False).replace("\n", "<br>")
+
+
+def _term_pattern(term: str) -> re.Pattern:
+    """The term as a whole word, ignoring case: "variance" is found in "Variance" but not in "covariance"."""
+    return re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)", re.IGNORECASE)
+
+
+def _marked_html(term: str, passage: str, mark: Callable[[str], str]) -> str:
+    """The passage as HTML, with every place of the term, itself escaped, replaced by `mark(place)`."""
+    parts, position = [], 0
+    for found in _term_pattern(term).finditer(passage):
+        parts.append(_plain_html(passage[position : found.start()]))
+        parts.append(mark(_plain_html(found.group())))
+        position = found.end()
+    parts.append(_plain_html(passage[position:]))
+    return "".join(parts)
 
 
 def tidy(text: str) -> str:
@@ -183,7 +216,9 @@ class Session:
         earlier = self._earlier(DEFINITION, term.casefold())
         if earlier is not None and not anyway:
             return EARLIER, earlier
-        return ADDED, self._add(Flashcard(0, DEFINITION, term, passage, key, earlier=earlier.date if earlier else ""))
+        card = Flashcard(0, DEFINITION, term, passage, key, earlier=earlier.date if earlier else "")
+        card.cloze = card.can_cloze
+        return ADDED, self._add(card)
 
     def edit(self, card_id: int, front: str, back: str) -> Flashcard:
         card = self._card(card_id)
@@ -191,6 +226,17 @@ class Session:
         if not front or not back:
             raise Problem("A card needs a front and a back; delete the card to remove it.")
         card.front, card.back = front, back
+        card.cloze = card.cloze and card.can_cloze  # the edit may have taken the term out of the passage
+        return card
+
+    def set_cloze(self, card_id: int, cloze: bool) -> Flashcard:
+        """Make a definition card a cloze card, or a term -> passage card."""
+        card = self._card(card_id)
+        if card.kind != DEFINITION:
+            raise Problem("Only definition cards can be cloze cards.")
+        if cloze and not card.can_cloze:
+            raise Problem(f"'{card.front}' is not in the passage, so there is nothing to hide.")
+        card.cloze = cloze
         return card
 
     def delete(self, card_id: int) -> None:
@@ -212,7 +258,7 @@ class Session:
         write_notes(self._notes(), path)
         return self._remember(day, "The deck was made")
 
-    def send(self, deck: str, send_notes: Callable[[list[tuple[str, str]], str], tuple[int, int]],
+    def send(self, deck: str, send_notes: Callable[[list[Note], str], tuple[int, int]],
              day: str | None = None) -> tuple[int, int, str]:
         """Send the cards, as the preview shows them, to Anki, then add them to the memory.
 
@@ -222,10 +268,10 @@ class Session:
         added, already = send_notes(self._notes(), deck)
         return added, already, self._remember(day, "The cards are in Anki")
 
-    def _notes(self) -> list[tuple[str, str]]:
+    def _notes(self) -> list[Note]:
         if not self.cards:
             raise Problem("There are no cards yet: pick a word or mark a definition first.")
-        return [(card.front_html, card.back_html) for card in self.cards]
+        return [card.note for card in self.cards]
 
     def _remember(self, day: str | None, done: str) -> str:
         if self.memory is None:
