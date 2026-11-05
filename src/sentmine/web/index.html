@@ -49,13 +49,6 @@ try {
   nav a { color: var(--soft); text-decoration: none; padding: 2px 0; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
   nav a:hover { color: var(--ink); border-bottom-color: var(--line); }
   nav a[aria-current=page] { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
-  .modes { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .modes label { padding: 5px 14px; cursor: pointer; transition: background-color .15s; }
-  .modes label:hover { background: var(--hover); }
-  .modes input { position: absolute; opacity: 0; }
-  .modes input:checked + span { font-weight: 600; color: var(--accent); }
-  .modes label:has(input:checked) { background: var(--page); }
-  .modes label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
   #count { font-weight: 600; font-variant-numeric: tabular-nums; }
   .spacer { flex: 1; }
   .deck { display: flex; align-items: center; gap: 8px; }
@@ -92,10 +85,9 @@ try {
   #text p { margin: 0 0 1em; }
   #text.empty { color: var(--soft); font: inherit; }
   #paste-box[open] + #text.empty { display: none; }
-  body[data-mode=word] .w { cursor: pointer; border-radius: 3px; transition: background-color .15s; }
-  body[data-mode=word] .w:hover { background: var(--hover); }
-  .w.picked, body[data-mode=word] .w.picked:hover { background: var(--picked); }
-  body[data-mode=definition] #text { cursor: text; }
+  .w { cursor: pointer; border-radius: 3px; transition: background-color .15s; }
+  .w:hover { background: var(--hover); }
+  .w.picked, .w.picked:hover { background: var(--picked); }
   .card { padding: 14px 0; }
   .card + .card { border-top: 1px solid var(--line); }
   .card:last-child { padding-bottom: 0; }
@@ -125,15 +117,11 @@ try {
   }
 </style>
 </head>
-<body data-mode="word">
+<body>
 
 <header>
   <h1>sentmine</h1>
   <nav aria-label="Pages"><a href="/" aria-current="page">Read</a><a href="/cards">My cards</a></nav>
-  <div class="modes" role="radiogroup" aria-label="What a pick makes">
-    <label><input type="radio" name="mode" value="word" checked><span>Word</span></label>
-    <label><input type="radio" name="mode" value="definition"><span>Definition</span></label>
-  </div>
   <span id="count">0 cards</span>
   <span class="spacer"></span>
   <div class="deck">
@@ -163,7 +151,7 @@ try {
   <section>
     <h2>Cards</h2>
     <div id="cards"></div>
-    <div id="no-cards">No cards yet. In Word mode, click a word. In Definition mode, select a term, then drag over its definition.</div>
+    <div id="no-cards">No cards yet. Click a word for a word card. For a definition card, drag over a term, then over its definition.</div>
   </section>
 </main>
 
@@ -189,14 +177,11 @@ $("theme").addEventListener("click", () => {
 });
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawThemeButton);
 drawThemeButton();
-const HINTS = {
-  word: "Word mode: click a word to make a card from its sentence. Click it again to remove the card.",
-  definition: "Definition mode: select the term first, then drag over the text that defines it.",
-};
+const HINT = "Click a word for a card from its sentence; click it again to remove the card. " +
+  "Drag over a term, then over its definition, for a definition card.";
 
 let state = { paragraphs: [], cards: [], count_text: "0 cards" };
-let mode = "word";
-let term = null;       // Definition mode: the term chosen, while its definition is still to be marked
+let term = null;       // the term dragged over, while its definition is still to be marked
 let editing = null;    // the id of the card being edited
 let lastPick = null;   // the last word click or definition sent, so "Make it anyway" can send it again
 
@@ -212,14 +197,14 @@ function say(message, warn) {
   status.replaceChildren();
   status.classList.remove("earlier");
   status.classList.toggle("warn", Boolean(warn));
-  if (mode === "definition" && term !== null && !warn) {
+  if (term !== null && !warn) {
     status.append("Term: ", element("span", "term", term), " Now drag over its definition.");
-    const cancel = element("button", "small", "Cancel");
+    const cancel = element("button", "small", "Cancel (Esc)");
     cancel.addEventListener("click", () => { term = null; say(""); });
     status.append(cancel);
     return;
   }
-  status.textContent = message || HINTS[mode];
+  status.textContent = message || HINT;
 }
 
 function showEarlier(data) {
@@ -384,41 +369,43 @@ function draw() {
   $("no-cards").hidden = state.cards.length > 0;
 }
 
-function setMode(next) {
-  mode = next;
-  term = null;
-  document.body.dataset.mode = next;
-  window.getSelection().removeAllRanges();
-  say("");
-}
-
-for (const radio of document.querySelectorAll("input[name=mode]")) {
-  radio.addEventListener("change", () => setMode(radio.value));
-}
-
-$("text").addEventListener("click", (event) => {
-  if (mode !== "word" || !event.target.classList.contains("w")) return;
-  if (!window.getSelection().isCollapsed) return;   // the reader was selecting, not clicking
+// One handler tells a click from a drag. It listens on the document because a drag may end
+// outside the text, and on mouseup because a click handler would come after the drag's
+// selection is cleared, and so would take every drag inside one word for a click.
+document.addEventListener("mouseup", (event) => {
+  if (event.button !== 0) return;
+  const selection = window.getSelection();
+  const selected = selection.toString().trim();
+  const inText = selected && $("text").contains(selection.anchorNode);
+  if (event.detail >= 2) {   // a double- or triple-click selects a word or paragraph; its first click counted
+    if (inText) selection.removeAllRanges();
+    return;
+  }
+  if (inText) {
+    selection.removeAllRanges();
+    if (term === null) {
+      term = selected.replace(/\s+/g, " ");
+      say("");
+      return;
+    }
+    const chosen = term;
+    term = null;
+    pick("/api/definition", { term: chosen, passage: selected });
+    return;
+  }
+  if (selected || !event.target.classList.contains("w") || !$("text").contains(event.target)) return;
+  term = null;   // a click on a word drops a waiting term
   pick("/api/word", {
     sentence: Number(event.target.dataset.sentence),
     word: Number(event.target.dataset.word),
   });
 });
 
-document.addEventListener("mouseup", () => {   // on the document: a drag may end outside the text
-  if (mode !== "definition") return;
-  const selection = window.getSelection();
-  const selected = selection.toString().trim();
-  if (!selected || !$("text").contains(selection.anchorNode)) return;
-  selection.removeAllRanges();
-  if (term === null) {
-    term = selected.replace(/\s+/g, " ");
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && term !== null) {
+    term = null;
     say("");
-    return;
   }
-  const chosen = term;
-  term = null;
-  pick("/api/definition", { term: chosen, passage: selected });
 });
 
 function mayReplaceCards() {
