@@ -6,6 +6,7 @@ text of each page out of the file. The rules are in openspec/specs/document-read
 
 import re
 import statistics
+import threading
 from collections import Counter
 from pathlib import Path
 
@@ -21,6 +22,7 @@ _BROKEN_WORD = re.compile(r"[^\W\d_]-$")
 _DIGITS = re.compile(r"\d+")
 
 SOFT_HYPHEN = "\x02"  # how pypdfium2 marks a word it found broken at a line end
+PDFIUM = threading.Lock()  # pdfium must not be used by two requests at once; every use of it holds this
 
 
 class DocumentProblem(ValueError):
@@ -91,6 +93,11 @@ def clean_pages(pages: list[str]) -> str:
 
 def _pages_of(data: bytes) -> list[str]:
     """The text of each page of a PDF. pypdfium2 also opens PDFs locked with an empty password."""
+    with PDFIUM:
+        return _pages_locked(data)
+
+
+def _pages_locked(data: bytes) -> list[str]:
     try:
         document = pypdfium2.PdfDocument(data)
     except pypdfium2.PdfiumError as error:
