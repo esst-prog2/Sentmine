@@ -71,7 +71,7 @@ try {
   button.small { padding: 2px 10px; font-size: 0.875rem; }
   #status {
     min-height: 2.4em; padding: 8px 20px; color: var(--soft); border-bottom: 1px solid var(--line);
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: center; gap: 12px; background: var(--page);
   }
   #status.warn { color: var(--warn); }
   #status .term { background: var(--term); color: var(--ink); padding: 1px 6px; border-radius: 4px; }
@@ -88,6 +88,26 @@ try {
   .w { cursor: pointer; border-radius: 3px; transition: background-color .15s; }
   .w:hover { background: var(--hover); }
   .w.picked, .w.picked:hover { background: var(--picked); }
+  #text.pdf { max-width: none; }
+  .pdf-page {
+    position: relative; margin: 0 0 16px; background: #fff; border: 1px solid var(--line); border-radius: 4px;
+    container-type: size; overflow: hidden;
+  }
+  .pdf-page img { display: block; width: 100%; height: 100%; user-select: none; pointer-events: none; }
+  .pdf-page .w {
+    position: absolute; color: transparent; white-space: pre; line-height: 1; overflow: hidden;
+    font-family: system-ui, sans-serif; border-radius: 2px;
+  }
+  .pdf-page .w::selection { background: rgba(26, 95, 208, 0.35); color: transparent; }
+  .pdf-page .w:hover { background: rgba(26, 95, 208, 0.16); }
+  .pdf-page .w.picked, .pdf-page .w.picked:hover { background: rgba(255, 196, 0, 0.45); }
+  .pdf-page .page-number { position: absolute; right: 8px; bottom: 6px; font: 0.75rem system-ui, sans-serif; color: #5c6470; }
+  @media (min-width: 801px) {
+    #status { position: sticky; top: var(--header, 0px); z-index: 1; }
+    main:has(#text.pdf) { grid-template-columns: minmax(0, 1fr) minmax(0, 28rem); }
+    main > section:last-child { position: sticky; top: calc(var(--header, 0px) + var(--status, 0px) + 20px);
+      max-height: calc(100vh - var(--header, 0px) - var(--status, 0px) - 40px); overflow: auto; }
+  }
   .card { padding: 14px 0; }
   .card + .card { border-top: 1px solid var(--line); }
   .card:last-child { padding-bottom: 0; }
@@ -176,6 +196,10 @@ $("theme").addEventListener("click", () => {
   drawThemeButton();
 });
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawThemeButton);
+new ResizeObserver(() => {   // the status line and the cards stay in view under the header while the text scrolls
+  document.documentElement.style.setProperty("--header", document.querySelector("header").offsetHeight + "px");
+  document.documentElement.style.setProperty("--status", $("status").offsetHeight + "px");
+}).observe(document.body);
 drawThemeButton();
 const HINT = "Click a word for a card from its sentence; click it again to remove the card. " +
   "Drag over a term, then over its definition, for a definition card.";
@@ -184,6 +208,7 @@ let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let term = null;       // the term dragged over, while its definition is still to be marked
 let editing = null;    // the id of the card being edited
 let lastPick = null;   // the last word click or definition sent, so "Make it anyway" can send it again
+let shownPdf = null;   // the version of the PDF whose pages are drawn, so its pictures are not drawn again
 
 function element(tag, className, text) {
   const made = document.createElement(tag);
@@ -268,6 +293,12 @@ async function call(method, url, body) {
 
 function drawText() {
   const text = $("text");
+  if (state.pdf) {
+    drawPages(text);
+    return;
+  }
+  shownPdf = null;
+  text.classList.remove("pdf");
   text.replaceChildren();
   text.classList.toggle("empty", state.paragraphs.length === 0);
   if (state.paragraphs.length === 0) {
@@ -291,6 +322,128 @@ function drawText() {
     });
     text.append(p);
   }
+}
+
+// A PDF is drawn as its own pages: a picture of each page with a box over each word, made
+// when the page comes near the screen. The boxes are words like those of a pasted text.
+const pageWatcher = new IntersectionObserver((seen) => {
+  for (const entry of seen) {
+    if (entry.isIntersecting) {
+      pageWatcher.unobserve(entry.target);
+      fillPage(entry.target);
+    }
+  }
+}, { rootMargin: "1200px 0px" });
+
+function drawPages(text) {
+  if (shownPdf !== state.pdf.version) {
+    shownPdf = state.pdf.version;
+    pageWatcher.disconnect();
+    text.classList.remove("empty");
+    text.classList.add("pdf");
+    text.replaceChildren();
+    state.pdf.sizes.forEach(([width, height], number) => {
+      const page = element("div", "pdf-page");
+      page.style.aspectRatio = width + " / " + height;
+      page.dataset.page = number;
+      const picture = element("img");
+      picture.alt = "Page " + (number + 1);
+      picture.loading = "lazy";
+      picture.src = "/api/pages/" + number + ".png?v=" + shownPdf;
+      page.append(picture, element("span", "page-number", String(number + 1)));
+      text.append(page);
+      pageWatcher.observe(page);
+    });
+  }
+  markPicked();
+}
+
+async function fillPage(page) {
+  const version = shownPdf;
+  let boxes;
+  try {
+    const response = await fetch("/api/pages/" + page.dataset.page + "/words");
+    boxes = (await response.json()).boxes;
+  } catch (error) {
+    return;   // the page stays a picture; its words cannot be picked
+  }
+  if (version !== shownPdf || !boxes) return;   // another text was read meanwhile
+  for (const [sentence, word, left, top, width, height] of boxes) {
+    const box = element("span", "w", wordText(sentence, word));
+    box.dataset.sentence = sentence;
+    box.dataset.word = word;
+    box.style.cssText = "left:" + left * 100 + "%;top:" + top * 100 + "%;width:" + width * 100 + "%;height:" +
+      height * 100 + "%;font-size:" + height * 85 + "cqh";
+    page.append(box);
+  }
+  markPicked();
+}
+
+function wordText(sentence, word) {
+  for (const paragraph of state.paragraphs) {
+    for (const drawn of paragraph) {
+      if (drawn.sentence !== sentence) continue;
+      const piece = drawn.pieces.find((one) => one.word === word);
+      return piece ? piece.text : "";
+    }
+  }
+  return "";
+}
+
+function markPicked() {
+  const picked = new Set();
+  for (const paragraph of state.paragraphs) {
+    for (const drawn of paragraph) {
+      for (const piece of drawn.pieces) {
+        if (piece.picked) picked.add(drawn.sentence + ":" + piece.word);
+      }
+    }
+  }
+  for (const box of $("text").querySelectorAll(".pdf-page .w")) {
+    box.classList.toggle("picked", picked.has(box.dataset.sentence + ":" + box.dataset.word));
+  }
+}
+
+// What a drag over a PDF's pages selected, as text: the boxes hold single words and the
+// browser does not know the spaces and paragraph breaks between them, so the text is taken
+// from the words of the text, from the first box selected to the last, with the punctuation
+// right after the last.
+function selectedOnPages(selection) {
+  const range = selection.getRangeAt(0);
+  const boxes = [...$("text").querySelectorAll(".pdf-page .w")].filter((box) =>
+    range.intersectsNode(box) && !(box.contains(range.endContainer) && range.endOffset === 0 && box !== range.startContainer.parentNode));
+  if (boxes.length === 0) return "";
+  const order = (box) => [Number(box.dataset.sentence), Number(box.dataset.word)];
+  const before = (a, b) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
+  let first = order(boxes[0]), last = first;
+  for (const box of boxes) {
+    const at = order(box);
+    if (before(at, first)) first = at;
+    if (before(last, at)) last = at;
+  }
+  const paragraphs = [];
+  let inside = false, done = false;
+  for (const paragraph of state.paragraphs) {
+    const sentences = [];
+    for (const drawn of paragraph) {
+      let part = "";
+      for (const piece of drawn.pieces) {
+        if (done) {
+          if (piece.word === undefined) part += piece.text.match(/^[^\s\p{L}\p{N}]*/u)[0];   // the full stop right after the last word
+          break;
+        }
+        const at = piece.word === undefined ? null : [drawn.sentence, piece.word];
+        if (at && at[0] === first[0] && at[1] === first[1]) inside = true;
+        if (inside) part += piece.text;
+        if (at && at[0] === last[0] && at[1] === last[1]) { inside = false; done = true; }
+      }
+      if (part) sentences.push(part);
+      if (done && !inside) break;
+    }
+    if (sentences.length) paragraphs.push(sentences.join(" "));
+    if (done) break;
+  }
+  return paragraphs.join("\n\n").trim();
 }
 
 async function busy(button, label, work) {
@@ -375,7 +528,8 @@ function draw() {
 document.addEventListener("mouseup", (event) => {
   if (event.button !== 0) return;
   const selection = window.getSelection();
-  const selected = selection.toString().trim();
+  const onPages = state.pdf && selection.rangeCount > 0 && !selection.isCollapsed && $("text").contains(selection.anchorNode);
+  const selected = onPages ? selectedOnPages(selection) : selection.toString().trim();
   const inText = selected && $("text").contains(selection.anchorNode);
   if (event.detail >= 2) {   // a double- or triple-click selects a word or paragraph; its first click counted
     if (inText) selection.removeAllRanges();

@@ -19,6 +19,7 @@ from sentmine.document import MOST_BYTES, DocumentProblem, read_file
 from sentmine.history import Entry
 from sentmine.meaning import MeaningProblem, find_api_key, suggest_meaning
 from sentmine.memory import CardMemory, MemoryProblem, RememberedCard, default_memory_path
+from sentmine.pages import Pages, locate, picture
 from sentmine.reading import DUPLICATE, EARLIER, REMOVED, Flashcard, Problem, Session, entry_card
 from sentmine.words import plural
 
@@ -107,6 +108,17 @@ def create_app(
     app = Flask(__name__, static_folder=None)
     app.config["MAX_CONTENT_LENGTH"] = MOST_BYTES
     reading = session if session is not None else Session()
+    shown: dict = {"pages": None, "version": 0}  # the PDF shown as its own pages, if the text came from one
+
+    def show_pages(pages: Pages | None) -> None:
+        shown["pages"] = pages
+        shown["version"] += 1  # page pictures of an earlier PDF must not come from the browser's cache
+
+    def pages_of(number: int) -> Pages:
+        pages = shown["pages"]
+        if pages is None or not 0 <= number < len(pages.sizes):
+            raise Problem("That page is not in the PDF being read.")
+        return pages
 
     def state(message: str = "", result: str = "", earlier: Entry | None = None):
         return jsonify(
@@ -119,6 +131,10 @@ def create_app(
             earlier=_earlier_json(earlier) if earlier is not None else None,
             memory_warning=reading.memory.problem if reading.memory is not None else "",
             can_suggest=ask is not None,
+            pdf=None if shown["pages"] is None else {
+                "version": shown["version"],
+                "sizes": [[round(width, 2), round(height, 2)] for width, height in shown["pages"].sizes],
+            },
         )
 
     def answer(result: str, card: Flashcard | Entry):
@@ -185,6 +201,7 @@ def create_app(
     @app.post("/api/text")
     def load_text():
         reading.load(sent("text"))
+        show_pages(None)
         return state("Text loaded.")
 
     @app.post("/api/file")
@@ -192,9 +209,21 @@ def create_app(
         upload = request.files.get("file")
         if upload is None:
             raise Problem("No file was sent.")
-        text, message = read_file(upload.filename or "", upload.read())
+        name, data = upload.filename or "", upload.read()
+        text, message = read_file(name, data)
         reading.load(text)
+        show_pages(locate(data, reading.sentences) if name.lower().endswith(".pdf") else None)
         return state(message)
+
+    @app.get("/api/pages/<int:number>/words")
+    def page_words(number: int):
+        return jsonify(boxes=pages_of(number).boxes[number])
+
+    @app.get("/api/pages/<int:number>.png")
+    def page_picture(number: int):
+        response = Response(picture(pages_of(number), number), mimetype="image/png")
+        response.headers["Cache-Control"] = "private, max-age=3600"  # the address carries the PDF's version
+        return response
 
     @app.post("/api/word")
     def pick_word():
