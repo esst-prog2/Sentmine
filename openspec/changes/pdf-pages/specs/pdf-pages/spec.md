@@ -27,7 +27,7 @@ Each word of the text read from the PDF SHALL be found on the page where it is p
 - **THEN** its first copy in the text is found on page 1 and its second on page 2
 
 ### Requirement: Picking on the pages
-A click on a word printed on a page and a drag over printed text SHALL do what they do on a pasted text, using the word's sentence from the text: a click makes or removes a word card, and drags choose a term and its definition. A word with a card SHALL be marked on the page. A passage dragged over the pages SHALL be the text from the first word selected to the last, with its spaces, paragraph breaks and the punctuation right after the last word.
+A click on a word printed on a page and a drag over printed text SHALL do what they do on a pasted text, using the word's sentence from the text: a click makes or removes a word card, and drags choose a term and its definition. A press that moves 5 pixels or more SHALL be a drag and a press that moves less SHALL be a click. A drag SHALL run from the word nearest the press to the word nearest the pointer, so it may start in the space between words, and the words it covers SHALL be marked while it goes on. Dragging near the top or bottom of the window SHALL scroll it. A word with a card SHALL be marked on the page. A passage dragged over the pages SHALL be the text from the first word selected to the last, with its spaces, paragraph breaks and the punctuation right after the last word.
 
 #### Scenario: A click on a page
 - **WHEN** the reader clicks `Suppose` printed in `Suppose we have three cards.`
@@ -36,3 +36,11 @@ A click on a word printed on a page and a drag over printed text SHALL do what t
 #### Scenario: A definition dragged over the pages
 - **WHEN** the reader drags over `random` and then from `Suppose` to `also black` at the end of the next sentences
 - **THEN** a definition card is made for `random` whose passage starts `Suppose we have three cards.` and ends `is also black?`
+
+#### Scenario: A click that wobbles
+- **WHEN** the reader presses on `Suppose`, moves 2 pixels and lets go
+- **THEN** a word card is made for `Suppose`, as for a click
+
+#### Scenario: A drag from the margin
+- **WHEN** the reader presses in the margin left of `Suppose` and drags to the end of `cards`
+- **THEN** the five words are marked while dragging, and `Suppose we have three cards.` becomes the term

@@ -101,6 +101,7 @@ try {
   .pdf-page .w::selection { background: rgba(26, 95, 208, 0.35); color: transparent; }
   .pdf-page .w:hover { background: rgba(26, 95, 208, 0.16); }
   .pdf-page .w.picked, .pdf-page .w.picked:hover { background: rgba(255, 196, 0, 0.45); }
+  .pdf-page .w.dragged, .pdf-page .w.dragged:hover { background: rgba(26, 95, 208, 0.3); }
   .pdf-page .page-number { position: absolute; right: 8px; bottom: 6px; font: 0.75rem system-ui, sans-serif; color: #5c6470; }
   @media (min-width: 801px) {
     #status { position: sticky; top: var(--header, 0px); z-index: 1; }
@@ -404,23 +405,13 @@ function markPicked() {
   }
 }
 
-// What a drag over a PDF's pages selected, as text: the boxes hold single words and the
-// browser does not know the spaces and paragraph breaks between them, so the text is taken
-// from the words of the text, from the first box selected to the last, with the punctuation
-// right after the last.
-function selectedOnPages(selection) {
-  const range = selection.getRangeAt(0);
-  const boxes = [...$("text").querySelectorAll(".pdf-page .w")].filter((box) =>
-    range.intersectsNode(box) && !(box.contains(range.endContainer) && range.endOffset === 0 && box !== range.startContainer.parentNode));
-  if (boxes.length === 0) return "";
-  const order = (box) => [Number(box.dataset.sentence), Number(box.dataset.word)];
-  const before = (a, b) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
-  let first = order(boxes[0]), last = first;
-  for (const box of boxes) {
-    const at = order(box);
-    if (before(at, first)) first = at;
-    if (before(last, at)) last = at;
-  }
+const order = (box) => [Number(box.dataset.sentence), Number(box.dataset.word)];
+const before = (a, b) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
+
+// The text from word `first` to word `last` (each [sentence, word]), with its spaces and
+// paragraph breaks and the punctuation right after the last word. On a PDF's pages the boxes
+// hold single words, so a passage is taken from the words of the text, not from the page.
+function textBetween(first, last) {
   const paragraphs = [];
   let inside = false, done = false;
   for (const paragraph of state.paragraphs) {
@@ -444,6 +435,87 @@ function selectedOnPages(selection) {
     if (done) break;
   }
   return paragraphs.join("\n\n").trim();
+}
+
+// On a PDF's pages sentmine drags by itself instead of using the browser's selection, which
+// over small separate boxes is easily taken for a click or selects nothing in the gaps between
+// words. A press that moves DRAG_PIXELS or more is a drag; it runs from the word nearest the
+// press to the word nearest the pointer, and those words are marked while it goes on.
+const DRAG_PIXELS = 5;
+const EDGE_PIXELS = 48;   // dragging this near the top or bottom of the window scrolls it
+let pageDrag = null;      // { from, to, x, y, lastX, lastY, moved, scroller }
+
+function nearestBox(x, y) {
+  const under = document.elementFromPoint(x, y);
+  if (!under) return null;
+  if (under.matches(".pdf-page .w")) return under;
+  const page = under.closest(".pdf-page");
+  if (!page) return null;
+  let best = null, bestScore = Infinity;
+  for (const box of page.querySelectorAll(".w")) {
+    const r = box.getBoundingClientRect();
+    const dx = x < r.left ? r.left - x : x > r.right ? x - r.right : 0;
+    const dy = y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0;
+    const score = 4 * dy + dx;   // the same line counts for more than the nearest column
+    if (score < bestScore) { best = box; bestScore = score; }
+  }
+  return best;
+}
+
+function draggedWords(drag) {
+  const from = order(drag.from), to = order(drag.to);
+  return before(to, from) ? [to, from] : [from, to];
+}
+
+function followDrag() {
+  const to = nearestBox(pageDrag.lastX, pageDrag.lastY);
+  if (to) pageDrag.to = to;
+  const [first, last] = draggedWords(pageDrag);
+  for (const box of $("text").querySelectorAll(".pdf-page .w")) {
+    const at = order(box);
+    box.classList.toggle("dragged", !before(at, first) && !before(last, at));
+  }
+}
+
+function scrollWhileDragging() {
+  const top = $("status").getBoundingClientRect().bottom;
+  if (pageDrag.lastY > window.innerHeight - EDGE_PIXELS) window.scrollBy(0, 24);
+  else if (pageDrag.lastY < top + EDGE_PIXELS) window.scrollBy(0, -24);
+  else return;
+  followDrag();
+}
+
+$("text").addEventListener("mousedown", (event) => {
+  if (event.button !== 0 || event.detail >= 2 || !state.pdf) return;
+  const from = nearestBox(event.clientX, event.clientY);
+  if (!from) return;
+  event.preventDefault();   // no browser selection: sentmine marks the words itself
+  pageDrag = { from, to: from, x: event.clientX, y: event.clientY, lastX: event.clientX, lastY: event.clientY, moved: false, scroller: null };
+});
+
+document.addEventListener("mousemove", (event) => {
+  if (!pageDrag) return;
+  pageDrag.lastX = event.clientX;
+  pageDrag.lastY = event.clientY;
+  if (!pageDrag.moved) {
+    if (Math.hypot(event.clientX - pageDrag.x, event.clientY - pageDrag.y) < DRAG_PIXELS) return;
+    pageDrag.moved = true;
+    pageDrag.scroller = setInterval(scrollWhileDragging, 40);
+  }
+  followDrag();
+});
+
+function endPageDrag(event) {
+  const drag = pageDrag;
+  pageDrag = null;
+  clearInterval(drag.scroller);
+  for (const box of $("text").querySelectorAll(".pdf-page .w.dragged")) box.classList.remove("dragged");
+  if (drag.moved) {
+    const [first, last] = draggedWords(drag);
+    chose(textBetween(first, last));
+  } else if (event.target === drag.from) {
+    pickWord(drag.from);   // a press and release on a word without moving: a click
+  }
 }
 
 async function busy(button, label, work) {
@@ -527,9 +599,12 @@ function draw() {
 // selection is cleared, and so would take every drag inside one word for a click.
 document.addEventListener("mouseup", (event) => {
   if (event.button !== 0) return;
+  if (pageDrag) {
+    endPageDrag(event);
+    return;
+  }
   const selection = window.getSelection();
-  const onPages = state.pdf && selection.rangeCount > 0 && !selection.isCollapsed && $("text").contains(selection.anchorNode);
-  const selected = onPages ? selectedOnPages(selection) : selection.toString().trim();
+  const selected = selection.toString().trim();
   const inText = selected && $("text").contains(selection.anchorNode);
   if (event.detail >= 2) {   // a double- or triple-click selects a word or paragraph; its first click counted
     if (inText) selection.removeAllRanges();
@@ -537,23 +612,29 @@ document.addEventListener("mouseup", (event) => {
   }
   if (inText) {
     selection.removeAllRanges();
-    if (term === null) {
-      term = selected.replace(/\s+/g, " ");
-      say("");
-      return;
-    }
-    const chosen = term;
-    term = null;
-    pick("/api/definition", { term: chosen, passage: selected });
+    chose(selected);
     return;
   }
   if (selected || !event.target.classList.contains("w") || !$("text").contains(event.target)) return;
-  term = null;   // a click on a word drops a waiting term
-  pick("/api/word", {
-    sentence: Number(event.target.dataset.sentence),
-    word: Number(event.target.dataset.word),
-  });
+  pickWord(event.target);
 });
+
+function chose(selected) {   // a drag: the term, or the definition of the waiting term
+  if (!selected) return;
+  if (term === null) {
+    term = selected.replace(/\s+/g, " ");
+    say("");
+    return;
+  }
+  const chosen = term;
+  term = null;
+  pick("/api/definition", { term: chosen, passage: selected });
+}
+
+function pickWord(box) {
+  term = null;   // a click on a word drops a waiting term
+  pick("/api/word", { sentence: Number(box.dataset.sentence), word: Number(box.dataset.word) });
+}
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && term !== null) {

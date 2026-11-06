@@ -18,7 +18,7 @@ A first, greedy version that searched forward for each word lost its place in ta
 
 **A word on two lines has two boxes** with the same sentence and word number, so either half can be clicked.
 
-**A drag over boxes is read from the words, not from the browser.** The boxes are separate, so the browser's selection text has no spaces or paragraph breaks. The page takes the first and last word box selected and rebuilds the passage from the words of the text between them, with the punctuation right after the last word.
+**sentmine drags on the pages itself, and reads the passage from the words.** A first version used the browser's selection over the boxes. Trying it, the reader found dragging hard: a small wobble on a word counted as a click, and a drag that started in a gap between words selected nothing. Now a press on a page that moves 5 pixels or more is a drag from the word nearest the press to the word nearest the pointer (the same line weighs four times the column, so the margin beside a line picks that line's word); the words covered are marked as it goes; holding near the top or bottom of the window scrolls it, so a passage can run onto the next page. The passage is rebuilt from the words of the text between the first and last word, with its spaces, paragraph breaks and the punctuation after the last word, because separate boxes carry no spaces. Pasted text keeps the browser's selection, which works there.
 
 **Pages and boxes are made when they come near the screen.** Pictures use `loading="lazy"`; the boxes of a page are fetched when it is within 1200 px of the screen. Pages are drawn once per PDF; later answers only update which words are picked.
 
