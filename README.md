@@ -1,42 +1,69 @@
 # sentmine
 
-A small reading app that runs on my own computer. I paste a text I am
-reading and turn parts of it into Anki flashcards as I go: a new word
-inside its real sentence, or a term with its definition.
+A small reading app that runs on my own computer. I open a PDF or paste a
+text I am reading and turn parts of it into Anki flashcards as I go: a new
+word inside its real sentence, or a term with the passage that defines it.
 
 ## 1. The demo
 
 I type `sentmine` in a terminal and the reading page opens in my browser.
-I paste a paragraph from this week's statistics notes:
+I open the solution manual of our course book, *Causal Inference in
+Statistics: A Primer* (a 75-page PDF; it is copyrighted, so it stays on my
+computer and is not in this repository). The status line says
+`Read 75 pages. 2 had no text.` and the left panel shows the real pages,
+with their formulas and tables as printed. The cards panel stays on the
+right while I scroll.
+
+On page 13 I do not know the word `simultaneously`, so I click it. It
+turns yellow on the page and a card appears:
 
 ```
-The standard deviation measures how spread out a set of values is.
-It is the square root of the variance. Outliers can skew it
-considerably.
+front:  Two fair coins are flipped simultaneously to determine the
+        payoffs of two players in the town’s casino.
+        (simultaneously in bold)
+back:   simultaneously
 ```
 
-The text appears as a page I can read. I need to learn the term, so I
-switch to Definition, select `standard deviation`, and drag over the
-first two sentences. A card appears in the preview on the right:
+I press **Suggest meaning** on the card. The small model `gpt-5-nano` gets
+the word and its sentence, and the back becomes:
 
 ```
-front:  standard deviation
-back:   The standard deviation measures how spread out a set of values
-        is. It is the square root of the variance.
+back:   simultaneously
+        At the same time; the two coin flips occur together, not one
+        after the other.
 ```
 
-I do not know the English word `skew`, so I switch to Word and click it.
-It turns yellow and a second card appears:
+On page 5 I want to remember a term. I drag over `Simpson’s reversal`;
+the words turn blue as I drag, and the status line says
+`Term: Simpson’s reversal Now drag over its definition.` I drag over the
+sentence that explains it. Because the term is inside that sentence,
+sentmine makes a cloze card, which hides the term:
 
 ```
-front:  Outliers can skew it considerably.   (skew in bold)
-back:   skew
+front:  Strangely, the experimental data revealed a [...]: Although the
+        drug proved beneficial to the population as a whole, drug takers
+        were less likely to recover than nontakers, among both lollipop
+        receivers and lollipop nonreceivers.
+back:   the same sentence, with Simpson’s reversal in bold
 ```
 
-The header says `2 cards`. In the preview I shorten the back of the first
-card. I click `skew` again by mistake and its card disappears, so I click
-it once more. Then I press Download and get `new.apkg` with two cards. I
-import it into Anki and both are there, in the words of the text I read.
+The button **Make it term → passage** would turn it into a card with the
+term on the front instead; I keep the cloze.
+
+I name the deck `causal` and press **Send to Anki**. Anki is open with
+the AnkiConnect add-on, so the cards go straight in, and the status line
+says `Sent to the deck 'causal' in Anki: 2 cards added. Now in My cards
+too.` (When Anki is closed, **Download** gives me `causal.apkg` to import
+instead. Measured on ten cards: download and import took me 30 seconds,
+Send to Anki 5.)
+
+A week later, in Study question 1.5.2, I meet `simultaneously` again and
+click it. No new card is made. The page shows my earlier card with its
+date, `'simultaneously' already has a card from 2026-11-07.`, and asks
+whether to **Skip** or **Make it anyway**. I skip; I learn it once.
+
+The **My cards** page lists every card I have sent or downloaded, newest
+first, with the day I made it, and I can search them.
 
 Why this replaced the first design: the earlier version guessed my new
 words from a list of words I know. I measured it on a real Guardian
