@@ -88,7 +88,7 @@ try {
   .w { cursor: pointer; border-radius: 3px; transition: background-color .15s; }
   .w:hover { background: var(--hover); }
   .w.picked, .w.picked:hover { background: var(--picked); }
-  .w.known { text-decoration: underline dotted var(--accent) 2px; text-underline-offset: 4px; }
+  .w.known { text-decoration: underline solid var(--accent) 2px; text-underline-offset: 4px; }
   #text.pdf { max-width: none; }
   .pdf-page {
     position: relative; margin: 0 0 16px; background: #fff; border: 1px solid var(--line); border-radius: 4px;
@@ -103,7 +103,19 @@ try {
   .pdf-page .w:hover { background: rgba(26, 95, 208, 0.16); }
   .pdf-page .w.picked, .pdf-page .w.picked:hover { background: rgba(255, 196, 0, 0.45); }
   .pdf-page .w.dragged, .pdf-page .w.dragged:hover { background: rgba(26, 95, 208, 0.3); }
-  .pdf-page .w.known { text-decoration: none; border-bottom: 2px dotted rgba(26, 95, 208, 0.85); }
+  #text .w.dragged { background: var(--selection); }
+  /* the keyboard: one stop on the text, then the arrow keys from word to word */
+  #text:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  #text .w:focus { outline: none; }
+  #text .w:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* A word you already have a card for: a strong blue line, a dot in the margin on its line, and a count
+     at the page's corner, so cards coming back are seen while scrolling. The page stays white in dark mode,
+     so these keep their light colours. */
+  .pdf-page .w.known { text-decoration: none; border-bottom: 2.5px solid rgba(26, 95, 208, 0.95); }
+  .pdf-page .known-dot { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #1a5fd0;
+    transform: translate(-50%, -50%); pointer-events: none; }
+  .pdf-page .known-count { position: absolute; top: 8px; right: 10px; font: 600 0.75rem system-ui, sans-serif;
+    color: #1a5fd0; background: #eef3fc; border: 1px solid #c8dafc; border-radius: 999px; padding: 2px 9px; }
   #known-card {
     position: fixed; z-index: 3; max-width: 26rem; padding: 10px 12px; pointer-events: none;
     background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px;
@@ -155,6 +167,20 @@ try {
   body.clip nav, body.clip #paste-box, body.clip .spacer { display: none; }
   body.clip main { grid-template-columns: 1fr; }
   .clip + .clip { border-top: 1px solid var(--line); padding-top: 14px; }
+  /* In the side panel the header is one slim row; the deck name, Download and Send to Anki sit in a bar at the
+     bottom, where the reader ends up after making cards. The theme follows the app's own choice. */
+  .mycards { display: none; color: var(--soft); font-size: 0.875rem; text-decoration: none; white-space: nowrap; }
+  .mycards:hover { color: var(--accent); }
+  body.clip .mycards { display: inline; margin-left: auto; }
+  body.clip #theme { display: none; }
+  body.clip header { flex-wrap: nowrap; }
+  body.clip #status { position: sticky; top: var(--header, 0px); z-index: 1; }
+  body.clip header .deck { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; width: auto; display: flex; flex-wrap: nowrap;
+    gap: 8px; padding: 10px 16px; background: var(--panel); border-top: 1px solid var(--line); box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.06); }
+  body.clip header .deck label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  body.clip #deck-name { flex: 1 1 auto; min-width: 0; }
+  body.clip #download, body.clip #send { white-space: nowrap; }
+  body.clip main { padding-bottom: 84px; }
   .clip-head { display: flex; justify-content: space-between; align-items: center; gap: 8px;
     font: 0.8125rem system-ui, sans-serif; color: var(--soft); margin-bottom: 4px; }
   body > header { view-transition-name: app-header; }
@@ -166,10 +192,11 @@ try {
   <h1>sentmine</h1>
   <nav aria-label="Pages"><a href="/" aria-current="page">Read</a><a href="/cards">My cards</a></nav>
   <span id="count">0 cards</span>
+  <a class="mycards" href="/cards" target="_blank" rel="noopener">My cards ↗</a>
   <span class="spacer"></span>
   <div class="deck">
     <label for="deck-name">Deck name</label>
-    <input type="text" id="deck-name" value="new">
+    <input type="text" id="deck-name" value="new" placeholder="Deck name">
     <button id="download">Download</button>
     <button class="main" id="send">Send to Anki</button>
   </div>
@@ -189,7 +216,7 @@ try {
         <input type="file" id="file" accept=".pdf,.txt">
       </label>
     </details>
-    <div id="text" class="empty">No text yet.</div>
+    <div id="text" class="empty" tabindex="0" aria-label="The text. Arrow keys move from word to word; Enter makes a card from the word; Shift and the arrow keys mark a term or a definition, then Enter.">No text yet.</div>
   </section>
 
   <section>
@@ -231,9 +258,9 @@ const CLIP = location.pathname.startsWith("/clip");
 const API = CLIP ? "/clip/api" : "/api";
 if (CLIP) document.body.classList.add("clip");
 const HINT = CLIP
-  ? "Select text on a web page and right-click: Word card from this sentence, or Definition card from this."
-  : "Click a word for a card from its sentence; click it again to remove the card. " +
-    "Drag over a term, then over its definition, for a definition card.";
+  ? "Select text on a page, right-click it, and choose a card."
+  : "Click a word for a card; click again to remove it. Drag over a term, then its definition, " +
+    "for a definition card. A blue line: you already have a card (point at it).";
 
 let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let term = null;       // the term dragged over, while its definition is still to be marked
@@ -458,6 +485,28 @@ function markPicked() {   // picked words, and words that already have cards, on
     if (known.has(place)) box.dataset.known = known.get(place);
     else delete box.dataset.known;
   }
+  for (const page of $("text").querySelectorAll(".pdf-page")) markKnownLines(page);
+}
+
+// On a PDF page: a dot in the margin beside each line with a word you have a card for, and their count.
+function markKnownLines(page) {
+  page.querySelectorAll(".known-dot, .known-count").forEach((mark) => mark.remove());
+  const known = [...page.querySelectorAll(".w.known")];
+  if (known.length === 0) return;
+  const textLeft = Math.min(...[...page.querySelectorAll(".w")].map((box) => parseFloat(box.style.left)));
+  const lines = new Set();
+  for (const box of known) {
+    const middle = Math.round(parseFloat(box.style.top) + parseFloat(box.style.height) / 2);
+    if (lines.has(middle)) continue;
+    lines.add(middle);
+    const dot = element("span", "known-dot");
+    dot.setAttribute("aria-hidden", "true");
+    dot.style.top = middle + "%";
+    dot.style.left = Math.max(textLeft - 2.2, 1) + "%";
+    page.append(dot);
+  }
+  page.append(element("span", "known-count",
+    known.length === 1 ? "1 word you have a card for" : known.length + " words you have cards for"));
 }
 
 // Pointing at a word that already has a card shows that card under the word.
@@ -672,7 +721,12 @@ function drawCard(card) {
 }
 
 function draw() {
+  const hadKeys = keyPlace !== null && $("text").contains(document.activeElement);
   drawText();
+  if (hadKeys) {   // pasted text is drawn again after each card: keep the keyboard on its word
+    const again = wordAt(keyPlace);
+    if (again) focusWord(again, false);
+  }
   $("count").textContent = state.count_text;
   $("cards").replaceChildren(...state.cards.map(drawCard));
   $("no-cards").hidden = state.cards.length > 0;
@@ -740,6 +794,92 @@ document.addEventListener("keydown", (event) => {
     term = null;
     say("");
   }
+});
+
+// The keyboard way to make cards: Tab into the text, the arrow keys move from word to word, Enter makes a
+// card from the word (and again removes it); Shift and the arrow keys mark words, as a drag does, and Enter
+// uses them as the term or its definition. A word you already have a card for shows that card.
+let keyPlace = null;   // "sentence:word" of the word the keyboard is on
+let keyAnchor = null;  // where a Shift-marking started
+
+const placeOf = (word) => word.dataset.sentence + ":" + word.dataset.word;
+const textWords = () => [...$("text").querySelectorAll(".w")];
+const wordAt = (place) => place && textWords().find((word) => placeOf(word) === place);
+
+function focusWord(word, scroll = true) {
+  word.tabIndex = -1;
+  word.focus({ preventScroll: true });
+  if (scroll) word.scrollIntoView({ block: "nearest" });
+  keyPlace = placeOf(word);
+  $("known-card").hidden = true;
+  if (word.classList.contains("known")) {
+    word.setAttribute("aria-describedby", "known-card");
+    requestAnimationFrame(() => requestAnimationFrame(() => {   // after the scroll, which hides the card
+      if (document.activeElement === word) showKnownCard(word);
+    }));
+  }
+}
+
+function firstWordInView() {
+  const top = textTop();
+  return textWords().find((word) => {
+    const r = word.getBoundingClientRect();
+    return r.height > 0 && r.top >= top && r.bottom <= window.innerHeight;
+  });
+}
+
+function marked() {
+  return textWords().filter((word) => word.classList.contains("dragged"));
+}
+
+function clearMarks() {
+  for (const word of marked()) word.classList.remove("dragged");
+  keyAnchor = null;
+}
+
+$("text").addEventListener("focus", (event) => {
+  // only when the keyboard arrives: a click beside the words must not move anything during a drag
+  if (event.target !== $("text") || !$("text").matches(":focus-visible")) return;
+  const word = wordAt(keyPlace) || firstWordInView() || textWords()[0];
+  if (word) focusWord(word);
+});
+
+$("text").addEventListener("focusout", (event) => {
+  if (event.target.classList && event.target.classList.contains("known")) $("known-card").hidden = true;
+});
+
+$("text").addEventListener("keydown", (event) => {
+  const words = textWords();
+  const at = words.indexOf(document.activeElement);
+  if (at < 0) return;
+  if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+    event.preventDefault();
+    const to = Math.max(0, Math.min(words.length - 1, at + (event.key === "ArrowRight" ? 1 : -1)));
+    if (event.shiftKey) {
+      if (keyAnchor === null) keyAnchor = at;
+      const [from, until] = [Math.min(keyAnchor, to), Math.max(keyAnchor, to)];
+      words.forEach((word, index) => word.classList.toggle("dragged", index >= from && index <= until));
+    } else {
+      clearMarks();
+    }
+    focusWord(words[to]);
+    return;
+  }
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    const range = marked();
+    if (range.length === 0) {
+      pickWord(words[at]);
+      return;
+    }
+    const selected = range.map((word) => word.textContent).join(" ");
+    const clipped = CLIP && term === null ? definitionClipOf(range[0]) : null;
+    clearMarks();
+    if (clipped) pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
+    else chose(selected);
+    return;
+  }
+  if (event.key === "Escape" && marked().length > 0) clearMarks();
 });
 
 function mayReplaceCards() {
