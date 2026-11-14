@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-14T00:00:00Z",
+  "title": "Design System: sentmine promo page",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#f6f5f1", "tonalRamp": ["#26251f", "#3e3c35", "#5a5850", "#7a776e", "#a09d93", "#c7c4ba", "#e4e2db", "#f6f5f1"] },
+      "panel": { "role": "neutral", "displayName": "Panel White", "canonical": "#ffffff", "tonalRamp": ["#262626", "#3d3d3d", "#595959", "#7a7a7a", "#a1a1a1", "#c7c7c7", "#e6e6e6", "#ffffff"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#1f2328", "tonalRamp": ["#1f2328", "#363b42", "#50565e", "#6f757e", "#9298a0", "#b6bac0", "#d8dbdf", "#f1f2f4"] },
+      "soft-ink": { "role": "neutral", "displayName": "Soft Ink", "canonical": "#5c6470", "tonalRamp": ["#1d2026", "#323741", "#4a515c", "#5c6470", "#848b96", "#aab0b9", "#d0d4da", "#eef0f3"] },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#d9d6cd", "tonalRamp": ["#28261f", "#403d34", "#5d5a4f", "#7e7a6e", "#a4a094", "#c3bfb4", "#d9d6cd", "#f1efea"] },
+      "hover-wash": { "role": "neutral", "displayName": "Hover Wash", "canonical": "#ecebe5", "tonalRamp": ["#27261f", "#3f3e36", "#5b5a51", "#7c7a71", "#a2a097", "#c8c6be", "#ecebe5", "#f8f8f5"] },
+      "action-blue": { "role": "primary", "displayName": "Action Blue", "canonical": "#1a5fd0", "tonalRamp": ["#0b1f45", "#10306b", "#154fae", "#1a5fd0", "#4f86e0", "#86abec", "#c8dafc", "#eef3fe"] },
+      "action-blue-deep": { "role": "primary", "displayName": "Action Blue Deep", "canonical": "#154fae", "tonalRamp": ["#0b1f45", "#10306b", "#154fae", "#1a5fd0", "#4f86e0", "#86abec", "#c8dafc", "#eef3fe"] },
+      "on-accent": { "role": "neutral", "displayName": "On Accent White", "canonical": "#ffffff" },
+      "picked-yellow": { "role": "secondary", "displayName": "Picked Yellow", "canonical": "#ffe27a", "tonalRamp": ["#3d300a", "#5e4b10", "#7a6410", "#a88a1a", "#d4b234", "#ffe27a", "#fff0b8", "#fff8d6"] },
+      "selection-blue": { "role": "neutral", "displayName": "Selection Blue", "canonical": "#c8dafc", "tonalRamp": ["#0b1f45", "#10306b", "#154fae", "#1a5fd0", "#4f86e0", "#86abec", "#c8dafc", "#eef3fe"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The opening headline only; 44px at 1440 wide, 28px at 390." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings." },
+      "title": { "displayName": "Title", "purpose": "Step headings." },
+      "body": { "displayName": "Body", "purpose": "All prose, measure 60-68ch." },
+      "lede": { "displayName": "Lede", "purpose": "Soft-ink paragraph under a section heading." },
+      "label": { "displayName": "Label", "purpose": "Card metadata, deck state, fact sources." },
+      "caption": { "displayName": "Caption", "purpose": "Image and sentence captions naming the book." },
+      "book-display": { "displayName": "Book Display", "purpose": "The retyped study question, Georgia italic, every word clickable; 1.45rem below 640px." },
+      "book-line": { "displayName": "Book Line", "purpose": "A quoted sentence from the book inside a panel, Georgia italic." },
+      "code": { "displayName": "Code", "purpose": "Install commands; inline code at 0.9em." }
+    },
+    "shadows": [
+      { "name": "popover", "value": "0 10px 28px rgba(31, 35, 40, 0.16), 0 1px 3px rgba(31, 35, 40, 0.14)", "purpose": "The known-card popover that floats under a word you already have a card for." },
+      { "name": "popover-pointer", "value": "-1px -1px 1px rgba(31, 35, 40, 0.08)", "purpose": "The rotated-square pointer on the popover." },
+      { "name": "screenshot-frame", "value": "0 2px 10px rgba(31, 35, 40, 0.06)", "purpose": "Faint lift on step screenshots so a picture of a screen reads as a picture." }
+    ],
+    "motion": [
+      { "name": "settle", "value": ".5s cubic-bezier(.16, 1, .3, 1); background #fff8d6 to transparent", "purpose": "The one animation: marks the deck card that just changed." },
+      { "name": "hover-color", "value": "background-color .15s, border-color .15s", "purpose": "Buttons and clickable words on hover." },
+      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce disables all animations, transitions and smooth scrolling", "purpose": "Accessibility." }
+    ],
+    "breakpoints": [
+      { "name": "narrow", "value": "900px", "purpose": "Two-column grids stack; deck not sticky and shows step 5; facts rows stack." },
+      { "name": "phone", "value": "640px", "purpose": "Header drops section nav and GitHub; sentence frame 20px 18px; book display 1.45rem." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Default action (GitHub, Copy): paper fill, hairline border.",
+      "html": "<a class=\"ds-button\" href=\"#\">GitHub</a>",
+      "css": ".ds-button { display: inline-block; font: 500 0.95rem system-ui, 'Segoe UI', -apple-system, sans-serif; color: #1f2328; background: #f6f5f1; text-decoration: none; border: 1px solid #d9d6cd; border-radius: 6px; padding: 7px 14px; transition: background-color .15s, border-color .15s; } .ds-button:hover { background: #ecebe5; border-color: #5c6470; } .ds-button:focus-visible { outline: 2px solid #1a5fd0; outline-offset: 3px; }"
+    },
+    {
+      "name": "Main Button",
+      "kind": "button",
+      "refersTo": "button-main",
+      "description": "The one primary action: Install.",
+      "html": "<a class=\"ds-button-main\" href=\"#\">Install</a>",
+      "css": ".ds-button-main { display: inline-block; font: 600 0.95rem system-ui, 'Segoe UI', -apple-system, sans-serif; color: #ffffff; background: #1a5fd0; text-decoration: none; border: 1px solid #1a5fd0; border-radius: 6px; padding: 7px 14px; transition: background-color .15s, border-color .15s; } .ds-button-main:hover { background: #154fae; border-color: #154fae; } .ds-button-main:focus-visible { outline: 2px solid #1a5fd0; outline-offset: 3px; }"
+    },
+    {
+      "name": "App Header",
+      "kind": "nav",
+      "refersTo": "app-header",
+      "description": "sentmine's own header: brand, section links, GitHub and Install.",
+      "html": "<header class=\"ds-bar\"><a class=\"ds-brand\" href=\"#\">sentmine</a><nav class=\"ds-nav\"><a href=\"#\">How it works</a><a href=\"#\">Comes back</a><a href=\"#\">Try it</a></nav><span style=\"flex:1\"></span><a class=\"ds-bar-btn\" href=\"#\">GitHub</a><a class=\"ds-bar-btn ds-main\" href=\"#\">Install</a></header>",
+      "css": ".ds-bar { display: flex; align-items: center; gap: 12px 24px; padding: 12px 24px; background: #ffffff; border-bottom: 1px solid #d9d6cd; font: 17px/1.6 system-ui, 'Segoe UI', -apple-system, sans-serif; } .ds-brand { font-weight: 700; font-size: 1.15rem; color: #1f2328; text-decoration: none; } .ds-nav { display: flex; gap: 20px; } .ds-nav a { color: #5c6470; text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; } .ds-nav a:hover { color: #1f2328; border-bottom-color: #d9d6cd; } .ds-bar-btn { font: 500 0.95rem system-ui, sans-serif; color: #1f2328; background: #f6f5f1; text-decoration: none; border: 1px solid #d9d6cd; border-radius: 6px; padding: 7px 14px; } .ds-bar-btn:hover { background: #ecebe5; border-color: #5c6470; } .ds-bar-btn.ds-main { background: #1a5fd0; border-color: #1a5fd0; color: #fff; font-weight: 600; } .ds-bar-btn.ds-main:hover { background: #154fae; border-color: #154fae; }"
+    },
+    {
+      "name": "Clickable Sentence",
+      "kind": "custom",
+      "refersTo": "page-line",
+      "description": "Signature: a book sentence retyped in Georgia italic, every word a pressable button, the picked one yellow.",
+      "html": "<figure class=\"ds-page-line\"><p class=\"ds-question\">Study question 1.3.7.</p><p class=\"ds-picks\"><button class=\"ds-pick\" aria-pressed=\"false\">Two</button> <button class=\"ds-pick\" aria-pressed=\"false\">fair</button> <button class=\"ds-pick\" aria-pressed=\"false\">coins</button> <button class=\"ds-pick\" aria-pressed=\"true\">simultaneously</button></p></figure>",
+      "css": ".ds-page-line { background: #ffffff; border: 1px solid #d9d6cd; border-radius: 6px; padding: 24px 32px; margin: 0; color: #1f2328; } .ds-question { font: 700 1.1rem Georgia, 'Times New Roman', serif; color: #5c6470; margin: 0 0 10px; } .ds-picks { font: italic 2.2rem/1.3 Georgia, 'Times New Roman', serif; letter-spacing: -0.01em; margin: 0; } .ds-pick { font: inherit; color: inherit; background: none; border: 0; padding: 0 .06em; cursor: pointer; border-radius: 3px; transition: background-color .15s; } .ds-pick:hover { background: #ecebe5; } .ds-pick[aria-pressed='true'] { background: #ffe27a; } .ds-pick:focus-visible { outline: 2px solid #1a5fd0; outline-offset: 1px; }"
+    },
+    {
+      "name": "Card Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "A flat white panel holding one card: front, dashed hairline, back, metadata.",
+      "html": "<aside class=\"ds-panel\"><p class=\"ds-panel-title\">Cards</p><div class=\"ds-front\">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs.</div><div class=\"ds-back\">simultaneously<br>Two things happening at the same time.</div><div class=\"ds-meta\">Word card</div></aside>",
+      "css": ".ds-panel { background: #ffffff; border: 1px solid #d9d6cd; border-radius: 10px; padding: 18px 22px; color: #1f2328; font: 17px/1.6 system-ui, 'Segoe UI', -apple-system, sans-serif; } .ds-panel-title { font-weight: 700; margin: 0 0 12px; } .ds-front { padding-bottom: 10px; border-bottom: 1px dashed #d9d6cd; } .ds-back { padding-top: 10px; } .ds-meta { margin-top: 12px; font-size: 0.85rem; color: #5c6470; }"
+    },
+    {
+      "name": "Known Word with Popover",
+      "kind": "custom",
+      "refersTo": "known-card",
+      "description": "A word you already have a card for: dotted blue underline, and the app's hover card floating under it.",
+      "html": "<div class=\"ds-return\"><p class=\"ds-return-line\">… which <span class=\"ds-known\">simultaneously</span> makes it uncomfortable</p><div class=\"ds-known-card\"><p class=\"ds-made\">Your card from 2026-11-14</p><p>Two fair coins are flipped <b>simultaneously</b>.</p></div></div>",
+      "css": ".ds-return { font: 17px/1.6 system-ui, 'Segoe UI', -apple-system, sans-serif; color: #1f2328; background: #ffffff; padding: 18px 22px; } .ds-return-line { font: italic 1.15rem/1.6 Georgia, 'Times New Roman', serif; margin: 0 0 14px; } .ds-known { text-decoration: underline dotted #1a5fd0 2px; text-underline-offset: 4px; } .ds-known-card { position: relative; background: #ffffff; border-radius: 8px; padding: 10px 14px; box-shadow: 0 10px 28px rgba(31,35,40,0.16), 0 1px 3px rgba(31,35,40,0.14); } .ds-known-card::before { content: ''; position: absolute; top: -6px; left: 40%; width: 12px; height: 12px; background: #ffffff; transform: rotate(45deg); box-shadow: -1px -1px 1px rgba(31,35,40,0.08); } .ds-known-card p { margin: 0; } .ds-made { font-size: 0.8rem; color: #5c6470; margin-bottom: 4px; }"
+    },
+    {
+      "name": "Step Shot",
+      "kind": "custom",
+      "refersTo": "step-shot",
+      "description": "A cropped real screenshot in a white frame with a faint lift, linking to the full screenshot.",
+      "html": "<div class=\"ds-shot\"><a href=\"#\"><div style=\"width:320px;height:120px;background:#f6f5f1\"></div></a></div>",
+      "css": ".ds-shot { width: fit-content; max-width: 100%; background: #ffffff; border: 1px solid #d9d6cd; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(31,35,40,0.06); } .ds-shot a { display: block; cursor: zoom-in; } .ds-shot a:focus-visible { outline: 2px solid #1a5fd0; outline-offset: 3px; }"
+    },
+    {
+      "name": "Install Block",
+      "kind": "custom",
+      "refersTo": "code-block",
+      "description": "Dark header with system name and Copy over the commands in an ink code block.",
+      "html": "<div class=\"ds-install\"><div class=\"ds-install-head\"><span>Windows</span><button class=\"ds-copy\">Copy</button></div><pre class=\"ds-pre\"><code>git clone https://github.com/esst-prog2/Sentmine\ncd Sentmine\npip install .\nsentmine</code></pre></div>",
+      "css": ".ds-install { font: 17px/1.6 system-ui, 'Segoe UI', -apple-system, sans-serif; } .ds-install-head { display: flex; justify-content: space-between; align-items: center; background: #2b3036; color: #f6f5f1; padding: 6px 8px 6px 16px; border-radius: 8px 8px 0 0; font-size: 0.9rem; } .ds-copy { font: 500 0.85rem system-ui, sans-serif; color: #1f2328; background: #f6f5f1; border: 1px solid #d9d6cd; border-radius: 6px; padding: 2px 12px; cursor: pointer; transition: background-color .15s, border-color .15s; } .ds-copy:hover { background: #ecebe5; border-color: #5c6470; } .ds-copy:focus-visible { outline: 2px solid #1a5fd0; outline-offset: 3px; } .ds-pre { font: 0.875rem/1.7 ui-monospace, Consolas, 'Cascadia Mono', monospace; background: #1f2328; color: #f6f5f1; padding: 16px 18px; margin: 0; border-radius: 0 0 8px 8px; overflow-x: auto; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Page Is the Reader",
+    "overview": "The promo page wears sentmine's working interface instead of a marketing skin: a white app header with a hairline under it, paper-coloured ground, white panels with warm grey hairlines, one blue for actions, one yellow for the picked word, and a dotted blue underline for a word that comes back. Interface text is the system UI face; anything that comes from the book is Georgia, usually italic. The visitor meets the product's own objects (a clickable sentence, a card, the card returning on a later page) before any claim.\n\nDensity is calm and document-like: single column of prose at 60 to 72ch, generous section padding, two-column splits only where two objects belong side by side (sentence card and its return; steps and their deck). Nothing is decorative: every image is a real screenshot, every number links to its source, and the one animation marks a card that just changed.",
+    "keyCharacteristics": [
+      "The app's own tokens, unchanged: paper, white panel, hairline, ink, soft ink, action blue, picked yellow.",
+      "Two voices of type: system UI for interface, Georgia for the book.",
+      "Flat panels with hairline borders; shadow only on things that float or are pictures of a screen.",
+      "One continuous object (a card) carried through the page, never a row of feature tiles.",
+      "Real rasters only, each with provenance."
+    ],
+    "rules": [
+      { "name": "The Borrowed Palette Rule", "body": "The page uses the app's colour tokens with the app's names and values. A new colour enters the page only if it first exists in the app.", "section": "colors" },
+      { "name": "The Yellow Means Picked Rule", "body": "Picked Yellow marks exactly one thing: the word currently chosen to become a card. Never a callout, badge or emphasis fill.", "section": "colors" },
+      { "name": "The Dotted Return Rule", "body": "A 2px dotted Action Blue underline, offset 4px, means \"you already have a card for this word\" and nothing else.", "section": "colors" },
+      { "name": "The Two Voices Rule", "body": "System UI is the page and the app talking; Georgia is the book. Never set interface copy in Georgia or book text in the system face.", "section": "typography" },
+      { "name": "The No Webfont Rule", "body": "No downloaded fonts: the page loads in the faces already on the reader's computer, as the app does.", "section": "typography" },
+      { "name": "The Only Floating Things Rule", "body": "A shadow means the element floats over the page (the popover) or is a photograph of a screen (the step shots). Panels, cards and buttons stay flat.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do take every colour, radius and border from the app's tokens; check src/sentmine/web/index.html before adding one.",
+      "Do set anything quoted from a book in Georgia italic and caption it with the book's title.",
+      "Do use only real screenshots from a real run, captured untouched; crop copyrighted pages small around the word or card and link the crop to its full screenshot.",
+      "Do record each shipping raster's provenance (below) when adding one.",
+      "Do link every number to its source and date.",
+      "Do write \"sentmine\" in lower case everywhere, including at the start of a sentence.",
+      "Do keep keyboard parity: visible 2px blue focus outline, one tab stop per word group, explicit image sizes and alt text.",
+      "Do respect prefers-reduced-motion."
+    ],
+    "donts": [
+      "Don't put an author name anywhere on the page or in docs/ (it is published); attribute to \"a project for Advanced Programming at ELTE\".",
+      "Don't invent users, testimonials, download counts or numbers.",
+      "Don't state what other tools can or cannot do; the page names none now, and any future mention is worded as what a web search found, with the month.",
+      "Don't use generated, stock or AI-made images.",
+      "Don't use Picked Yellow or the dotted blue underline for anything but their app meanings.",
+      "Don't add shadows to panels, cards or buttons; only the popover and screenshot frames lift.",
+      "Don't break the story into a split hero over a row of feature cards; carry one card through.",
+      "Don't load webfonts."
+    ]
+  }
+}
