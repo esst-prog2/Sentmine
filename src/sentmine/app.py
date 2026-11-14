@@ -35,6 +35,7 @@ BROWSER_DELAY_SECONDS = 0.8
 _PAGE = Path(__file__).parent / "web" / "index.html"
 _CARDS_PAGE = Path(__file__).parent / "web" / "cards.html"
 _DATA_MARK = "<!-- first data -->"  # where a page gets the data it first shows
+_EXTENSION_ORIGINS = ("chrome-extension://", "extension://", "moz-extension://")  # the browser extension
 _NOT_IN_A_FILE_NAME = re.compile(r"[^\w \-]+")
 
 
@@ -202,6 +203,17 @@ def create_app(
     def problem(error: Exception):
         return jsonify(error=str(error)), 400
 
+    @app.before_request
+    def only_own_pages_change_things():
+        """A request that changes something must come from sentmine's own page or a browser extension. A browser
+        always names the website a request comes from (Origin), so another site cannot make it post here."""
+        origin = request.headers.get("Origin")
+        if request.method in ("GET", "HEAD", "OPTIONS") or origin is None:
+            return None
+        if origin == request.host_url.rstrip("/") or origin.startswith(_EXTENSION_ORIGINS):
+            return None
+        return jsonify(error="Only sentmine's own page can change what it reads."), 403
+
     @app.errorhandler(RequestEntityTooLarge)
     def too_large(error: RequestEntityTooLarge):
         return jsonify(error="This file is larger than 50 MB, so it cannot be read."), 413
@@ -247,6 +259,11 @@ def create_app(
             raise Problem("This app has no card memory.")
         reading.memory.delete(card_id)
         return remembered()
+
+    @app.get("/api/hello")
+    def hello():
+        """Tells the browser extension that this port is sentmine, not another program."""
+        return jsonify(app="sentmine")
 
     @app.get("/api/state")
     def get_state():
