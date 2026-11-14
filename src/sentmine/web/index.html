@@ -88,7 +88,7 @@ try {
   .w { cursor: pointer; border-radius: 3px; transition: background-color .15s; }
   .w:hover { background: var(--hover); }
   .w.picked, .w.picked:hover { background: var(--picked); }
-  .w.known { text-decoration: underline dotted var(--accent) 2px; text-underline-offset: 4px; }
+  .w.known { text-decoration: underline solid var(--accent) 2px; text-underline-offset: 4px; }
   #text.pdf { max-width: none; }
   .pdf-page {
     position: relative; margin: 0 0 16px; background: #fff; border: 1px solid var(--line); border-radius: 4px;
@@ -103,7 +103,14 @@ try {
   .pdf-page .w:hover { background: rgba(26, 95, 208, 0.16); }
   .pdf-page .w.picked, .pdf-page .w.picked:hover { background: rgba(255, 196, 0, 0.45); }
   .pdf-page .w.dragged, .pdf-page .w.dragged:hover { background: rgba(26, 95, 208, 0.3); }
-  .pdf-page .w.known { text-decoration: none; border-bottom: 2px dotted rgba(26, 95, 208, 0.85); }
+  /* A word you already have a card for: a strong blue line, a dot in the margin on its line, and a count
+     at the page's corner, so cards coming back are seen while scrolling. The page stays white in dark mode,
+     so these keep their light colours. */
+  .pdf-page .w.known { text-decoration: none; border-bottom: 2.5px solid rgba(26, 95, 208, 0.95); }
+  .pdf-page .known-dot { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #1a5fd0;
+    transform: translate(-50%, -50%); pointer-events: none; }
+  .pdf-page .known-count { position: absolute; top: 8px; right: 10px; font: 600 0.75rem system-ui, sans-serif;
+    color: #1a5fd0; background: #eef3fc; border: 1px solid #c8dafc; border-radius: 999px; padding: 2px 9px; }
   #known-card {
     position: fixed; z-index: 3; max-width: 26rem; padding: 10px 12px; pointer-events: none;
     background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px;
@@ -232,8 +239,8 @@ const API = CLIP ? "/clip/api" : "/api";
 if (CLIP) document.body.classList.add("clip");
 const HINT = CLIP
   ? "Select text on a web page and right-click: Word card from this sentence, or Definition card from this."
-  : "Click a word for a card from its sentence; click it again to remove the card. " +
-    "Drag over a term, then over its definition, for a definition card.";
+  : "Click a word for a card; click again to remove it. Drag over a term, then its definition, " +
+    "for a definition card. A blue line: you already have a card (point at it).";
 
 let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let term = null;       // the term dragged over, while its definition is still to be marked
@@ -458,6 +465,28 @@ function markPicked() {   // picked words, and words that already have cards, on
     if (known.has(place)) box.dataset.known = known.get(place);
     else delete box.dataset.known;
   }
+  for (const page of $("text").querySelectorAll(".pdf-page")) markKnownLines(page);
+}
+
+// On a PDF page: a dot in the margin beside each line with a word you have a card for, and their count.
+function markKnownLines(page) {
+  page.querySelectorAll(".known-dot, .known-count").forEach((mark) => mark.remove());
+  const known = [...page.querySelectorAll(".w.known")];
+  if (known.length === 0) return;
+  const textLeft = Math.min(...[...page.querySelectorAll(".w")].map((box) => parseFloat(box.style.left)));
+  const lines = new Set();
+  for (const box of known) {
+    const middle = Math.round(parseFloat(box.style.top) + parseFloat(box.style.height) / 2);
+    if (lines.has(middle)) continue;
+    lines.add(middle);
+    const dot = element("span", "known-dot");
+    dot.setAttribute("aria-hidden", "true");
+    dot.style.top = middle + "%";
+    dot.style.left = Math.max(textLeft - 2.2, 1) + "%";
+    page.append(dot);
+  }
+  page.append(element("span", "known-count",
+    known.length === 1 ? "1 word you have a card for" : known.length + " words you have cards for"));
 }
 
 // Pointing at a word that already has a card shows that card under the word.
