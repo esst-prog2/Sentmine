@@ -110,6 +110,7 @@ try {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); font: 0.9375rem/1.45 system-ui, "Segoe UI", sans-serif;
   }
   #known-card .made { color: var(--soft); font-size: 0.8125rem; margin-bottom: 4px; }
+  #known-card .met { color: var(--accent); }
   #known-card .back { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
   .pdf-page .page-number { position: absolute; right: 8px; bottom: 6px; font: 0.75rem system-ui, sans-serif; color: #5c6470; }
   @media (min-width: 801px) {
@@ -431,7 +432,9 @@ function showKnownCard(word) {
   front.innerHTML = card.front_html;   // escaped by the server; only <b> and <br> are real tags
   const back = element("div", "back");
   back.innerHTML = card.back_html;
-  shown.replaceChildren(element("div", "made", "Your card from " + card.date), front, back);
+  const made = element("div", "made", "Your card from " + card.date);
+  if (card.met_again) made.append(" · ", element("span", "met", card.met_again));
+  shown.replaceChildren(made, front, back);
   shown.hidden = false;
   const r = word.getBoundingClientRect();
   const left = Math.max(8, Math.min(r.left, window.innerWidth - shown.offsetWidth - 8));

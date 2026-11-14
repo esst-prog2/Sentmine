@@ -1,5 +1,6 @@
 """The reading session behind the page: one pasted text and the cards the reader made from it."""
 
+import hashlib
 import html
 import re
 from collections.abc import Callable
@@ -89,6 +90,14 @@ def _plain_html(text: str) -> str:
     return html.escape(text, quote=False).replace("\n", "<br>")
 
 
+def _terms_pattern(terms: dict[str, Entry]) -> re.Pattern | None:
+    """All remembered terms as one pattern of whole words, ignoring case, longest first; None without terms."""
+    if not terms:
+        return None
+    alternatives = "|".join(re.escape(term) for term in sorted(terms, key=len, reverse=True))
+    return re.compile(r"(?<!\w)(?:" + alternatives + r")(?!\w)", re.IGNORECASE)
+
+
 def _term_pattern(term: str) -> re.Pattern:
     """The term as a whole word, ignoring case: "variance" is found in "Variance" but not in "covariance"."""
     return re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)", re.IGNORECASE)
@@ -128,6 +137,7 @@ class Session:
         self.paragraphs: list[list[str]] = []  # each paragraph is a list of sentences
         self.cards: list[Flashcard] = []
         self.memory = memory  # None: the session remembers nothing between runs
+        self.text_id = ""  # which text is read: the same words give the same id
         self._next_id = 1
 
     @property
@@ -141,19 +151,35 @@ class Session:
             raise Problem("There is no text to read: paste a text first.")
         self.paragraphs = [split_sentences(paragraph) for paragraph in tidied.split("\n\n")]
         self.cards = []
+        self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
+
+    def meet(self, cards: list[tuple[str, str]], day: str | None = None) -> None:
+        """Record the remembered cards (kind, key) met in this text. A memory that cannot be written records nothing."""
+        if self.memory is None or not self.text_id:
+            return
+        try:
+            self.memory.meet(cards, self.text_id, day or date.today().isoformat())
+        except MemoryProblem:
+            pass  # reading goes on; only the count on My cards misses this text
 
     def known_cards(self) -> dict[str, Entry]:
         """The remembered word cards, by base form; empty without a memory."""
         return self.memory.word_cards() if self.memory is not None else {}
 
-    def layout(self, known: dict[str, Entry] | None = None) -> list[list[dict]]:
+    def known_terms(self) -> dict[str, Entry]:
+        """The remembered definition cards, by term; empty without a memory."""
+        return self.memory.term_cards() if self.memory is not None else {}
+
+    def layout(self, known: dict[str, Entry] | None = None, terms: dict[str, Entry] | None = None) -> list[list[dict]]:
         """The text as the page draws it: paragraphs of sentences, each cut into words and the text between.
 
-        A word whose base form is in `known` (remembered word cards) and that is not picked
-        carries `known`: that base form.
+        A word that is not picked carries `known` when it has a remembered card: `term:` and the
+        term when it is part of a remembered term (`terms`), else its base form when that is
+        in `known` (remembered word cards).
         """
         picked = {card.place for card in self.cards if card.place is not None}
         known = known or {}
+        find_terms = _terms_pattern(terms or {})
         paragraphs = []
         number = 0
         for paragraph in self.paragraphs:
@@ -161,6 +187,7 @@ class Session:
             for sentence in paragraph:
                 pieces = []
                 position = 0
+                found = [(m.start(), m.end(), " ".join(m.group().lower().split())) for m in find_terms.finditer(sentence)] if find_terms else []
                 for index, word in enumerate(clickable_words(sentence)):
                     if word.start > position:
                         pieces.append({"text": sentence[position : word.start]})
@@ -169,10 +196,14 @@ class Session:
                         "word": index,
                         "picked": (number, index) in picked,
                     }
-                    if known and not piece["picked"]:
-                        base = base_form(piece["text"])
-                        if base in known:
-                            piece["known"] = base
+                    if not piece["picked"]:
+                        term = next((key for start, end, key in found if start <= word.start and word.end <= end), None)
+                        if term is not None:
+                            piece["known"] = "term:" + term  # a term wins over a word card
+                        elif known:
+                            base = base_form(piece["text"])
+                            if base in known:
+                                piece["known"] = base
                     pieces.append(piece)
                     position = word.end
                 if position < len(sentence):
@@ -294,6 +325,8 @@ class Session:
         ]
         try:
             self.memory.add(entries)
+            if self.text_id:  # the text they were made from does not count as meeting them again
+                self.memory.made_from([(entry.kind, entry.key) for entry in entries], self.text_id, day)
         except MemoryProblem as error:
             return f"{done}, but these cards were not remembered. {error}"
         return ""

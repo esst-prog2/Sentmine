@@ -65,7 +65,12 @@ def _earlier_json(entry: Entry) -> dict:
     return {"kind": entry.kind, "front_html": card.front_html, "back_html": card.back_html, "date": entry.date}
 
 
-def _remembered_json(card: RememberedCard) -> dict:
+def _known_json(entry: Entry, met: tuple[int, str] | None) -> dict:
+    """A remembered card shown when pointing at its word: as an earlier card, with how often it was met again."""
+    return {**_earlier_json(entry), "met_again": _met_again_line(met)}
+
+
+def _remembered_json(card: RememberedCard, met: tuple[int, str] | None = None) -> dict:
     shown = entry_card(card.entry)
     return {
         "id": card.id,
@@ -73,7 +78,16 @@ def _remembered_json(card: RememberedCard) -> dict:
         "front_html": shown.front_html,
         "back_html": shown.back_html,
         "date": card.entry.date,
+        "met_again": _met_again_line(met),
     }
+
+
+def _met_again_line(met: tuple[int, str] | None) -> str:
+    """`Met again in 3 texts, last on 2026-11-14`, or "" for a card never met again."""
+    if not met:
+        return ""
+    count, last = met
+    return f"Met again in {plural(count, 'text')}, last on {last}"
 
 
 def _message(result: str, card: Flashcard | Entry) -> str:
@@ -87,11 +101,12 @@ def _message(result: str, card: Flashcard | Entry) -> str:
     return f"Made a card for '{name}'."
 
 
-def _known_note(count: int) -> str:
-    """How many words of a text already have cards, said after reading it."""
-    if count == 1:
-        return "1 word you have a card for is underlined."
-    return f"{count} words you have cards for are underlined."
+def _known_note(words: int, terms: int = 0) -> str:
+    """How many words and terms of a text already have cards, said after reading it."""
+    counted = [f"{count} {name}{'' if count == 1 else 's'}" for count, name in ((words, "word"), (terms, "term")) if count]
+    if words + terms == 1:
+        return f"{counted[0]} you have a card for is underlined."
+    return f"{' and '.join(counted)} you have cards for are underlined."
 
 
 def _sent_message(deck: str, added: int, already: int) -> str:
@@ -128,14 +143,22 @@ def create_app(
         return pages
 
     def state(message: str = "", result: str = "", earlier: Entry | None = None, count_known: bool = False):
-        known = reading.known_cards()
-        paragraphs = reading.layout(known)
+        known, terms = reading.known_cards(), reading.known_terms()
+        paragraphs = reading.layout(known, terms)
         in_text = sorted({piece["known"] for p in paragraphs for s in p for piece in s["pieces"] if "known" in piece})
+        terms_in_text = [key for key in in_text if key.startswith("term:")]
         if count_known and in_text:
-            message = f"{message} {_known_note(len(in_text))}"
+            message = f"{message} {_known_note(len(in_text) - len(terms_in_text), len(terms_in_text))}"
+            reading.meet([("definition", key[len("term:"):]) if key.startswith("term:") else ("word", key) for key in in_text])
+        met = reading.memory.met_again() if reading.memory is not None and in_text else {}
         return jsonify(
             paragraphs=paragraphs,
-            known_cards={key: _earlier_json(known[key]) for key in in_text},
+            known_cards={
+                key: _known_json(*(
+                    (terms[key[len("term:"):]], met.get(("definition", key[len("term:"):]))) if key.startswith("term:")
+                    else (known[key], met.get(("word", key)))
+                )) for key in in_text
+            },
             cards=[_card_json(card) for card in reading.cards],
             count=len(reading.cards),
             count_text=plural(len(reading.cards), "card"),
@@ -192,8 +215,9 @@ def create_app(
         if memory is None:
             return jsonify(cards=[], total=0, total_text=plural(0, "card"), progress=None, memory_warning="This app has no card memory.")
         cards, total = memory.search(request.args.get("q", ""))
+        met = memory.met_again()
         return jsonify(
-            cards=[_remembered_json(card) for card in cards],
+            cards=[_remembered_json(card, met.get((card.entry.kind, card.entry.key))) for card in cards],
             total=total,
             total_text=plural(total, "card"),
             progress=memory.progress(),

@@ -17,7 +17,7 @@ SHOWN_AT_MOST = 200
 MONTHS_SHOWN = 6
 
 # Each step brings the layout up by one version; it runs in one transaction with its version number.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 _CREATE_TABLE = """
     CREATE TABLE cards (
         id INTEGER PRIMARY KEY,
@@ -31,6 +31,17 @@ _CREATE_TABLE = """
     )
 """
 _CREATE_INDEX = "CREATE INDEX cards_by_key ON cards (kind, key)"
+# Layout 3: each text a card's word or term was met in; `made` marks the text the card was made from.
+_CREATE_MEETINGS = """
+    CREATE TABLE meetings (
+        kind TEXT NOT NULL,
+        key TEXT NOT NULL,
+        text_id TEXT NOT NULL,
+        made INTEGER NOT NULL DEFAULT 0,
+        day TEXT NOT NULL,
+        PRIMARY KEY (kind, key, text_id)
+    )
+"""
 _INSERT = "INSERT OR IGNORE INTO cards (kind, key, front, back, word, made_on) VALUES (?, ?, ?, ?, ?, ?)"
 _COLUMNS = "id, kind, key, front, back, word, made_on"
 
@@ -100,6 +111,11 @@ class CardMemory:
                             db.execute("PRAGMA user_version = 1")
                 if version < 2:
                     self._move_old_history(db)
+                if _version(db) < 3:
+                    with _transaction(db):
+                        if _version(db) < 3:
+                            db.execute(_CREATE_MEETINGS)
+                            db.execute("PRAGMA user_version = 3")
             except sqlite3.DatabaseError as error:
                 raise MemoryProblem(f"The card memory '{self.path}' could not be opened ({error}).") from None
 
@@ -133,10 +149,17 @@ class CardMemory:
 
     def word_cards(self) -> dict[str, Entry]:
         """The latest word card for each base form, by base form; empty when the memory cannot be read."""
+        return self._latest("word")
+
+    def term_cards(self) -> dict[str, Entry]:
+        """The latest definition card for each term, by term (lower case, single spaces); empty when unreadable."""
+        return self._latest("definition")
+
+    def _latest(self, kind: str) -> dict[str, Entry]:
         if self.problem:
             return {}
         try:
-            rows = self._query(f"SELECT {_COLUMNS} FROM cards WHERE kind = ? ORDER BY made_on, id", ("word",))
+            rows = self._query(f"SELECT {_COLUMNS} FROM cards WHERE kind = ? ORDER BY made_on, id", (kind,))
         except MemoryProblem:
             return {}
         return {entry.key: entry for entry in (_card(row).entry for row in rows)}
@@ -152,6 +175,44 @@ class CardMemory:
                     return db.total_changes - before
             except sqlite3.Error as error:
                 raise MemoryProblem(f"The cards could not be added to the card memory '{self.path}' ({error}).") from None
+
+    def meet(self, cards: Iterable[tuple[str, str]], text_id: str, day: str) -> None:
+        """Record that these cards (kind, key) were met in a text; once per text, the first day kept."""
+        self._write(
+            "INSERT OR IGNORE INTO meetings (kind, key, text_id, made, day) VALUES (?, ?, ?, 0, ?)",
+            [(kind, key, text_id, day) for kind, key in cards],
+            "The cards met in this text could not be recorded",
+        )
+
+    def made_from(self, cards: Iterable[tuple[str, str]], text_id: str, day: str) -> None:
+        """Record the text these cards (kind, key) were made from, which does not count as meeting them again."""
+        self._write(
+            "INSERT INTO meetings (kind, key, text_id, made, day) VALUES (?, ?, ?, 1, ?) "
+            "ON CONFLICT (kind, key, text_id) DO UPDATE SET made = 1",
+            [(kind, key, text_id, day) for kind, key in cards],
+            "The text these cards were made from could not be recorded",
+        )
+
+    def met_again(self) -> dict[tuple[str, str], tuple[int, str]]:
+        """For each card (kind, key) met again: in how many texts, and the last day; empty when unreadable."""
+        if self.problem:
+            return {}
+        try:
+            rows = self._query("SELECT kind, key, COUNT(*), MAX(day) FROM meetings WHERE made = 0 GROUP BY kind, key", ())
+        except MemoryProblem:
+            return {}
+        return {(kind, key): (count, last) for kind, key, count, last in rows}
+
+    def _write(self, sql: str, rows: list[tuple], failed: str) -> None:
+        self._usable()
+        if not rows:
+            return
+        with closing(self._connect()) as db:
+            try:
+                with _transaction(db):
+                    db.executemany(sql, rows)
+            except sqlite3.Error as error:
+                raise MemoryProblem(f"{failed} in the card memory '{self.path}' ({error}).") from None
 
     # --- what the My cards page needs -----------------------------------------------------
 
@@ -196,7 +257,10 @@ class CardMemory:
         with closing(self._connect()) as db:
             try:
                 with _transaction(db):
+                    found = db.execute("SELECT kind, key FROM cards WHERE id = ?", (card_id,)).fetchone()
                     gone = db.execute("DELETE FROM cards WHERE id = ?", (card_id,)).rowcount
+                    if found and not db.execute("SELECT 1 FROM cards WHERE kind = ? AND key = ?", found).fetchone():
+                        db.execute("DELETE FROM meetings WHERE kind = ? AND key = ?", found)  # the last card for it
             except sqlite3.Error as error:
                 raise MemoryProblem(f"The card could not be deleted from the card memory '{self.path}' ({error}).") from None
         if not gone:

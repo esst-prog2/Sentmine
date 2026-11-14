@@ -50,10 +50,11 @@ def test_another_form_of_the_word_is_marked(memory):
     assert marked(session.layout(session.known_cards())) == [("ran", "run")]
 
 
-def test_a_definition_term_is_not_marked(memory):
+def test_a_definition_term_is_marked_as_a_term_not_a_word(memory):
     session = Session(memory)
     session.load("The variance is never negative.")
-    assert marked(session.layout(session.known_cards())) == []
+    assert marked(session.layout(session.known_cards())) == []  # not as a word
+    assert marked(session.layout(session.known_cards(), session.known_terms())) == [("variance", "term:variance")]
 
 
 def test_a_picked_word_is_shown_as_picked_not_marked(memory):
