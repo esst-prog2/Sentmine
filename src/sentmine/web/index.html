@@ -103,6 +103,11 @@ try {
   .pdf-page .w:hover { background: rgba(26, 95, 208, 0.16); }
   .pdf-page .w.picked, .pdf-page .w.picked:hover { background: rgba(255, 196, 0, 0.45); }
   .pdf-page .w.dragged, .pdf-page .w.dragged:hover { background: rgba(26, 95, 208, 0.3); }
+  #text .w.dragged { background: var(--selection); }
+  /* the keyboard: one stop on the text, then the arrow keys from word to word */
+  #text:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  #text .w:focus { outline: none; }
+  #text .w:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   /* A word you already have a card for: a strong blue line, a dot in the margin on its line, and a count
      at the page's corner, so cards coming back are seen while scrolling. The page stays white in dark mode,
      so these keep their light colours. */
@@ -211,7 +216,7 @@ try {
         <input type="file" id="file" accept=".pdf,.txt">
       </label>
     </details>
-    <div id="text" class="empty">No text yet.</div>
+    <div id="text" class="empty" tabindex="0" aria-label="The text. Arrow keys move from word to word; Enter makes a card from the word; Shift and the arrow keys mark a term or a definition, then Enter.">No text yet.</div>
   </section>
 
   <section>
@@ -716,7 +721,12 @@ function drawCard(card) {
 }
 
 function draw() {
+  const hadKeys = keyPlace !== null && $("text").contains(document.activeElement);
   drawText();
+  if (hadKeys) {   // pasted text is drawn again after each card: keep the keyboard on its word
+    const again = wordAt(keyPlace);
+    if (again) focusWord(again, false);
+  }
   $("count").textContent = state.count_text;
   $("cards").replaceChildren(...state.cards.map(drawCard));
   $("no-cards").hidden = state.cards.length > 0;
@@ -784,6 +794,92 @@ document.addEventListener("keydown", (event) => {
     term = null;
     say("");
   }
+});
+
+// The keyboard way to make cards: Tab into the text, the arrow keys move from word to word, Enter makes a
+// card from the word (and again removes it); Shift and the arrow keys mark words, as a drag does, and Enter
+// uses them as the term or its definition. A word you already have a card for shows that card.
+let keyPlace = null;   // "sentence:word" of the word the keyboard is on
+let keyAnchor = null;  // where a Shift-marking started
+
+const placeOf = (word) => word.dataset.sentence + ":" + word.dataset.word;
+const textWords = () => [...$("text").querySelectorAll(".w")];
+const wordAt = (place) => place && textWords().find((word) => placeOf(word) === place);
+
+function focusWord(word, scroll = true) {
+  word.tabIndex = -1;
+  word.focus({ preventScroll: true });
+  if (scroll) word.scrollIntoView({ block: "nearest" });
+  keyPlace = placeOf(word);
+  $("known-card").hidden = true;
+  if (word.classList.contains("known")) {
+    word.setAttribute("aria-describedby", "known-card");
+    requestAnimationFrame(() => requestAnimationFrame(() => {   // after the scroll, which hides the card
+      if (document.activeElement === word) showKnownCard(word);
+    }));
+  }
+}
+
+function firstWordInView() {
+  const top = textTop();
+  return textWords().find((word) => {
+    const r = word.getBoundingClientRect();
+    return r.height > 0 && r.top >= top && r.bottom <= window.innerHeight;
+  });
+}
+
+function marked() {
+  return textWords().filter((word) => word.classList.contains("dragged"));
+}
+
+function clearMarks() {
+  for (const word of marked()) word.classList.remove("dragged");
+  keyAnchor = null;
+}
+
+$("text").addEventListener("focus", (event) => {
+  // only when the keyboard arrives: a click beside the words must not move anything during a drag
+  if (event.target !== $("text") || !$("text").matches(":focus-visible")) return;
+  const word = wordAt(keyPlace) || firstWordInView() || textWords()[0];
+  if (word) focusWord(word);
+});
+
+$("text").addEventListener("focusout", (event) => {
+  if (event.target.classList && event.target.classList.contains("known")) $("known-card").hidden = true;
+});
+
+$("text").addEventListener("keydown", (event) => {
+  const words = textWords();
+  const at = words.indexOf(document.activeElement);
+  if (at < 0) return;
+  if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+    event.preventDefault();
+    const to = Math.max(0, Math.min(words.length - 1, at + (event.key === "ArrowRight" ? 1 : -1)));
+    if (event.shiftKey) {
+      if (keyAnchor === null) keyAnchor = at;
+      const [from, until] = [Math.min(keyAnchor, to), Math.max(keyAnchor, to)];
+      words.forEach((word, index) => word.classList.toggle("dragged", index >= from && index <= until));
+    } else {
+      clearMarks();
+    }
+    focusWord(words[to]);
+    return;
+  }
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    const range = marked();
+    if (range.length === 0) {
+      pickWord(words[at]);
+      return;
+    }
+    const selected = range.map((word) => word.textContent).join(" ");
+    const clipped = CLIP && term === null ? definitionClipOf(range[0]) : null;
+    clearMarks();
+    if (clipped) pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
+    else chose(selected);
+    return;
+  }
+  if (event.key === "Escape" && marked().length > 0) clearMarks();
 });
 
 function mayReplaceCards() {
