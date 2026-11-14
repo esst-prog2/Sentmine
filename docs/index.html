@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sentmine: read the real page, click a word, get an Anki card</title>
+<meta name="description" content="sentmine is a reading app for students who read English course books. Click a word on the real PDF page to make an Anki card from its sentence; your cards come back when you meet them again.">
+<style>
+  :root {
+    --page: #f6f5f1; --panel: #ffffff; --ink: #1f2328; --soft: #5c6470; --line: #d9d6cd; --hover: #ecebe5;
+    --accent: #1a5fd0; --accent-hover: #154fae; --on-accent: #ffffff; --picked: #ffe27a; --selection: #c8dafc;
+    --book: Georgia, "Times New Roman", serif;
+    --ui: system-ui, "Segoe UI", -apple-system, sans-serif;
+    --code: ui-monospace, Consolas, "Cascadia Mono", monospace;
+    --gutter: clamp(16px, 4vw, 48px);
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; scrollbar-color: #c4c0b5 var(--page); }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 17px/1.6 var(--ui); }
+  ::selection { background: var(--selection); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  a:hover { color: var(--accent-hover); }
+  img { display: block; max-width: 100%; height: auto; }
+  p { margin: 0 0 1em; }
+
+  /* The app's own header: brand, pages, and the deck controls become the page's actions. */
+  .bar {
+    position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px 24px;
+    padding: 12px var(--gutter); background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  .brand { font-weight: 700; font-size: 1.15rem; color: var(--ink); text-decoration: none; }
+  .bar nav { display: flex; gap: 20px; }
+  .bar nav a { color: var(--soft); text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; }
+  .bar nav a:hover { color: var(--ink); border-bottom-color: var(--line); }
+  .spacer { flex: 1; }
+  .button {
+    display: inline-block; font: 500 0.95rem var(--ui); color: var(--ink); background: var(--page); text-decoration: none;
+    border: 1px solid var(--line); border-radius: 6px; padding: 7px 14px; transition: background-color .15s, border-color .15s;
+  }
+  .button:hover { background: var(--hover); border-color: var(--soft); color: var(--ink); }
+  .button.main { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+  .button.main:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
+
+  /* The status line carries the headline, as sentmine's status line carries what just happened. */
+  .status { padding: clamp(24px, 5vw, 44px) var(--gutter) clamp(20px, 3vw, 28px); border-bottom: 1px solid var(--line); }
+  .status h1 { font: 700 clamp(2rem, 4.6vw, 3.5rem)/1.08 var(--ui); letter-spacing: -0.02em; margin: 0 0 14px; max-width: 18em; text-wrap: balance; }
+  .status p { color: var(--soft); font-size: clamp(1.05rem, 1.6vw, 1.25rem); max-width: 46em; margin: 0; }
+
+  /* First viewport: the book sentence is the hero, the card it made below it, the headline a confident line above. */
+  .opening .status { padding-bottom: 8px; border-bottom: 0; }
+  .opening .status h1 { font-size: clamp(1.5rem, 2.4vw, 2rem); max-width: none; margin-bottom: 6px; }
+  .opening .status p { font-size: 1.05rem; }
+  .stage { padding: 8px var(--gutter); display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); }
+  .page-line { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: clamp(24px, 4vw, 48px) clamp(20px, 5vw, 64px); margin: 0; }
+  .page-line .question { font: 700 1.1rem var(--book); margin: 0 0 10px; color: var(--soft); }
+  .page-line p { font: italic clamp(1.7rem, 4.2vw, 2.6rem)/1.3 var(--book); letter-spacing: -0.01em; margin: 0 0 18px; text-wrap: pretty; }
+  .page-line mark { background: var(--picked); color: var(--ink); padding: 0 .12em; border-radius: 3px; }
+  .opening .card { max-width: 40rem; }
+  .caption { font: 0.82rem/1.5 var(--ui); color: var(--soft); margin-top: 10px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; }
+  .panel-title { font-weight: 700; margin: 0 0 12px; }
+  .card .front { padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+  .card .back { padding-top: 10px; }
+  .card .meta { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 0.85rem; color: var(--soft); }
+  .try-line { padding: 16px var(--gutter) 40px; color: var(--soft); }
+  .try-line code { font: 0.95rem var(--code); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; }
+
+  section { padding: clamp(48px, 7vw, 88px) var(--gutter); border-top: 1px solid var(--line); }
+  section > h2 { font: 700 clamp(1.6rem, 3vw, 2.3rem)/1.15 var(--ui); letter-spacing: -0.015em; margin: 0 0 12px; max-width: 22em; text-wrap: balance; }
+  .lede { color: var(--soft); font-size: 1.12rem; max-width: 44em; margin-bottom: 36px; }
+  .measure { max-width: 68ch; }
+
+  /* Five steps: the deck panel stays in view and one card moves through the steps beside it. */
+  .steps { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 24rem); gap: 40px; align-items: start; }
+  .step { margin: 0 0 clamp(48px, 7vw, 80px); }
+  .step h3 { font: 700 1.3rem/1.3 var(--ui); margin: 0 0 6px; }
+  .step p { max-width: 60ch; color: var(--ink); }
+  .shot a { display: block; cursor: zoom-in; }
+  .shot { width: fit-content; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(31, 35, 40, 0.06); }
+  .deck { position: sticky; top: 92px; }
+  .deck .state { font-size: 0.85rem; color: var(--soft); margin: 0 0 10px; min-height: 2.6em; }
+  .deck .card + .card { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .deck .meaning, .deck .cloze, .deck .sent, .deck .back-again { display: none; }
+  .gap { color: var(--accent); font-weight: 600; }
+  .sent { margin-top: 12px; font-size: 0.9rem; color: var(--ink); background: var(--page); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+  .deck[data-step="2"] .meaning, .deck[data-step="3"] .meaning, .deck[data-step="4"] .meaning, .deck[data-step="5"] .meaning { display: block; }
+  .deck[data-step="3"] .cloze, .deck[data-step="4"] .cloze, .deck[data-step="5"] .cloze { display: block; }
+  .deck[data-step="4"] .sent, .deck[data-step="5"] .sent { display: block; }
+  .deck[data-step="5"] .back-again { display: block; }
+  .deck .card.lit { animation: settle .5s cubic-bezier(.16, 1, .3, 1); }
+  @keyframes settle { from { background: #fff8d6; } to { background: transparent; } }
+  .back-again { margin-top: 12px; font-size: 0.9rem; }
+  .back-again span { text-decoration: underline dotted var(--accent) 2px; text-underline-offset: 4px; }
+
+  .comes-back { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+  .comes-back ul { padding-left: 1.2em; margin: 0; }
+  .comes-back li { margin-bottom: 10px; }
+  .underline-demo { text-decoration: underline dotted var(--accent) 2px; text-underline-offset: 4px; }
+
+  .facts { list-style: none; padding: 0; margin: 0; max-width: 60em; border-top: 1px solid var(--line); }
+  .facts li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 15rem); gap: 8px 24px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .facts .source { color: var(--soft); font-size: 0.9rem; }
+
+  pre { font: 0.95rem/1.7 var(--code); background: var(--ink); color: #f6f5f1; padding: 18px 22px; border-radius: 8px; overflow-x: auto; max-width: 44em; margin: 0 0 20px; }
+  pre ::selection { background: #2d4a7a; color: #fff; }
+  .options { padding-left: 1.2em; max-width: 60ch; }
+  .options li { margin-bottom: 8px; }
+
+  footer { padding: 32px var(--gutter) 48px; border-top: 1px solid var(--line); color: var(--soft); font-size: 0.95rem; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+
+  @media (max-width: 900px) {
+    .steps, .comes-back { grid-template-columns: 1fr; }
+    .deck { position: static; }
+    .facts li { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .bar nav { display: none; }
+    .bar .button:not(.main) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <a class="brand" href="#top">sentmine</a>
+  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#comes-back">Comes back</a><a href="#try">Try it</a></nav>
+  <span class="spacer"></span>
+  <a class="button" href="https://github.com/esst-prog2/Sentmine">GitHub</a>
+  <a class="button main" href="#try">Install</a>
+</header>
+
+<main id="top">
+  <div class="opening">
+    <div class="status">
+      <h1>Read the real page. Click a word. It's an Anki card.</h1>
+      <p>sentmine is a reading app for students who read English course books. It turns the words and terms you meet into Anki cards, and brings those cards back when you meet them again.</p>
+    </div>
+    <div class="stage">
+      <figure class="page-line">
+        <p class="question">Study question 1.3.7.</p>
+        <p>Two fair coins are flipped <mark>simultaneously</mark> to determine the payoffs of two players in the town’s casino. Player 1 wins a dollar if and only if at least one coin lands on head.</p>
+        <figcaption class="caption">From page 13 of the solution manual to Pearl, Glymour and Jewell, <cite>Causal Inference in Statistics: A Primer</cite>, set large on this page. In sentmine you read the PDF page itself (step 1).</figcaption>
+      </figure>
+      <aside class="panel card" aria-label="The card sentmine made">
+        <p class="panel-title">Cards</p>
+        <div class="front">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</div>
+        <div class="back">simultaneously<br>Two things happening at the same time.</div>
+        <div class="meta">Word card · the meaning came from Suggest meaning (step 2)</div>
+      </aside>
+    </div>
+    <p class="try-line">Runs on your own computer. You need Python 3.10 or newer and git. <a href="#try">How to install</a></p>
+  </div>
+
+  <section id="how" aria-labelledby="how-title">
+    <h2 id="how-title">One card, five steps</h2>
+    <p class="lede">Everything below is one real run on the solution manual, with Anki open. The card in the panel beside the steps (after them on a phone) is the one you follow. Click a screenshot to see the whole screen.</p>
+    <div class="steps">
+      <div>
+        <article class="step" data-step="1">
+          <h3>Click a word on the page</h3>
+          <p>You read the PDF as it looks. Clicking <i>simultaneously</i> marks it yellow and makes a card from the sentence it came from.</p>
+          <div class="shot"><a href="img/1-click-a-word.png" title="Open the full screenshot"><img src="img/step-1-click.png" width="1217" height="389" alt="sentmine showing page 13 of the book with 'simultaneously' marked yellow and a new card in the cards panel."></a></div>
+        </article>
+        <article class="step" data-step="2">
+          <h3>Ask what it means</h3>
+          <p>Suggest meaning sends the word and its sentence to the small model <code>gpt-5-nano</code> and writes a short meaning on the back, for you to check and edit.</p>
+          <div class="shot"><a href="img/2-suggest-meaning.png" title="Open the full screenshot"><img src="img/step-2-meaning.png" width="450" height="227" loading="lazy" alt="The same card now has a meaning on its back: Two things happening at the same time."></a></div>
+        </article>
+        <article class="step" data-step="3">
+          <h3>Drag over a term, then its definition</h3>
+          <p>Drag over <i>Simpson’s reversal</i>, then over the sentence that explains it. The term is inside its own definition, so sentmine makes a cloze card that hides it.</p>
+          <div class="shot"><a href="img/3-cloze-card.png" title="Open the full screenshot"><img src="img/step-3-cloze.png" width="1217" height="443" loading="lazy" alt="A cloze card: Strangely, the experimental data revealed a [...]: although the drug proved beneficial, with Simpson's reversal in bold on the back."></a></div>
+        </article>
+        <article class="step" data-step="4">
+          <h3>Send it to Anki</h3>
+          <p>With Anki open and the AnkiConnect add-on installed, one click puts the cards in your deck. Without Anki, Download gives you a deck file to import.</p>
+          <div class="shot"><a href="img/4-send-to-anki.png" title="Open the full screenshot"><img src="img/step-4-send.png" width="1411" height="99" loading="lazy" alt="The status line: Sent to the deck 'sentmine demo' in Anki: 2 cards added. Now in My cards too."></a></div>
+        </article>
+        <article class="step" data-step="5">
+          <h3>Meet the word again</h3>
+          <p>On page 25 the word comes up again, in another study question. Clicking it makes no duplicate: sentmine shows the card you already have, and you can skip it.</p>
+          <div class="shot"><a href="img/5-already-has-a-card.png" title="Open the full screenshot"><img src="img/step-5-again.png" width="792" height="374" loading="lazy" alt="'simultaneously' already has a card from 2026-11-14, with the earlier card and the buttons Skip and Make it anyway."></a></div>
+        </article>
+      </div>
+      <aside class="deck panel" data-step="1" aria-label="The deck, step by step">
+        <p class="state">Step 1: a word card from its sentence.</p>
+        <div class="card lit">
+          <div class="front">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</div>
+          <div class="back">simultaneously<span class="meaning">Two things happening at the same time.</span></div>
+        </div>
+        <div class="card cloze">
+          <div class="front">Strangely, the experimental data revealed a <span class="gap">[...]</span>: Although the drug proved beneficial to the population as a whole…</div>
+        </div>
+        <div class="sent">Sent to the deck ‘sentmine demo’ in Anki: 2 cards added.</div>
+        <div class="back-again">Page 25: <span>simultaneously</span> already has this card.</div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="comes-back" aria-labelledby="back-title">
+    <h2 id="back-title">Your cards come back while you read</h2>
+    <div class="comes-back">
+      <div class="shot"><a href="img/6-cards-come-back.png" title="Open the full screenshot"><img src="img/6-cards-come-back.png" width="1820" height="441" loading="lazy" alt="On a later page, Simpson's reversal is underlined with a dotted line, and pointing at it shows the card made earlier."></a></div>
+      <div class="measure">
+        <p>When you open the next chapter, every word and term you already have a card for is <span class="underline-demo">underlined</span>. Point at one and your own card appears, with the day you made it.</p>
+        <ul>
+          <li>Reading becomes review: you meet your words again, in new sentences.</li>
+          <li>My cards counts how many texts each card was met again in.</li>
+          <li>Words are matched by their base form, so <i>ran</i> finds your card for <i>run</i>.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="why-title">
+    <h2 id="why-title">Why I built it</h2>
+    <div class="measure">
+      <p>I read statistics books in English. Copying a sentence into Anki by hand was slow, so most of the words I wanted to keep never became cards.</p>
+      <p>The first version tried to guess my new words from a list of words I know. On one Guardian article it made 103 cards, and only 4 of them were really new to me (<a href="https://github.com/esst-prog2/Sentmine#1-the-demo">README</a>). So now I choose what becomes a card myself, while reading.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="facts-title">
+    <h2 id="facts-title">Measured, with sources</h2>
+    <ul class="facts">
+      <li><span>Ten cards: about 30 seconds to download and import the deck, about 5 seconds with Send to Anki. One timing by hand.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/blob/main/PLANNING_LOG.md">Planning log, 3 November 2026</a></li>
+      <li><span>On four real PDFs of 10 to 166 pages, sentmine found the printed place of 99.9 to 100% of the words it read from them, so those words can be clicked on the page itself.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/blob/main/PLANNING_LOG.md">Planning log, 6 November 2026</a></li>
+      <li><span>555 automated tests pass.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/tree/main/tests">pytest, 14 November 2026</a></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="similar-title">
+    <h2 id="similar-title">Similar tools</h2>
+    <p class="measure">Pick2anki (a plugin for Zotero’s PDF reader), Vocabsieve and several browser add-ons also send words to Anki with their sentence. In what a web search found about them in November 2026, cloze cards from your own definitions and cards that come back while you read were not described. I have not tried them by hand. sentmine does both.</p>
+  </section>
+
+  <section id="try" aria-labelledby="try-title">
+    <h2 id="try-title">Try it</h2>
+    <p class="lede">sentmine runs on your own computer. You need Python 3.10 or newer and git. Open a terminal and run:</p>
+    <pre><code>git clone https://github.com/esst-prog2/Sentmine
+cd Sentmine
+python -m venv .venv
+.venv\Scripts\activate
+pip install .
+sentmine</code></pre>
+    <p class="measure">On macOS or Linux, the fourth line is <code>source .venv/bin/activate</code> instead. sentmine was built and tested on Windows.</p>
+    <p class="measure"><b>What opens:</b> sentmine’s reading page, in your browser, at <code>http://127.0.0.1:8000</code> (or the next free port up to 8010). Paste a text, or open a PDF that has text in it. Scanned PDFs cannot be read yet.</p>
+    <p class="measure"><b>If the terminal says it cannot find <code>sentmine</code></b>, the virtual environment is not active: run the activate line again, then <code>sentmine</code>.</p>
+    <ul class="options">
+      <li><b>Anki is optional.</b> With the AnkiConnect add-on, Send to Anki adds cards straight to your deck; without it, Download writes a deck file.</li>
+      <li><b>Suggest meaning needs your own OpenAI key</b>: set <code>OPENAI_API_KEY</code>, or put the line <code>OPENAI_API_KEY=...</code> in <code>.env</code> in sentmine’s user folder (<code>%APPDATA%\sentmine</code> on Windows).</li>
+      <li><b>Your text stays on your computer</b>, except one thing: when you press Suggest meaning, that word and its sentence are sent to OpenAI.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="next-title">
+    <h2 id="next-title">What’s next</h2>
+    <p class="measure">Reading anywhere in the browser: picking words on web pages, and sending PDFs from Canvas straight into sentmine.</p>
+  </section>
+</main>
+
+<footer>
+  <span>sentmine, a project for Advanced Programming at ELTE.</span>
+  <a href="https://github.com/esst-prog2/Sentmine">Source on GitHub</a>
+</footer>
+
+<script>
+  // The deck beside the steps follows the step in view; without JavaScript it simply shows step 1.
+  const deck = document.querySelector(".deck");
+  const states = {
+    1: "Step 1: a word card from its sentence.",
+    2: "Step 2: the meaning is on its back.",
+    3: "Step 3: a cloze card joins it.",
+    4: "Step 4: both cards are in Anki.",
+    5: "Step 5: the word comes back, and so does its card.",
+  };
+  const narrow = window.matchMedia("(max-width: 900px)");
+  if (deck && narrow.matches) {   // on a phone the panel sits after the steps and shows where the card ends up
+    deck.dataset.step = "5";
+    deck.querySelector(".state").textContent = "After the five steps, the deck holds:";
+  } else if (deck && "IntersectionObserver" in window) {
+    const watcher = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const step = entry.target.dataset.step;
+        if (deck.dataset.step === step) continue;
+        deck.dataset.step = step;
+        deck.querySelector(".state").textContent = states[step];
+        const card = step === "3" ? deck.querySelector(".cloze") : deck.querySelector(".card");
+        card.classList.remove("lit");
+        void card.offsetWidth;   // restart the settle animation on the card that changed
+        card.classList.add("lit");
+      }
+    }, { rootMargin: "-40% 0px -50% 0px" });
+    document.querySelectorAll(".step").forEach((step) => watcher.observe(step));
+  }
+</script>
+</body>
+</html>
