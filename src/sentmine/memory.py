@@ -133,10 +133,17 @@ class CardMemory:
 
     def word_cards(self) -> dict[str, Entry]:
         """The latest word card for each base form, by base form; empty when the memory cannot be read."""
+        return self._latest("word")
+
+    def term_cards(self) -> dict[str, Entry]:
+        """The latest definition card for each term, by term (lower case, single spaces); empty when unreadable."""
+        return self._latest("definition")
+
+    def _latest(self, kind: str) -> dict[str, Entry]:
         if self.problem:
             return {}
         try:
-            rows = self._query(f"SELECT {_COLUMNS} FROM cards WHERE kind = ? ORDER BY made_on, id", ("word",))
+            rows = self._query(f"SELECT {_COLUMNS} FROM cards WHERE kind = ? ORDER BY made_on, id", (kind,))
         except MemoryProblem:
             return {}
         return {entry.key: entry for entry in (_card(row).entry for row in rows)}

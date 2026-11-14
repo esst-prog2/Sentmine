@@ -87,11 +87,12 @@ def _message(result: str, card: Flashcard | Entry) -> str:
     return f"Made a card for '{name}'."
 
 
-def _known_note(count: int) -> str:
-    """How many words of a text already have cards, said after reading it."""
-    if count == 1:
-        return "1 word you have a card for is underlined."
-    return f"{count} words you have cards for are underlined."
+def _known_note(words: int, terms: int = 0) -> str:
+    """How many words and terms of a text already have cards, said after reading it."""
+    counted = [f"{count} {name}{'' if count == 1 else 's'}" for count, name in ((words, "word"), (terms, "term")) if count]
+    if words + terms == 1:
+        return f"{counted[0]} you have a card for is underlined."
+    return f"{' and '.join(counted)} you have cards for are underlined."
 
 
 def _sent_message(deck: str, added: int, already: int) -> str:
@@ -128,14 +129,17 @@ def create_app(
         return pages
 
     def state(message: str = "", result: str = "", earlier: Entry | None = None, count_known: bool = False):
-        known = reading.known_cards()
-        paragraphs = reading.layout(known)
+        known, terms = reading.known_cards(), reading.known_terms()
+        paragraphs = reading.layout(known, terms)
         in_text = sorted({piece["known"] for p in paragraphs for s in p for piece in s["pieces"] if "known" in piece})
+        terms_in_text = [key for key in in_text if key.startswith("term:")]
         if count_known and in_text:
-            message = f"{message} {_known_note(len(in_text))}"
+            message = f"{message} {_known_note(len(in_text) - len(terms_in_text), len(terms_in_text))}"
         return jsonify(
             paragraphs=paragraphs,
-            known_cards={key: _earlier_json(known[key]) for key in in_text},
+            known_cards={
+                key: _earlier_json(terms[key[len("term:"):]] if key.startswith("term:") else known[key]) for key in in_text
+            },
             cards=[_card_json(card) for card in reading.cards],
             count=len(reading.cards),
             count_text=plural(len(reading.cards), "card"),

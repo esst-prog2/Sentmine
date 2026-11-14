@@ -89,6 +89,14 @@ def _plain_html(text: str) -> str:
     return html.escape(text, quote=False).replace("\n", "<br>")
 
 
+def _terms_pattern(terms: dict[str, Entry]) -> re.Pattern | None:
+    """All remembered terms as one pattern of whole words, ignoring case, longest first; None without terms."""
+    if not terms:
+        return None
+    alternatives = "|".join(re.escape(term) for term in sorted(terms, key=len, reverse=True))
+    return re.compile(r"(?<!\w)(?:" + alternatives + r")(?!\w)", re.IGNORECASE)
+
+
 def _term_pattern(term: str) -> re.Pattern:
     """The term as a whole word, ignoring case: "variance" is found in "Variance" but not in "covariance"."""
     return re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)", re.IGNORECASE)
@@ -146,14 +154,20 @@ class Session:
         """The remembered word cards, by base form; empty without a memory."""
         return self.memory.word_cards() if self.memory is not None else {}
 
-    def layout(self, known: dict[str, Entry] | None = None) -> list[list[dict]]:
+    def known_terms(self) -> dict[str, Entry]:
+        """The remembered definition cards, by term; empty without a memory."""
+        return self.memory.term_cards() if self.memory is not None else {}
+
+    def layout(self, known: dict[str, Entry] | None = None, terms: dict[str, Entry] | None = None) -> list[list[dict]]:
         """The text as the page draws it: paragraphs of sentences, each cut into words and the text between.
 
-        A word whose base form is in `known` (remembered word cards) and that is not picked
-        carries `known`: that base form.
+        A word that is not picked carries `known` when it has a remembered card: `term:` and the
+        term when it is part of a remembered term (`terms`), else its base form when that is
+        in `known` (remembered word cards).
         """
         picked = {card.place for card in self.cards if card.place is not None}
         known = known or {}
+        find_terms = _terms_pattern(terms or {})
         paragraphs = []
         number = 0
         for paragraph in self.paragraphs:
@@ -161,6 +175,7 @@ class Session:
             for sentence in paragraph:
                 pieces = []
                 position = 0
+                found = [(m.start(), m.end(), " ".join(m.group().lower().split())) for m in find_terms.finditer(sentence)] if find_terms else []
                 for index, word in enumerate(clickable_words(sentence)):
                     if word.start > position:
                         pieces.append({"text": sentence[position : word.start]})
@@ -169,10 +184,14 @@ class Session:
                         "word": index,
                         "picked": (number, index) in picked,
                     }
-                    if known and not piece["picked"]:
-                        base = base_form(piece["text"])
-                        if base in known:
-                            piece["known"] = base
+                    if not piece["picked"]:
+                        term = next((key for start, end, key in found if start <= word.start and word.end <= end), None)
+                        if term is not None:
+                            piece["known"] = "term:" + term  # a term wins over a word card
+                        elif known:
+                            base = base_form(piece["text"])
+                            if base in known:
+                                piece["known"] = base
                     pieces.append(piece)
                     position = word.end
                 if position < len(sentence):
