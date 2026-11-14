@@ -215,9 +215,11 @@ an extension for Edge and Chrome. In `edge://extensions` (or
 `chrome://extensions`) switch on Developer mode, choose Load unpacked and pick
 the `extension` folder. With sentmine running, press the button on a PDF or a
 web page: the PDF, or the page's text (only the selected part if you selected
-some), opens in sentmine's Read page. It reads a tab only when you press the
-button, and sends it nowhere but sentmine on this computer. On Canvas, open the
-PDF itself in its own tab first; for files on your computer, use Open a file.
+some; otherwise the article without the site's menus), opens in sentmine's Read page. It reads a tab only when you press the
+button, and sends it nowhere but sentmine on this computer. On Canvas's page about
+a file it sends the file behind the Download link; for files on your computer,
+use Open a file. The article is found with Mozilla's Readability
+(`extension/vendor`, Apache 2.0).
 
 The first design, a command-line tool that picks the words from a
 known-words list, still works: `sentmine passage.txt --known known.txt

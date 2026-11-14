@@ -13,7 +13,7 @@ EXTENSION = Path(__file__).parent.parent / "extension"
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
 def test_the_extensions_logic():
     run = subprocess.run(["node", "--test", str(EXTENSION / "test" / "logic.test.mjs")],
-                         capture_output=True, text=True, timeout=120)
+                         capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL)
     assert run.returncode == 0, run.stdout + run.stderr
 
 

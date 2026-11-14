@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Open the current tab in sentmine
-The browser extension SHALL have one button that, when pressed, sends the content of the current tab to the sentmine app running on this computer and then shows sentmine's Read page. A PDF SHALL be sent as a file; a web page SHALL be sent as text, the selected text when there is a selection, otherwise the page's main text. The Read page SHALL show the new text from its top.
+The browser extension SHALL have one button that, when pressed, sends the content of the current tab to the sentmine app running on this computer and then shows sentmine's Read page. A PDF SHALL be sent as a file; a web page SHALL be sent as text, the selected text when there is a selection, otherwise the article without the site's menus, boxes, picture captions and reference marks. On Canvas's page about a file, the file behind its Download link SHALL be sent, downloaded with the reader's own login. The Read page SHALL show the new text from its top.
 
 #### Scenario: A PDF in the browser
 - **WHEN** the reader has a PDF open in a tab and presses the button
@@ -11,12 +11,20 @@ The browser extension SHALL have one button that, when pressed, sends the conten
 - **WHEN** the reader has selected two paragraphs of an article and presses the button
 - **THEN** sentmine reads those two paragraphs
 
+#### Scenario: A Wikipedia article
+- **WHEN** the reader presses the button on a Wikipedia article
+- **THEN** sentmine's text starts with the article's title and first sentence, without the menus, the info box or `[1]` marks
+
+#### Scenario: Canvas's page about a file
+- **WHEN** the reader presses the button on the Canvas page of a PDF that has a Download link
+- **THEN** sentmine's Read page shows that PDF's pages
+
 #### Scenario: sentmine is not running
 - **WHEN** no sentmine answers on ports 8000 to 8010
 - **THEN** the button says that sentmine is not running and to start it with `sentmine` in a terminal, and nothing is sent
 
 #### Scenario: A tab it cannot read
-- **WHEN** the tab is a browser page, a local file, or a page that only links to a PDF
+- **WHEN** the tab is a browser page or a local file
 - **THEN** the button says what to do instead, and nothing is sent
 
 ### Requirement: Finding sentmine
