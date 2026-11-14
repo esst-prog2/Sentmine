@@ -1,7 +1,7 @@
 # document-reader Specification
 
 ## Purpose
-TBD - created by archiving change document-reader. Update Purpose after archive.
+Read a text from a file (PDF or plain .txt) instead of a paste, cleaned of what the file format adds, and say clearly when a file cannot be read.
 
 ## Requirements
 

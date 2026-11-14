@@ -1,7 +1,7 @@
 # cloze-cards Specification
 
 ## Purpose
-TBD - created by archiving change cloze-cards. Update Purpose after archive.
+Let a definition become a cloze card, the term hidden in its own passage, as an option per card, without changing what the memory keeps.
 
 ## Requirements
 

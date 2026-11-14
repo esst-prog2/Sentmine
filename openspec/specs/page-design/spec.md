@@ -1,7 +1,7 @@
 # page-design Specification
 
 ## Purpose
-TBD - created by archiving change polish-interface. Update Purpose after archive.
+Keep the app's pages readable in light and dark, with controls that show their state and one shared header.
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 # ai-meanings Specification
 
 ## Purpose
-TBD - created by archiving change ai-meanings. Update Purpose after archive.
+Let the reader ask for a suggested meaning of a word or term in its sentence, keep the reader in charge of what the card says, and say plainly what leaves the computer.
 
 ## Requirements
 

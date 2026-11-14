@@ -1,7 +1,7 @@
 # card-history Specification
 
 ## Purpose
-TBD - created by archiving change remember-cards. Update Purpose after archive.
+Remember which cards the reader has already made, so the same word or term is not carded twice and earlier cards can be found again.
 
 ## Requirements
 
