@@ -1,7 +1,7 @@
 # my-cards Specification
 
 ## Purpose
-TBD - created by archiving change memory-database. Update Purpose after archive.
+Give the reader one page with every card they have made: newest first, searchable, with their progress, and a way to delete a card.
 
 ## Requirements
 

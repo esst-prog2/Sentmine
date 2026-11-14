@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Open in sentmine</title>
+<style>
+  /* sentmine's own colours, light and dark */
+  :root { --page: #f6f5f1; --ink: #1f2328; --soft: #5c6470; --warn: #b3261e; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --page: #16181c; --ink: #e8e6e1; --soft: #a2a8b3; --warn: #ff8a80; } }
+  body { margin: 0; width: 300px; padding: 14px 16px; background: var(--page); color: var(--ink); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; }
+  b { font-weight: 700; }
+  p { margin: 6px 0 0; }
+  .warn { color: var(--warn); }
+  .soft { color: var(--soft); }
+</style>
+</head>
+<body>
+<b>sentmine</b>
+<p id="say" class="soft" role="status">Sending this tab to sentmine…</p>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

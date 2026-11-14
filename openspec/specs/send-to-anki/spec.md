@@ -1,7 +1,7 @@
 # send-to-anki Specification
 
 ## Purpose
-TBD - created by archiving change send-to-anki. Update Purpose after archive.
+Put the cards into the reader's Anki deck in one step through AnkiConnect, skipping cards already there and remembering what was sent.
 
 ## Requirements
 
