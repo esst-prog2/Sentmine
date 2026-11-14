@@ -1,8 +1,8 @@
 ## 1. Which words have cards
 
-- [ ] 1.1 `CardMemory.word_cards()`: the latest word card for each base form; empty when the memory cannot be read
-- [ ] 1.2 `Session.layout()` marks word pieces with the base form of their remembered card; picked words are not marked; `base_form` cached
-- [ ] 1.3 `known_cards` in the state, and the count at the end of the message after reading a text or file; verify each scenario with the test client
+- [x] 1.1 `CardMemory.word_cards()`: the latest word card for each base form; empty when the memory cannot be read
+- [x] 1.2 `Session.layout()` marks word pieces with the base form of their remembered card; picked words are not marked; `base_form` cached
+- [x] 1.3 `known_cards` in the state, and the count at the end of the message after reading a text or file; verify each scenario with the test client
 
 ## 2. The page
 

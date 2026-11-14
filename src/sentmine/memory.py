@@ -131,6 +131,16 @@ class CardMemory:
         )
         return _card(row[0]).entry if row else None
 
+    def word_cards(self) -> dict[str, Entry]:
+        """The latest word card for each base form, by base form; empty when the memory cannot be read."""
+        if self.problem:
+            return {}
+        try:
+            rows = self._query(f"SELECT {_COLUMNS} FROM cards WHERE kind = ? ORDER BY made_on, id", ("word",))
+        except MemoryProblem:
+            return {}
+        return {entry.key: entry for entry in (_card(row).entry for row in rows)}
+
     def add(self, entries: Iterable[Entry]) -> int:
         """Remember the cards that are not remembered yet; returns how many were new."""
         self._usable()

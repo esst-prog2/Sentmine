@@ -142,9 +142,18 @@ class Session:
         self.paragraphs = [split_sentences(paragraph) for paragraph in tidied.split("\n\n")]
         self.cards = []
 
-    def layout(self) -> list[list[dict]]:
-        """The text as the page draws it: paragraphs of sentences, each cut into words and the text between."""
+    def known_cards(self) -> dict[str, Entry]:
+        """The remembered word cards, by base form; empty without a memory."""
+        return self.memory.word_cards() if self.memory is not None else {}
+
+    def layout(self, known: dict[str, Entry] | None = None) -> list[list[dict]]:
+        """The text as the page draws it: paragraphs of sentences, each cut into words and the text between.
+
+        A word whose base form is in `known` (remembered word cards) and that is not picked
+        carries `known`: that base form.
+        """
         picked = {card.place for card in self.cards if card.place is not None}
+        known = known or {}
         paragraphs = []
         number = 0
         for paragraph in self.paragraphs:
@@ -155,13 +164,16 @@ class Session:
                 for index, word in enumerate(clickable_words(sentence)):
                     if word.start > position:
                         pieces.append({"text": sentence[position : word.start]})
-                    pieces.append(
-                        {
-                            "text": sentence[word.start : word.end],
-                            "word": index,
-                            "picked": (number, index) in picked,
-                        }
-                    )
+                    piece = {
+                        "text": sentence[word.start : word.end],
+                        "word": index,
+                        "picked": (number, index) in picked,
+                    }
+                    if known and not piece["picked"]:
+                        base = base_form(piece["text"])
+                        if base in known:
+                            piece["known"] = base
+                    pieces.append(piece)
                     position = word.end
                 if position < len(sentence):
                     pieces.append({"text": sentence[position:]})
