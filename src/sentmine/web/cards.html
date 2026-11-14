@@ -69,6 +69,7 @@ try {
   .card:last-child { padding-bottom: 0; }
   .card .front { margin: 0 0 8px; }
   .card .back { margin: 8px 0; padding-top: 8px; border-top: 1px dashed var(--line); }
+  .card .met { margin-top: 6px; font-size: 0.875rem; color: var(--accent); }
   .card .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; font-size: 0.875rem; color: var(--soft); }
   .card .meta time { font-variant-numeric: tabular-nums; margin-right: auto; }
   button {
@@ -206,7 +207,9 @@ function drawCard(card) {
     if (data) draw(data); else remove.disabled = false;
   });
   meta.append(element("span", "", card.kind === "word" ? "Word" : "Definition"), date, remove);
-  box.append(front, back, meta);
+  box.append(front, back);
+  if (card.met_again) box.append(element("div", "met", card.met_again));
+  box.append(meta);
   return box;
 }
 

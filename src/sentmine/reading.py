@@ -1,5 +1,6 @@
 """The reading session behind the page: one pasted text and the cards the reader made from it."""
 
+import hashlib
 import html
 import re
 from collections.abc import Callable
@@ -136,6 +137,7 @@ class Session:
         self.paragraphs: list[list[str]] = []  # each paragraph is a list of sentences
         self.cards: list[Flashcard] = []
         self.memory = memory  # None: the session remembers nothing between runs
+        self.text_id = ""  # which text is read: the same words give the same id
         self._next_id = 1
 
     @property
@@ -149,6 +151,16 @@ class Session:
             raise Problem("There is no text to read: paste a text first.")
         self.paragraphs = [split_sentences(paragraph) for paragraph in tidied.split("\n\n")]
         self.cards = []
+        self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
+
+    def meet(self, cards: list[tuple[str, str]], day: str | None = None) -> None:
+        """Record the remembered cards (kind, key) met in this text. A memory that cannot be written records nothing."""
+        if self.memory is None or not self.text_id:
+            return
+        try:
+            self.memory.meet(cards, self.text_id, day or date.today().isoformat())
+        except MemoryProblem:
+            pass  # reading goes on; only the count on My cards misses this text
 
     def known_cards(self) -> dict[str, Entry]:
         """The remembered word cards, by base form; empty without a memory."""
@@ -313,6 +325,8 @@ class Session:
         ]
         try:
             self.memory.add(entries)
+            if self.text_id:  # the text they were made from does not count as meeting them again
+                self.memory.made_from([(entry.kind, entry.key) for entry in entries], self.text_id, day)
         except MemoryProblem as error:
             return f"{done}, but these cards were not remembered. {error}"
         return ""
