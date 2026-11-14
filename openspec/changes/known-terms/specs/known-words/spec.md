@@ -11,6 +11,10 @@ When a text or PDF is shown, each word whose base form has a word card in the me
 - **WHEN** the memory has a word card for `run` and the text contains `ran`
 - **THEN** `ran` is underlined
 
+#### Scenario: A definition term
+- **WHEN** the memory has only a definition card for `variance`
+- **THEN** `variance` is underlined as a term, by the requirement on terms, and pointing at it shows the definition card
+
 #### Scenario: No memory
 - **WHEN** the app runs without a card memory
 - **THEN** no word is underlined and the text can be read and picked as before
