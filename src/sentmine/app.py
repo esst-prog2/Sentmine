@@ -34,6 +34,7 @@ BROWSER_DELAY_SECONDS = 0.8
 
 _PAGE = Path(__file__).parent / "web" / "index.html"
 _CARDS_PAGE = Path(__file__).parent / "web" / "cards.html"
+_DATA_MARK = "<!-- first data -->"  # where a page gets the data it first shows
 _NOT_IN_A_FILE_NAME = re.compile(r"[^\w \-]+")
 
 
@@ -205,13 +206,25 @@ def create_app(
     def too_large(error: RequestEntityTooLarge):
         return jsonify(error="This file is larger than 50 MB, so it cannot be read."), 413
 
+    def page_with(path: Path, first: Callable[[], Response]) -> Response:
+        """The page with the data it first shows inside, so it is drawn complete when it first appears,
+        not empty and then filled. Without that data the page asks for it, as before."""
+        html = path.read_text(encoding="utf-8")
+        try:
+            # "<" is written as \u003c: the JSON means the same, and nothing in it can end the script element.
+            data = first().get_data(as_text=True).replace("<", "\\u003c")
+        except (Problem, MemoryProblem, DocumentProblem):
+            return Response(html, mimetype="text/html")
+        holder = f'<script type="application/json" id="first-data">{data}</script>'
+        return Response(html.replace(_DATA_MARK, holder, 1), mimetype="text/html")
+
     @app.get("/")
     def page():
-        return Response(_PAGE.read_text(encoding="utf-8"), mimetype="text/html")
+        return page_with(_PAGE, state)
 
     @app.get("/cards")
     def cards_page():
-        return Response(_CARDS_PAGE.read_text(encoding="utf-8"), mimetype="text/html")
+        return page_with(_CARDS_PAGE, remembered)
 
     @app.get("/api/memory")
     def remembered():
@@ -258,7 +271,11 @@ def create_app(
 
     @app.get("/api/pages/<int:number>/words")
     def page_words(number: int):
-        return jsonify(boxes=pages_of(number).boxes[number])
+        response = jsonify(boxes=pages_of(number).boxes[number])
+        # Cached only when asked for with this PDF's fingerprint, like the pictures, so another PDF never gets them.
+        cached = shown["version"] != "" and request.args.get("v") == shown["version"]
+        response.headers["Cache-Control"] = "private, max-age=3600" if cached else "no-store"
+        return response
 
     @app.get("/api/pages/<int:number>.png")
     def page_picture(number: int):

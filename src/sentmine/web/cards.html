@@ -88,6 +88,12 @@ try {
     * { transition: none !important; }
     button:active:not(:disabled) { transform: none; }
   }
+  /* Going between Read and My cards: the content fades and the header stays where it is. */
+  @media (prefers-reduced-motion: no-preference) {
+    @view-transition { navigation: auto; }
+    ::view-transition-group(*) { animation-duration: .15s; }
+  }
+  body > header { view-transition-name: app-header; }
 </style>
 </head>
 <body>
@@ -121,6 +127,7 @@ try {
   </section>
 </main>
 
+<!-- first data -->
 <script>
 "use strict";
 
@@ -228,6 +235,17 @@ function draw(data) {
   }
 }
 
+// The data the page first shows comes inside it, so the page is drawn complete in its first frame.
+// Without it (or if it cannot be read) the page asks the app, as before.
+function firstData() {
+  try {
+    const holder = document.getElementById("first-data");
+    return holder ? JSON.parse(holder.textContent) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 async function load() {
   const data = await ask("GET", "/api/memory?q=" + encodeURIComponent($("search").value));
   if (data) draw(data);
@@ -238,7 +256,12 @@ $("search").addEventListener("input", () => {
   searchTimer = setTimeout(load, 200);
 });
 
-load();
+const first = firstData();
+if (first && $("search").value === "") {   // the data in the page is the list with no search
+  draw(first);
+} else {
+  load();
+}
 </script>
 </body>
 </html>

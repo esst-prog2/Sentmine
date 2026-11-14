@@ -146,6 +146,12 @@ try {
     * { transition: none !important; }
     button:active:not(:disabled) { transform: none; }
   }
+  /* Going between Read and My cards: the content fades and the header stays where it is. */
+  @media (prefers-reduced-motion: no-preference) {
+    @view-transition { navigation: auto; }
+    ::view-transition-group(*) { animation-duration: .15s; }
+  }
+  body > header { view-transition-name: app-header; }
 </style>
 </head>
 <body>
@@ -187,6 +193,7 @@ try {
   </section>
 </main>
 
+<!-- first data -->
 <script>
 "use strict";
 
@@ -293,6 +300,10 @@ async function call(method, url, body) {
     say(data.error || "Something went wrong.", true);
     return null;
   }
+  return use(data);
+}
+
+function use(data) {   // show what the app answered
   state = data;
   draw();
   if (data.result === "earlier") {
@@ -375,7 +386,7 @@ async function fillPage(page) {
   const version = shownPdf;
   let boxes;
   try {
-    const response = await fetch("/api/pages/" + page.dataset.page + "/words");
+    const response = await fetch("/api/pages/" + page.dataset.page + "/words?v=" + version);
     boxes = (await response.json()).boxes;
   } catch (error) {
     return;   // the page stays a picture; its words cannot be picked
@@ -800,7 +811,17 @@ function restorePlace() {
   }
 }
 
-call("GET", "/api/state").then((loaded) => {
+// The data the page first shows comes inside it, so the page is drawn complete in its first frame.
+// Without it (or if it cannot be read) the page asks the app, as before.
+function firstData() {
+  try {
+    const holder = document.getElementById("first-data");
+    return holder ? JSON.parse(holder.textContent) : null;
+  } catch (error) {
+    return null;
+  }
+}
+function opened(loaded) {
   if (loaded && loaded.memory_warning) {
     say(loaded.memory_warning + " Earlier cards will not be found, and new ones will not be remembered.", true);
   }
@@ -809,7 +830,14 @@ call("GET", "/api/state").then((loaded) => {
     $("paste-box").querySelector("summary").textContent = "Paste or open another text";
     restorePlace();
   }
-});
+}
+
+const first = firstData();
+if (first) {
+  opened(use(first));
+} else {
+  call("GET", "/api/state").then(opened);
+}
 </script>
 </body>
 </html>
