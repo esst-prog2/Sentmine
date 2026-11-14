@@ -85,6 +85,7 @@ try {
   #text p { margin: 0 0 1em; }
   #text.empty { color: var(--soft); font: inherit; }
   #paste-box[open] + #text.empty { display: none; }
+  body.clip #paste-box[open] + #text.empty { display: block; }   /* the panel has no paste box: say what to do */
   .w { cursor: pointer; border-radius: 3px; transition: background-color .15s; }
   .w:hover { background: var(--hover); }
   .w.picked, .w.picked:hover { background: var(--picked); }
@@ -256,7 +257,10 @@ drawThemeButton();
 // Under /clip the same page shows the clips from web pages, in the extension's side panel.
 const CLIP = location.pathname.startsWith("/clip");
 const API = CLIP ? "/clip/api" : "/api";
-if (CLIP) document.body.classList.add("clip");
+if (CLIP) {
+  document.body.classList.add("clip");
+  $("no-cards").textContent = "No cards yet. In a sentence, click a word; in a definition, drag over its term.";
+}
 const HINT = CLIP
   ? "Select text on a page, right-click it, and choose a card."
   : "Click a word for a card; click again to remove it. Drag over a term, then its definition, " +
@@ -364,7 +368,9 @@ function drawText() {
   text.replaceChildren();
   text.classList.toggle("empty", state.paragraphs.length === 0);
   if (state.paragraphs.length === 0) {
-    text.textContent = "No text yet.";
+    text.textContent = CLIP
+      ? "No clips yet. Select a sentence or a definition on a web page, right-click it, and choose Word card from this sentence or Definition card from this."
+      : "No text yet.";
     return;
   }
   state.paragraphs.forEach((paragraph, number) => {
