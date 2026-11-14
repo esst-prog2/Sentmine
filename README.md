@@ -221,6 +221,14 @@ a file it sends the file behind the Download link; for files on your computer,
 use Open a file. The article is found with Mozilla's Readability
 (`extension/vendor`, Apache 2.0).
 
+**Cards from a web page, in a side panel.** Select a sentence on a web page,
+right-click it and choose *Word card from this sentence*; or select a
+definition and choose *Definition card from this*. A panel opens beside the
+page with the selection: click a word for a word card, or, in a definition,
+drag over its term. Clips are kept apart from the text in Read, and their
+cards stay until you send or download them from the panel. The right-click
+needs no access to the page: the browser hands over only the selected text.
+
 The first design, a command-line tool that picks the words from a
 known-words list, still works: `sentmine passage.txt --known known.txt
 --deck new.apkg`.

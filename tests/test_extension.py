@@ -20,5 +20,5 @@ def test_the_extensions_logic():
 def test_the_extension_asks_for_little():
     manifest = json.loads((EXTENSION / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["manifest_version"] == 3
-    assert sorted(manifest["permissions"]) == ["activeTab", "scripting"]
+    assert sorted(manifest["permissions"]) == ["activeTab", "contextMenus", "scripting", "sidePanel"]
     assert manifest["host_permissions"] == ["http://127.0.0.1/*"]   # sentmine's address, never all websites

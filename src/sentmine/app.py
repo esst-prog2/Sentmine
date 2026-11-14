@@ -132,7 +132,27 @@ def create_app(
     `send(notes, deck)` adds notes to Anki; tests give a fake one."""
     app = Flask(__name__, static_folder=None)
     app.config["MAX_CONTENT_LENGTH"] = MOST_BYTES
-    reading = session if session is not None else Session()
+    read = session if session is not None else Session()
+    clips = Session(read.memory)  # clips from web pages, kept apart from the text in Read
+
+    def now() -> Session:
+        """The session a request is about: under /clip the clips, otherwise the text in Read."""
+        return clips if request.path.startswith("/clip") else read
+
+    class _Now:   # `reading` below stands for the session of the request
+        def __getattr__(self, name: str):
+            return getattr(now(), name)
+
+    reading = _Now()
+
+    def both(method: str, rule: str):
+        """A reading route, answered for Read at `rule` and for the clips at /clip + `rule`."""
+        def register(view):
+            app.add_url_rule(rule, view_func=view, methods=[method])
+            app.add_url_rule("/clip" + rule, endpoint="clip_" + view.__name__, view_func=view, methods=[method])
+            return view
+        return register
+
     shown: dict = {"pages": None, "version": ""}  # the PDF shown as its own pages, if the text came from one
 
     def show_pages(pages: Pages | None, data: bytes = b"") -> None:
@@ -173,7 +193,8 @@ def create_app(
             memory_warning=reading.memory.problem if reading.memory is not None else "",
             can_suggest=ask is not None,
             text_id=reading.text_id,  # names the text read, so the page can keep the reader's place in it
-            pdf=None if shown["pages"] is None else {
+            clip_kinds=clips.clip_kinds if now() is clips else None,
+            pdf=None if shown["pages"] is None or now() is clips else {
                 "version": shown["version"],
                 "sizes": [[round(width, 2), round(height, 2)] for width, height in shown["pages"].sizes],
             },
@@ -234,6 +255,10 @@ def create_app(
     def page():
         return page_with(_PAGE, state)
 
+    @app.get("/clip")
+    def clip_page():
+        return page_with(_PAGE, state)
+
     @app.get("/cards")
     def cards_page():
         return page_with(_CARDS_PAGE, remembered)
@@ -265,7 +290,7 @@ def create_app(
         """Tells the browser extension that this port is sentmine, not another program."""
         return jsonify(app="sentmine")
 
-    @app.get("/api/state")
+    @both("GET", "/api/state")
     def get_state():
         return state()
 
@@ -274,6 +299,11 @@ def create_app(
         reading.load(sent("text"))
         show_pages(None)
         return state("Text loaded.", count_known=True)
+
+    @app.post("/clip/api/text")
+    def add_clip():
+        clips.add(sent("text"), (request.get_json(silent=True) or {}).get("kind", "word"))
+        return state("Clip added.", count_known=True)
 
     @app.post("/api/file")
     def load_file():
@@ -300,25 +330,25 @@ def create_app(
         response.headers["Cache-Control"] = "private, max-age=3600"  # the address carries the PDF's version
         return response
 
-    @app.post("/api/word")
+    @both("POST", "/api/word")
     def pick_word():
         return answer(*reading.pick_word(sent("sentence", int), sent("word", int), anyway()))
 
-    @app.post("/api/definition")
+    @both("POST", "/api/definition")
     def add_definition():
         return answer(*reading.add_definition(sent("term"), sent("passage"), anyway()))
 
-    @app.put("/api/cards/<int:card_id>")
+    @both("PUT", "/api/cards/<int:card_id>")
     def edit_card(card_id: int):
         reading.edit(card_id, sent("front"), sent("back"))
         return state("Card changed.")
 
-    @app.delete("/api/cards/<int:card_id>")
+    @both("DELETE", "/api/cards/<int:card_id>")
     def delete_card(card_id: int):
         reading.delete(card_id)
         return state("Card deleted.")
 
-    @app.put("/api/cards/<int:card_id>/cloze")
+    @both("PUT", "/api/cards/<int:card_id>/cloze")
     def switch_cloze(card_id: int):
         cloze = (request.get_json(silent=True) or {}).get("cloze")
         if not isinstance(cloze, bool):
@@ -328,21 +358,21 @@ def create_app(
             return state(f"Now a cloze card: '{card.front}' is hidden in the passage.")
         return state("Now a term → passage card.")
 
-    @app.post("/api/cards/<int:card_id>/meaning")
+    @both("POST", "/api/cards/<int:card_id>/meaning")
     def suggest_card_meaning(card_id: int):
         if ask is None:
             raise Problem("Suggesting a meaning needs an API key.")
         reading.suggest(card_id, ask)
         return state("Meaning suggested. Check it, and edit it if you like.")
 
-    @app.post("/api/send")
+    @both("POST", "/api/send")
     def send_to_anki():
         deck = deck_name(sent("deck"))
         added, already, warning = reading.send(deck, send)
         message = _sent_message(deck, added, already)
         return state(message + (" " + warning if warning else ""), "warning" if warning else "sent")
 
-    @app.get("/api/deck")
+    @both("GET", "/api/deck")
     def download_deck():
         name = deck_file_name(request.args.get("name", ""))
         with tempfile.TemporaryDirectory() as folder:
