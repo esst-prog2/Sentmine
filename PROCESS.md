@@ -5,3 +5,4 @@ How this project is made, one row per step since session 8 (10 November 2026). E
 | Date | Step | What the tool did | What I decided |
 |---|---|---|---|
 | 2026-11-10 | Start keeping this file | Claude (Claude Code) read the session 8 slides, listed Homework 9 and 10, the slides and the demo dates, and created this file on the branch `hw9-page`. | From now on, after each step: commit, and add a row here with the step, what the tool did, and what I decided. |
+| 2026-11-14 | Plan after the professor's feedback | Claude summarised the feedback on Homework 7 and 8 and proposed: no features before the demos, five screenshots from a real run first, the page in `docs/`, gstack and Impeccable installed for the page, the session 8 slides moved out of the repository folder. | Yes to all of it. |
