@@ -1,12 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Open in sentmine",
-  "version": "0.1.0",
-  "description": "Open the PDF or web page in this tab in sentmine, the reading app running on your own computer.",
+  "version": "0.2.0",
+  "description": "Open the PDF or web page in this tab in sentmine, or make cards from text you select, in a panel beside the page. Works with sentmine running on your own computer.",
   "action": {
     "default_title": "Open in sentmine",
     "default_popup": "popup.html"
   },
-  "permissions": ["activeTab", "scripting"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "permissions": ["activeTab", "scripting", "contextMenus", "sidePanel"],
   "host_permissions": ["http://127.0.0.1/*"]
 }

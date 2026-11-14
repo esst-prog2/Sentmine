@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { findSentmine, pdfName, tidy, whatToSend } from "../logic.js";
+import { LONGEST_CLIP, clipFor, findSentmine, pdfName, tidy, whatToSend } from "../logic.js";
+
+test("a right-click makes a clip of its kind, tidied", () => {
+  assert.deepEqual(clipFor("word", " Outliers can skew it.[3] "), { text: "Outliers can skew it.", kind: "word" });
+  assert.deepEqual(clipFor("definition", "A confounder is a variable."), { text: "A confounder is a variable.", kind: "definition" });
+});
+
+test("an empty, too long or unknown clip is refused with a reason", () => {
+  assert.match(clipFor("word", "   ").refuse, /Select a sentence/);
+  assert.match(clipFor("word", "x".repeat(LONGEST_CLIP + 1)).refuse, /a lot of text/);
+  assert.match(clipFor("poem", "A line.").refuse, /not one of/);
+});
 
 const page = (text, selection = "", contentType = "text/html", download = "", downloadName = "") =>
   ({ text, selection, contentType, download, downloadName });

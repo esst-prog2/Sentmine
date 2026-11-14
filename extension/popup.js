@@ -125,4 +125,12 @@ export async function openInSentmine(tab) {
 }
 
 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-if (tab && (await openInSentmine(tab)) === "sent") window.close();
+
+document.getElementById("open").addEventListener("click", async () => {
+  if (tab && (await openInSentmine(tab)) === "sent") window.close();
+});
+
+document.getElementById("panel").addEventListener("click", async () => {
+  if (tab) await chrome.sidePanel.open({ windowId: tab.windowId });   // the click lets the panel open
+  window.close();
+});

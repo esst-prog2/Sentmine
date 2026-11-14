@@ -130,6 +130,9 @@ def clickable_words(sentence: str) -> list[Word]:
     return [word for word in find_words(sentence) if not word.ignored]
 
 
+CLIP_KINDS = ("word", "definition")
+
+
 class Session:
     """One text and its cards, kept in memory for one reader."""
 
@@ -138,6 +141,7 @@ class Session:
         self.cards: list[Flashcard] = []
         self.memory = memory  # None: the session remembers nothing between runs
         self.text_id = ""  # which text is read: the same words give the same id
+        self.clip_kinds: list[str] = []  # for clips from web pages: "word" or "definition", one per paragraph
         self._next_id = 1
 
     @property
@@ -151,7 +155,40 @@ class Session:
             raise Problem("There is no text to read: paste a text first.")
         self.paragraphs = [split_sentences(paragraph) for paragraph in tidied.split("\n\n")]
         self.cards = []
+        self.clip_kinds = []
         self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
+
+    def add(self, text: str, kind: str = "word") -> None:
+        """A clip from a web page: added after the clips before it, whose cards stay. A definition clip is kept
+        as one paragraph, since all of it is the definition."""
+        if kind not in CLIP_KINDS:
+            raise Problem(f"A clip is a {' or a '.join(CLIP_KINDS)}.")
+        tidied = tidy(text)
+        if not tidied:
+            raise Problem("The selection has no text to read.")
+        parts = [" ".join(tidied.split())] if kind == "definition" else tidied.split("\n\n")
+        self.paragraphs += [split_sentences(part) for part in parts]
+        self.clip_kinds += [kind] * len(parts)
+        self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
+
+    def remove_clip(self, number: int) -> None:
+        """Take a clip away. Its cards stay, since they hold their own text; the clicked places of the
+        clips after it move up, so their words stay marked."""
+        if not 0 <= number < len(self.paragraphs):
+            raise Problem("That clip is not there any more.")
+        first = sum(len(paragraph) for paragraph in self.paragraphs[:number])
+        count = len(self.paragraphs[number])
+        del self.paragraphs[number]
+        if number < len(self.clip_kinds):
+            del self.clip_kinds[number]
+        for card in self.cards:
+            if card.place is None:
+                continue
+            sentence, word = card.place
+            if first <= sentence < first + count:
+                card.place = None   # its sentence is gone
+            elif sentence >= first + count:
+                card.place = (sentence - count, word)
 
     def meet(self, cards: list[tuple[str, str]], day: str | None = None) -> None:
         """Record the remembered cards (kind, key) met in this text. A memory that cannot be written records nothing."""

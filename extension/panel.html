@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>sentmine</title>
+<style>
+  /* sentmine's own colours, light and dark */
+  :root { --page: #f6f5f1; --ink: #1f2328; --soft: #5c6470; --warn: #b3261e; --line: #d9d6cd; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --page: #16181c; --ink: #e8e6e1; --soft: #a2a8b3; --warn: #ff8a80; --line: #343841; } }
+  html, body { height: 100%; margin: 0; background: var(--page); color: var(--ink); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; }
+  iframe { display: block; width: 100%; height: 100%; border: 0; }
+  #say { padding: 16px; }
+  #say b { display: block; margin-bottom: 6px; }
+  .warn { color: var(--warn); }
+  button { font: inherit; margin-top: 10px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="say" role="status"><b>sentmine</b><span id="line">Looking for sentmine…</span></div>
+<iframe id="clips" title="Your clips and their cards" hidden></iframe>
+<script type="module" src="panel.js"></script>
+</body>
+</html>

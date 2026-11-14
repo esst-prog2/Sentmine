@@ -151,6 +151,12 @@ try {
     @view-transition { navigation: auto; }
     ::view-transition-group(*) { animation-duration: .15s; }
   }
+  /* Clip mode (/clip): the side panel beside a web page. One column, no paste box, a label on each clip. */
+  body.clip nav, body.clip #paste-box, body.clip .spacer { display: none; }
+  body.clip main { grid-template-columns: 1fr; }
+  .clip + .clip { border-top: 1px solid var(--line); padding-top: 14px; }
+  .clip-head { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    font: 0.8125rem system-ui, sans-serif; color: var(--soft); margin-bottom: 4px; }
   body > header { view-transition-name: app-header; }
 </style>
 </head>
@@ -220,8 +226,14 @@ new ResizeObserver(() => {   // the status line and the cards stay in view under
   document.documentElement.style.setProperty("--status", $("status").offsetHeight + "px");
 }).observe(document.body);
 drawThemeButton();
-const HINT = "Click a word for a card from its sentence; click it again to remove the card. " +
-  "Drag over a term, then over its definition, for a definition card.";
+// Under /clip the same page shows the clips from web pages, in the extension's side panel.
+const CLIP = location.pathname.startsWith("/clip");
+const API = CLIP ? "/clip/api" : "/api";
+if (CLIP) document.body.classList.add("clip");
+const HINT = CLIP
+  ? "Select text on a web page and right-click: Word card from this sentence, or Definition card from this."
+  : "Click a word for a card from its sentence; click it again to remove the card. " +
+    "Drag over a term, then over its definition, for a definition card.";
 
 let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let term = null;       // the term dragged over, while its definition is still to be marked
@@ -328,8 +340,9 @@ function drawText() {
     text.textContent = "No text yet.";
     return;
   }
-  for (const paragraph of state.paragraphs) {
+  state.paragraphs.forEach((paragraph, number) => {
     const p = element("p");
+    if (state.clip_kinds) p.dataset.kind = state.clip_kinds[number];
     paragraph.forEach((sentence, index) => {
       if (index > 0) p.append(" ");
       for (const piece of sentence.pieces) {
@@ -344,8 +357,21 @@ function drawText() {
         p.append(word);
       }
     });
-    text.append(p);
-  }
+    if (!state.clip_kinds) {
+      text.append(p);
+      return;
+    }
+    // a clip: what to do with it, and a way to take it away
+    const head = element("div", "clip-head");
+    head.append(element("span", "", state.clip_kinds[number] === "definition" ? "Definition: drag over its term" : "Sentence: click a word"));
+    const remove = element("button", "small", "Remove");
+    remove.setAttribute("aria-label", "Remove this clip");
+    remove.addEventListener("click", () => call("DELETE", API + "/clips/" + number));
+    head.append(remove);
+    const clip = element("div", "clip");
+    clip.append(head, p);
+    text.append(clip);
+  });
 }
 
 // A PDF is drawn as its own pages: a picture of each page with a box over each word, made
@@ -600,7 +626,7 @@ function drawCard(card) {
     back.value = card.back;
     const save = element("button", "main small", "Save");
     save.addEventListener("click", async () => {
-      const done = await call("PUT", "/api/cards/" + card.id, { front: front.value, back: back.value });
+      const done = await call("PUT", API + "/cards/" + card.id, { front: front.value, back: back.value });
       if (done) { editing = null; draw(); }
     });
     const cancel = element("button", "small", "Cancel");
@@ -620,12 +646,12 @@ function drawCard(card) {
   const edit = element("button", "small", "Edit");
   edit.addEventListener("click", () => { editing = card.id; draw(); });
   const remove = element("button", "small", "Delete");
-  remove.addEventListener("click", () => call("DELETE", "/api/cards/" + card.id));
+  remove.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id));
   const buttons = element("div", "buttons");
   buttons.append(kind, edit, remove);
   if (card.kind === "definition" && (card.cloze || card.can_cloze)) {
     const other = element("button", "small", card.cloze ? "Make it term → passage" : "Make it cloze");
-    other.addEventListener("click", () => call("PUT", "/api/cards/" + card.id + "/cloze", { cloze: !card.cloze }));
+    other.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/cloze", { cloze: !card.cloze }));
     buttons.append(other);
   }
   if (card.kind === "word" && state.can_suggest) {
@@ -633,7 +659,7 @@ function drawCard(card) {
     suggest.addEventListener("click", async () => {
       suggest.disabled = true;
       suggest.textContent = "Asking…";
-      const done = await call("POST", "/api/cards/" + card.id + "/meaning");
+      const done = await call("POST", API + "/cards/" + card.id + "/meaning");
       if (!done) {   // the message says why; the card has not changed
         suggest.disabled = false;
         suggest.textContent = "Suggest meaning";
@@ -669,30 +695,44 @@ document.addEventListener("mouseup", (event) => {
     return;
   }
   if (inText) {
+    const clipped = CLIP && term === null ? definitionClipOf(selection.anchorNode) : null;
     selection.removeAllRanges();
-    chose(selected);
+    if (clipped) {
+      pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
+    } else {
+      chose(selected);
+    }
     return;
   }
   if (selected || !event.target.classList.contains("w") || !$("text").contains(event.target)) return;
   pickWord(event.target);
 });
 
+// a term keeps no full stop, comma or colon after it: "Simpson's reversal:" would hide the colon in a cloze card
+function termOf(selected) {
+  return selected.replace(/\s+/g, " ").replace(/[.,;:!?]+$/, "") || selected;
+}
+
+function definitionClipOf(node) {   // the definition clip a drag was in, if it was in one
+  const element = node && (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
+  return element ? element.closest('#text p[data-kind="definition"]') : null;
+}
+
 function chose(selected) {   // a drag: the term, or the definition of the waiting term
   if (!selected) return;
   if (term === null) {
-    // a term keeps no full stop, comma or colon after it: "Simpson's reversal:" would hide the colon in a cloze card
-    term = selected.replace(/\s+/g, " ").replace(/[.,;:!?]+$/, "") || selected;
+    term = termOf(selected);
     say("");
     return;
   }
   const chosen = term;
   term = null;
-  pick("/api/definition", { term: chosen, passage: selected });
+  pick(API + "/definition", { term: chosen, passage: selected });
 }
 
 function pickWord(box) {
   term = null;   // a click on a word drops a waiting term
-  pick("/api/word", { sentence: Number(box.dataset.sentence), word: Number(box.dataset.word) });
+  pick(API + "/word", { sentence: Number(box.dataset.sentence), word: Number(box.dataset.word) });
 }
 
 document.addEventListener("keydown", (event) => {
@@ -740,12 +780,12 @@ $("file").addEventListener("change", async () => {
 
 $("download").addEventListener("click", () => busy($("download"), "Making the deck…", download));
 $("send").addEventListener("click", () =>
-  busy($("send"), "Sending…", () => call("POST", "/api/send", { deck: $("deck-name").value })));
+  busy($("send"), "Sending…", () => call("POST", API + "/send", { deck: $("deck-name").value })));
 
 async function download() {
   let response;
   try {
-    response = await fetch("/api/deck?name=" + encodeURIComponent($("deck-name").value));
+    response = await fetch(API + "/deck?name=" + encodeURIComponent($("deck-name").value));
   } catch (error) {
     say("The app is not answering. Is `sentmine` still running in the terminal?", true);
     return;
@@ -828,7 +868,12 @@ function opened(loaded) {
   if (loaded && loaded.paragraphs.length > 0) {
     $("paste-box").open = false;
     $("paste-box").querySelector("summary").textContent = "Paste or open another text";
-    restorePlace();
+    if (CLIP) {
+      const clips = $("text").querySelectorAll("p");
+      clips[clips.length - 1].scrollIntoView({ block: "start" });
+    } else {
+      restorePlace();
+    }
   }
 }
 
@@ -836,7 +881,7 @@ const first = firstData();
 if (first) {
   opened(use(first));
 } else {
-  call("GET", "/api/state").then(opened);
+  call("GET", API + "/state").then(opened);
 }
 </script>
 </body>

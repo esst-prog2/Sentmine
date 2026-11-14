@@ -21,6 +21,22 @@ export async function findSentmine(fetchFn, ports = PORTS, wait = 600) {
   return answers.find((base) => base !== null) || null;
 }
 
+// The right-click items on selected text, by the kind of clip each one makes.
+export const MENU = { word: "Word card from this sentence", definition: "Definition card from this" };
+
+export const LONGEST_CLIP = 3000;   // characters: a sentence or a definition, not a whole page
+
+// The clip for a right-click item and the selected text, or a reason not to send it.
+export function clipFor(menuItemId, selected) {
+  if (!(menuItemId in MENU)) return { refuse: "That is not one of sentmine's menu items." };
+  const text = tidy(selected || "");
+  if (text === "") return { refuse: "Select a sentence or a definition first, then right-click it." };
+  if (text.length > LONGEST_CLIP) {
+    return { refuse: "That is a lot of text for one card. Select one sentence or one definition, or send the whole page with the sentmine button." };
+  }
+  return { text, kind: menuItemId };
+}
+
 // Marks a web page puts in its text that are not part of it: reference numbers like [12], [edit].
 export function tidy(text) {
   return text
