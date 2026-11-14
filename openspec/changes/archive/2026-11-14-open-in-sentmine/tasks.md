@@ -13,4 +13,4 @@
 - [x] 3.1 In headless Edge with the extension loaded: a web page and a PDF end up in sentmine's Read page; a page of another site changes nothing (Edge itself blocks it before it reaches the app; the app's 403 is covered by the app's tests)
 - [x] 3.2 How to install it, in the README; the whole suite; `openspec validate open-in-sentmine --strict`
 - [x] 3.4 After the reader's first try: the article without menus (Readability), Canvas's Download link followed; checked again on Wikipedia in headless Edge
-- [ ] 3.3 The reader loads it in Edge and opens a page and a PDF with it (needs the reader)
+- [x] 3.3 The reader loads it in Edge and opens a page and a PDF with it (needs the reader)
