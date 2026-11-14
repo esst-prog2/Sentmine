@@ -14,4 +14,4 @@
 ## 4. Wrap-up
 
 - [x] 4.1 Run the whole suite and `openspec validate met-again --strict`; rerun the click and drag checks
-- [ ] 4.2 Open the reader's own memory once with the new version and check its card count is unchanged (needs the reader's OK)
+- [x] 4.2 Open the reader's own memory once with the new version and check its card count is unchanged (needs the reader's OK)
