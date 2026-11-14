@@ -12,4 +12,4 @@
 
 - [x] 3.1 Measure the time to read the 166-page book before and after
 - [x] 3.2 Run the whole suite and `openspec validate known-words --strict`
-- [ ] 3.3 The reader reads a text with words they have cards for (needs the reader)
+- [x] 3.3 The reader reads a text with words they have cards for (needs the reader)
