@@ -17,4 +17,4 @@
 
 - [x] 4.1 Headless Edge: a word clip and a definition clip make their cards in the clip page at panel width; Read untouched
 - [x] 4.2 README, the whole suite, `openspec validate clip-panel --strict`
-- [ ] 4.3 The reader tries it on a web page (needs the reader)
+- [x] 4.3 The reader tries it on a web page (needs the reader)
