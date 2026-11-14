@@ -165,14 +165,14 @@ A warm neutral paper interface with one cool blue for action and one yellow that
 - **Hover Wash** (`hover-wash`): hover fill on buttons and on clickable words.
 - **Selection Blue** (`selection-blue`): text selection, with ink text.
 
-One-off literals in the build, not tokens: install-block header `#2b3036`, selection inside code `#2d4a7a`, settle flash `#fff8d6`, scrollbar thumb `#c4c0b5`.
+Supporting tokens: `--code-head` `#2b3036` (install-block header), `--code-selection` `#2d4a7a` (selection inside code), `--picked-soft` `#fff8d6` (settle flash), `--scrollbar` `#c4c0b5` (scrollbar thumb). Every colour in the CSS is a token on `:root`; no hex value appears outside it.
 
 ### Named Rules
 **The Borrowed Palette Rule.** The page uses the app's colour tokens with the app's names and values. A new colour enters the page only if it first exists in the app.
 
 **The Yellow Means Picked Rule.** Picked Yellow marks exactly one thing: the word currently chosen to become a card. Never a callout, badge or emphasis fill.
 
-**The Dotted Return Rule.** A 2px dotted Action Blue underline, offset 4px, means "you already have a card for this word" and nothing else.
+**The Dotted Return Rule.** A 2px dotted Action Blue underline, offset 4px, means "you already have a card for this word" and nothing else. It is one CSS rule, shared by `.known`, `.back-again span` and `.underline-demo`.
 
 ## Typography
 
@@ -204,11 +204,11 @@ Full-bleed bands with a fluid side gutter (`gutter`, 16 to 48px); sections separ
 
 - **Section order as shipped:** opening; One card, five steps; Your cards come back while you read; Why I built it; Measured, with sources; Try it; footer.
 - **Opening:** headline and one line, then a stage (single column, `stack` gap): the book-sentence frame full width, then a two-column grid of equal columns (the card it made; the same word twelve pages later), then a one-line caption.
-- **How it works:** two columns, steps `minmax(0, 1fr)` and deck `minmax(0, 24rem)`, `column-gap` between. Each step is followed by `clamp(48px, 7vw, 80px)`. The deck is sticky at `top: 92px`.
+- **How it works:** two columns, steps `minmax(0, 1fr)` and deck `minmax(0, 24rem)`, `column-gap` between. Each step is followed by `clamp(48px, 7vw, 80px)`. The deck is sticky at `top: var(--below-bar)` (86px).
 - **Comes back:** two columns at 1.25fr / 1fr, vertically centred.
 - **Facts:** each row a grid of claim and a 15rem source column.
 - **Install:** `repeat(auto-fit, minmax(min(100%, 26rem), 1fr))`, max 64rem.
-- **Anchors:** `scroll-padding-top: 76px` clears the sticky header; smooth scrolling unless reduced motion is requested.
+- **Anchors:** `scroll-padding-top: var(--below-bar)` clears the sticky header; `--below-bar` is `--bar-height` (62px) plus 24px, shared with the deck's sticky top; smooth scrolling unless reduced motion is requested.
 
 **Breakpoints.** At 900px and below every two-column grid becomes one column, the deck stops being sticky and shows its final state (step 5) after the steps, and facts rows stack. At 640px and below the header drops its section nav and the GitHub button (Install stays), the sentence frame padding becomes 20px 18px and the book display drops to 1.45rem.
 
@@ -261,13 +261,13 @@ Each step is a title, one paragraph, and a cropped real screenshot in a white fr
 A panel (padding 4px 24px, max 60em) holding a plain list: each row is the claim and, in a 15rem soft-ink column, the linked source with its date. Rows are separated by hairlines.
 
 ### Install Blocks
-Two side-by-side slabs: a dark header (`#2b3036`, paper text, the system name and a Copy button) over an ink code block in paper text. A `<details>` "Optional: Anki and AI meanings" follows, its summary in 600 weight with a soft-ink marker.
+Two side-by-side slabs: a dark header (`--code-head`, paper text, the system name and a Copy button) over an ink code block in paper text. A `<details>` "Optional: Anki and AI meanings" follows, its summary in 600 weight with a soft-ink marker.
 
 ### Footer
 Hairline above, soft ink at 0.95rem, a wrapping row: what comes next, the course attribution, the source link.
 
 ### Motion
-One animation: **settle** (`.5s cubic-bezier(.16, 1, .3, 1)`), a fade from `#fff8d6` to transparent on the deck card that just changed. Otherwise only .15s colour transitions on hover. Under `prefers-reduced-motion: reduce` all animations and transitions are off and scrolling is instant.
+One animation: **settle** (`.5s cubic-bezier(.16, 1, .3, 1)`), a fade from `--picked-soft` to transparent on the deck card that just changed. Otherwise only .15s colour transitions on hover. Under `prefers-reduced-motion: reduce` all animations and transitions are off and scrolling is instant.
 
 ## Do's and Don'ts
 
