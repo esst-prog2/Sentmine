@@ -88,6 +88,7 @@ try {
   .w { cursor: pointer; border-radius: 3px; transition: background-color .15s; }
   .w:hover { background: var(--hover); }
   .w.picked, .w.picked:hover { background: var(--picked); }
+  .w.known { text-decoration: underline dotted var(--accent) 2px; text-underline-offset: 4px; }
   #text.pdf { max-width: none; }
   .pdf-page {
     position: relative; margin: 0 0 16px; background: #fff; border: 1px solid var(--line); border-radius: 4px;
@@ -102,6 +103,14 @@ try {
   .pdf-page .w:hover { background: rgba(26, 95, 208, 0.16); }
   .pdf-page .w.picked, .pdf-page .w.picked:hover { background: rgba(255, 196, 0, 0.45); }
   .pdf-page .w.dragged, .pdf-page .w.dragged:hover { background: rgba(26, 95, 208, 0.3); }
+  .pdf-page .w.known { text-decoration: none; border-bottom: 2px dotted rgba(26, 95, 208, 0.85); }
+  #known-card {
+    position: fixed; z-index: 3; max-width: 26rem; padding: 10px 12px; pointer-events: none;
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18); font: 0.9375rem/1.45 system-ui, "Segoe UI", sans-serif;
+  }
+  #known-card .made { color: var(--soft); font-size: 0.8125rem; margin-bottom: 4px; }
+  #known-card .back { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
   .pdf-page .page-number { position: absolute; right: 8px; bottom: 6px; font: 0.75rem system-ui, sans-serif; color: #5c6470; }
   @media (min-width: 801px) {
     #status { position: sticky; top: var(--header, 0px); z-index: 1; }
@@ -155,6 +164,7 @@ try {
 </header>
 
 <div id="status" role="status"></div>
+<div id="known-card" role="tooltip" hidden></div>
 
 <main>
   <section>
@@ -315,7 +325,8 @@ function drawText() {
           p.append(piece.text);
           continue;
         }
-        const word = element("span", piece.picked ? "w picked" : "w", piece.text);
+        const word = element("span", piece.picked ? "w picked" : piece.known ? "w known" : "w", piece.text);
+        if (piece.known) word.dataset.known = piece.known;
         word.dataset.sentence = sentence.sentence;
         word.dataset.word = piece.word;
         p.append(word);
@@ -391,19 +402,51 @@ function wordText(sentence, word) {
   return "";
 }
 
-function markPicked() {
+function markPicked() {   // picked words, and words that already have cards, on a PDF's pages
   const picked = new Set();
+  const known = new Map();
   for (const paragraph of state.paragraphs) {
     for (const drawn of paragraph) {
       for (const piece of drawn.pieces) {
         if (piece.picked) picked.add(drawn.sentence + ":" + piece.word);
+        if (piece.known) known.set(drawn.sentence + ":" + piece.word, piece.known);
       }
     }
   }
   for (const box of $("text").querySelectorAll(".pdf-page .w")) {
-    box.classList.toggle("picked", picked.has(box.dataset.sentence + ":" + box.dataset.word));
+    const place = box.dataset.sentence + ":" + box.dataset.word;
+    box.classList.toggle("picked", picked.has(place));
+    box.classList.toggle("known", known.has(place));
+    if (known.has(place)) box.dataset.known = known.get(place);
+    else delete box.dataset.known;
   }
 }
+
+// Pointing at a word that already has a card shows that card under the word.
+function showKnownCard(word) {
+  const card = state.known_cards && state.known_cards[word.dataset.known];
+  const shown = $("known-card");
+  if (!card) return;
+  const front = element("div", "front");
+  front.innerHTML = card.front_html;   // escaped by the server; only <b> and <br> are real tags
+  const back = element("div", "back");
+  back.innerHTML = card.back_html;
+  shown.replaceChildren(element("div", "made", "Your card from " + card.date), front, back);
+  shown.hidden = false;
+  const r = word.getBoundingClientRect();
+  const left = Math.max(8, Math.min(r.left, window.innerWidth - shown.offsetWidth - 8));
+  const below = r.bottom + 8 + shown.offsetHeight < window.innerHeight;
+  shown.style.left = left + "px";
+  shown.style.top = (below ? r.bottom + 8 : r.top - 8 - shown.offsetHeight) + "px";
+}
+
+$("text").addEventListener("mouseover", (event) => {
+  if (event.target.matches(".w.known") && !pageDrag) showKnownCard(event.target);
+});
+$("text").addEventListener("mouseout", (event) => {
+  if (event.target.matches(".w.known")) $("known-card").hidden = true;
+});
+window.addEventListener("scroll", () => { $("known-card").hidden = true; }, { passive: true });
 
 const order = (box) => [Number(box.dataset.sentence), Number(box.dataset.word)];
 const before = (a, b) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
@@ -490,6 +533,7 @@ $("text").addEventListener("mousedown", (event) => {
   const from = nearestBox(event.clientX, event.clientY);
   if (!from) return;
   event.preventDefault();   // no browser selection: sentmine marks the words itself
+  $("known-card").hidden = true;
   pageDrag = { from, to: from, x: event.clientX, y: event.clientY, lastX: event.clientX, lastY: event.clientY, moved: false, scroller: null };
 });
 
@@ -622,7 +666,8 @@ document.addEventListener("mouseup", (event) => {
 function chose(selected) {   // a drag: the term, or the definition of the waiting term
   if (!selected) return;
   if (term === null) {
-    term = selected.replace(/\s+/g, " ");
+    // a term keeps no full stop, comma or colon after it: "Simpson's reversal:" would hide the colon in a cloze card
+    term = selected.replace(/\s+/g, " ").replace(/[.,;:!?]+$/, "") || selected;
     say("");
     return;
   }

@@ -87,6 +87,13 @@ def _message(result: str, card: Flashcard | Entry) -> str:
     return f"Made a card for '{name}'."
 
 
+def _known_note(count: int) -> str:
+    """How many words of a text already have cards, said after reading it."""
+    if count == 1:
+        return "1 word you have a card for is underlined."
+    return f"{count} words you have cards for are underlined."
+
+
 def _sent_message(deck: str, added: int, already: int) -> str:
     if added == 0:
         if already == 1:
@@ -120,9 +127,15 @@ def create_app(
             raise Problem("That page is not in the PDF being read.")
         return pages
 
-    def state(message: str = "", result: str = "", earlier: Entry | None = None):
+    def state(message: str = "", result: str = "", earlier: Entry | None = None, count_known: bool = False):
+        known = reading.known_cards()
+        paragraphs = reading.layout(known)
+        in_text = sorted({piece["known"] for p in paragraphs for s in p for piece in s["pieces"] if "known" in piece})
+        if count_known and in_text:
+            message = f"{message} {_known_note(len(in_text))}"
         return jsonify(
-            paragraphs=reading.layout(),
+            paragraphs=paragraphs,
+            known_cards={key: _earlier_json(known[key]) for key in in_text},
             cards=[_card_json(card) for card in reading.cards],
             count=len(reading.cards),
             count_text=plural(len(reading.cards), "card"),
@@ -202,7 +215,7 @@ def create_app(
     def load_text():
         reading.load(sent("text"))
         show_pages(None)
-        return state("Text loaded.")
+        return state("Text loaded.", count_known=True)
 
     @app.post("/api/file")
     def load_file():
@@ -213,7 +226,7 @@ def create_app(
         text, message = read_file(name, data)
         reading.load(text)
         show_pages(locate(data, reading.sentences) if name.lower().endswith(".pdf") else None)
-        return state(message)
+        return state(message, count_known=True)
 
     @app.get("/api/pages/<int:number>/words")
     def page_words(number: int):
