@@ -88,9 +88,9 @@
       "name": "Known Word with Popover",
       "kind": "custom",
       "refersTo": "known-card",
-      "description": "A word you already have a card for: dotted blue underline, and the app's hover card floating under it.",
+      "description": "A word you already have a card for: solid blue underline, and the app's hover card floating under it.",
       "html": "<div class=\"ds-return\"><p class=\"ds-return-line\">… which <span class=\"ds-known\">simultaneously</span> makes it uncomfortable</p><div class=\"ds-known-card\"><p class=\"ds-made\">Your card from 2026-11-14</p><p>Two fair coins are flipped <b>simultaneously</b>.</p></div></div>",
-      "css": ".ds-return { font: 17px/1.6 system-ui, 'Segoe UI', -apple-system, sans-serif; color: #1f2328; background: #ffffff; padding: 18px 22px; } .ds-return-line { font: italic 1.15rem/1.6 Georgia, 'Times New Roman', serif; margin: 0 0 14px; } .ds-known { text-decoration: underline dotted #1a5fd0 2px; text-underline-offset: 4px; } .ds-known-card { position: relative; background: #ffffff; border-radius: 8px; padding: 10px 14px; box-shadow: 0 10px 28px rgba(31,35,40,0.16), 0 1px 3px rgba(31,35,40,0.14); } .ds-known-card::before { content: ''; position: absolute; top: -6px; left: 40%; width: 12px; height: 12px; background: #ffffff; transform: rotate(45deg); box-shadow: -1px -1px 1px rgba(31,35,40,0.08); } .ds-known-card p { margin: 0; } .ds-made { font-size: 0.8rem; color: #5c6470; margin-bottom: 4px; }"
+      "css": ".ds-return { font: 17px/1.6 system-ui, 'Segoe UI', -apple-system, sans-serif; color: #1f2328; background: #ffffff; padding: 18px 22px; } .ds-return-line { font: italic 1.15rem/1.6 Georgia, 'Times New Roman', serif; margin: 0 0 14px; } .ds-known { text-decoration: underline solid #1a5fd0 2px; text-underline-offset: 4px; } .ds-known-card { position: relative; background: #ffffff; border-radius: 8px; padding: 10px 14px; box-shadow: 0 10px 28px rgba(31,35,40,0.16), 0 1px 3px rgba(31,35,40,0.14); } .ds-known-card::before { content: ''; position: absolute; top: -6px; left: 40%; width: 12px; height: 12px; background: #ffffff; transform: rotate(45deg); box-shadow: -1px -1px 1px rgba(31,35,40,0.08); } .ds-known-card p { margin: 0; } .ds-made { font-size: 0.8rem; color: #5c6470; margin-bottom: 4px; }"
     },
     {
       "name": "Step Shot",
@@ -111,7 +111,7 @@
   ],
   "narrative": {
     "northStar": "The Page Is the Reader",
-    "overview": "The promo page wears sentmine's working interface instead of a marketing skin: a white app header with a hairline under it, paper-coloured ground, white panels with warm grey hairlines, one blue for actions, one yellow for the picked word, and a dotted blue underline for a word that comes back. Interface text is the system UI face; anything that comes from the book is Georgia, usually italic. The visitor meets the product's own objects (a clickable sentence, a card, the card returning on a later page) before any claim.\n\nDensity is calm and document-like: single column of prose at 60 to 72ch, generous section padding, two-column splits only where two objects belong side by side (sentence card and its return; steps and their deck). Nothing is decorative: every image is a real screenshot, every number links to its source, and the one animation marks a card that just changed.",
+    "overview": "The promo page wears sentmine's working interface instead of a marketing skin: a white app header with a hairline under it, paper-coloured ground, white panels with warm grey hairlines, one blue for actions, one yellow for the picked word, and a solid blue underline for a word that comes back. Interface text is the system UI face; anything that comes from the book is Georgia, usually italic. The visitor meets the product's own objects (a clickable sentence, a card, the card returning on a later page) before any claim.\n\nDensity is calm and document-like: single column of prose at 60 to 72ch, generous section padding, two-column splits only where two objects belong side by side (sentence card and its return; steps and their deck). Nothing is decorative: every image is a real screenshot, every number links to its source, and the one animation marks a card that just changed.",
     "keyCharacteristics": [
       "The app's own tokens, unchanged: paper, white panel, hairline, ink, soft ink, action blue, picked yellow.",
       "Two voices of type: system UI for interface, Georgia for the book.",
@@ -122,7 +122,7 @@
     "rules": [
       { "name": "The Borrowed Palette Rule", "body": "The page uses the app's colour tokens with the app's names and values. A new colour enters the page only if it first exists in the app.", "section": "colors" },
       { "name": "The Yellow Means Picked Rule", "body": "Picked Yellow marks exactly one thing: the word currently chosen to become a card. Never a callout, badge or emphasis fill.", "section": "colors" },
-      { "name": "The Dotted Return Rule", "body": "A 2px dotted Action Blue underline, offset 4px, means \"you already have a card for this word\" and nothing else.", "section": "colors" },
+      { "name": "The Return Line Rule", "body": "A 2px solid Action Blue underline, offset 4px, means \"you already have a card for this word\" and nothing else.", "section": "colors" },
       { "name": "The Two Voices Rule", "body": "System UI is the page and the app talking; Georgia is the book. Never set interface copy in Georgia or book text in the system face.", "section": "typography" },
       { "name": "The No Webfont Rule", "body": "No downloaded fonts: the page loads in the faces already on the reader's computer, as the app does.", "section": "typography" },
       { "name": "The Only Floating Things Rule", "body": "A shadow means the element floats over the page (the popover) or is a photograph of a screen (the step shots). Panels, cards and buttons stay flat.", "section": "elevation" }
@@ -142,7 +142,7 @@
       "Don't invent users, testimonials, download counts or numbers.",
       "Don't state what other tools can or cannot do; the page names none now, and any future mention is worded as what a web search found, with the month.",
       "Don't use generated, stock or AI-made images.",
-      "Don't use Picked Yellow or the dotted blue underline for anything but their app meanings.",
+      "Don't use Picked Yellow or the blue return underline for anything but their app meanings.",
       "Don't add shadows to panels, cards or buttons; only the popover and screenshot frames lift.",
       "Don't break the story into a split hero over a row of feature cards; carry one card through.",
       "Don't load webfonts."

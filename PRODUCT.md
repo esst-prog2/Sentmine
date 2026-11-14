@@ -31,7 +31,8 @@ The reader works on a desktop computer with course PDFs, Anki open with the Anki
 - Runs only on the reader's computer (`127.0.0.1`). The text stays there, except that Suggest meaning sends the word and its sentence to OpenAI (`gpt-5-nano`), only with the reader's own key (`OPENAI_API_KEY`, or `.env` in sentmine's user folder).
 - Installed from the repository with Python 3.10 or newer (`pip install .`); there is no online version and no package release.
 - Anki with AnkiConnect is optional: Download writes an `.apkg` deck instead.
-- Scanned PDFs cannot be read yet; there is no browser extension yet (planned after the demos).
+- Scanned PDFs cannot be read yet.
+- A browser extension for Edge and Chrome (loaded unpacked from `extension/`) opens the PDF or web article in the current tab in sentmine, and makes cards from selected text in a side panel; it reads a tab only when its button is pressed, and the right-click needs no page access.
 
 ## Brand Commitments
 
@@ -39,9 +40,10 @@ The name is `sentmine`, written in lower case. No author name on the promo page:
 
 ## Evidence on Hand
 
-- Six screenshots from one real run on the course book's solution manual, cropped: `docs/img/1-click-a-word.png` to `docs/img/6-cards-come-back.png`. The manual is copyrighted: only small parts appear, with a caption naming it.
+- Seven screenshots from real runs: six from one run on the course book's solution manual, cropped: `docs/img/1-click-a-word.png` to `docs/img/6-cards-come-back.png`. The manual is copyrighted: only small parts appear, with a caption naming it.
 - Measurements, each in `PLANNING_LOG.md`: 10 cards, Download and import 30 s against Send to Anki 5 s (one timing by hand, 2026-11-03); 99.9 to 100% of words found on four real PDFs (2026-11-06); the first design's 103 cards, of which 4 were really new (Homework 4).
-- 555 automated tests (pytest, 2026-11-14).
+- 579 automated tests (pytest, 2026-11-14).
+- The side panel screenshot `docs/img/7-side-panel.png`: two clips from Wikipedia's *Causal inference* article (CC BY-SA 4.0), credited on the page.
 - No users besides the author, no testimonials, no download counts: none may be invented.
 
 ## Product Principles
