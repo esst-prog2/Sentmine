@@ -69,7 +69,11 @@
   .page-line .pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .meetings { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
   .return .return-line { font: italic 1.15rem/1.6 var(--book); margin: 0 0 14px; }
-  .known, .back-again span, .underline-demo { text-decoration: underline dotted var(--accent) 2px; text-underline-offset: 4px; }
+  .known, .back-again span, .underline-demo { text-decoration: underline solid var(--accent) 2px; text-underline-offset: 4px; }
+  .browser { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); gap: 40px; align-items: start; }
+  .browser .shot img { width: 100%; }
+  .browser ul { padding-left: 1.2em; margin: 0; }
+  .browser li { margin-bottom: 10px; }
   .known-card { position: relative; background: var(--panel); border-radius: 8px; padding: 10px 14px; margin-top: 4px;
     box-shadow: 0 10px 28px rgba(31, 35, 40, 0.16), 0 1px 3px rgba(31, 35, 40, 0.14); }
   .known-card::before { content: ""; position: absolute; top: -6px; left: var(--at, 40%); width: 12px; height: 12px;
@@ -138,7 +142,7 @@
   footer { padding: 32px var(--gutter) 48px; border-top: 1px solid var(--line); color: var(--soft); font-size: 0.95rem; display: flex; flex-wrap: wrap; gap: 8px 24px; }
 
   @media (max-width: 900px) {
-    .steps, .comes-back, .meetings { grid-template-columns: 1fr; }
+    .steps, .comes-back, .meetings, .browser { grid-template-columns: 1fr; }
     .deck { position: static; }
     .facts li { grid-template-columns: 1fr; }
   }
@@ -158,7 +162,7 @@
 
 <header class="bar">
   <a class="brand" href="#top">sentmine</a>
-  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#comes-back">Comes back</a><a href="#try">Try it</a></nav>
+  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#comes-back">Comes back</a><a href="#browser">In the browser</a><a href="#try">Try it</a></nav>
   <span class="spacer"></span>
   <a class="button" href="https://github.com/esst-prog2/Sentmine">GitHub</a>
   <a class="button main" href="#try">Install</a>
@@ -229,7 +233,7 @@
         <article class="step" data-step="5">
           <h3>Meet the word again</h3>
           <p>On page 25 the word comes up again, in another study question. Clicking it makes no duplicate: sentmine shows the card you already have, and you can skip it.</p>
-          <div class="shot"><a href="img/5-already-has-a-card.png" title="Open the full screenshot"><img src="img/step-5-again.png" width="792" height="374" loading="lazy" alt="'simultaneously' already has a card from 2026-11-14, with the earlier card and the buttons Skip and Make it anyway."></a></div>
+          <div class="shot"><a href="img/5-already-has-a-card.png" title="Open the full screenshot"><img src="img/step-5-again.png" width="792" height="382" loading="lazy" alt="'simultaneously' already has a card from 2026-11-14, with the earlier card and the buttons Skip and Make it anyway."></a></div>
         </article>
       </div>
       <aside class="deck panel" data-step="1" aria-label="The deck, step by step">
@@ -250,14 +254,30 @@
   <section id="comes-back" aria-labelledby="back-title">
     <h2 id="back-title">Your cards come back while you read</h2>
     <div class="comes-back">
-      <div class="shot"><a href="img/6-cards-come-back.png" title="Open the full screenshot"><img src="img/6-cards-come-back.png" width="1820" height="441" loading="lazy" alt="On a later page, Simpson's reversal is underlined with a dotted line, and pointing at it shows the card made earlier."></a></div>
+      <div class="shot"><a href="img/6-cards-come-back.png" title="Open the full screenshot"><img src="img/6-cards-come-back.png" width="938" height="228" loading="lazy" alt="On a later page, Simpson's reversal has a solid blue line under it and a blue dot in the margin beside its lines; pointing at it shows the card made earlier."></a></div>
       <div class="measure">
-        <p>When you open the next chapter, every word and term you already have a card for is <span class="underline-demo">underlined</span>. Point at one and your own card appears, with the day you made it.</p>
+        <p>When you open the next chapter, every word and term you already have a card for is <span class="underline-demo">underlined in blue</span>, with a blue dot in the page's margin beside its line and a count at the page's corner, so you see them while you scroll. Point at one, or reach it with the keyboard, and your own card appears, with the day you made it.</p>
         <ul>
           <li>Reading becomes review: you meet your words again, in new sentences.</li>
           <li>My cards counts how many texts each card was met again in.</li>
           <li>Words are matched by their base form, so <i>ran</i> finds your card for <i>run</i> (<a href="https://github.com/esst-prog2/Sentmine/blob/dfe10afdcc6e1eec5e9f5a93d729f12544c38b96/tests/test_known_words.py#L47-L50">a test checks this</a>).</li>
         </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="browser" aria-labelledby="browser-title">
+    <h2 id="browser-title">Cards from web pages, too</h2>
+    <div class="browser">
+      <figure class="shot" style="margin:0"><img src="img/7-side-panel.png" width="400" height="780" loading="lazy" alt="sentmine's side panel beside a web page: a definition clip and a sentence clip from Wikipedia, with the word etiology marked yellow, the two cards below, and Download and Send to Anki at the bottom."></figure>
+      <div class="measure">
+        <p>A browser extension for Edge and Chrome brings sentmine to what you read online.</p>
+        <ul>
+          <li><b>Open this page in sentmine:</b> the PDF in the tab, or the web page's article without its menus, opens in the Read page. On a Canvas file page it takes the PDF behind the Download link.</li>
+          <li><b>Right-click what you selected:</b> <i>Word card from this sentence</i> or <i>Definition card from this</i>. A panel opens beside the page; click the word, or drag over the term. The cards are kept apart from what you read in sentmine.</li>
+          <li>It reads a tab only when you press its button, and sends it nowhere but sentmine on your computer. The right-click needs no access to the page at all.</li>
+        </ul>
+        <p class="caption">The two clips are from Wikipedia’s article <cite>Causal inference</cite> (CC BY-SA 4.0).</p>
       </div>
     </div>
   </section>
@@ -276,7 +296,7 @@
     <ul class="facts">
       <li><span>Ten cards: about 30 seconds to download and import the deck, about 5 seconds with Send to Anki. One timing by hand.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/blob/dfe10afdcc6e1eec5e9f5a93d729f12544c38b96/PLANNING_LOG.md?plain=1#L167">Planning log, 4 November 2026</a></li>
       <li><span>On four real PDFs of 10 to 166 pages, sentmine found the printed place of 99.9 to 100% of the words it read from them, so those words can be clicked on the page itself.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/blob/dfe10afdcc6e1eec5e9f5a93d729f12544c38b96/PLANNING_LOG.md?plain=1#L177">Planning log, 6 November 2026</a></li>
-      <li><span>555 automated tests passed on 14 November 2026. To check, run <code>python -m pytest</code> in the sentmine folder.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/tree/dfe10afdcc6e1eec5e9f5a93d729f12544c38b96/tests">The tests, as of that day</a></li>
+      <li><span>579 automated tests passed on 14 November 2026. To check, run <code>python -m pytest</code> in the sentmine folder.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/tree/26e81d7d965b79801ca8e3e7a3f4363fc6933ffb/tests">The tests, as of that day</a></li>
     </ul>
     </div>
   </section>
@@ -308,6 +328,13 @@ sentmine</code></pre>
     <p class="measure"><b>What opens:</b> sentmine’s reading page, in your browser, at <code>http://127.0.0.1:8000</code> (or the next free port up to 8010). Paste a text, or open a PDF that has selectable text. Scanned PDFs cannot be read yet.</p>
     <p class="measure"><b>If the terminal says it cannot find <code>sentmine</code></b>, the virtual environment is not active: run the activate line again, then <code>sentmine</code>.</p>
     <details class="optional">
+      <summary>Optional: the browser extension</summary>
+      <ul class="options">
+        <li>In Edge open <code>edge://extensions</code> (in Chrome <code>chrome://extensions</code>), switch on <b>Developer mode</b>, choose <b>Load unpacked</b> and pick the <code>extension</code> folder inside Sentmine.</li>
+        <li>sentmine must be running for the button and the right-click to reach it.</li>
+      </ul>
+    </details>
+    <details class="optional">
       <summary>Optional: Anki and AI meanings</summary>
       <ul class="options">
         <li><b>Anki is optional.</b> With the AnkiConnect add-on, Send to Anki adds cards straight to your deck; without it, Download writes a deck file.</li>
@@ -320,7 +347,7 @@ sentmine</code></pre>
 </main>
 
 <footer>
-  <span>Planned next (<a href="https://github.com/esst-prog2/Sentmine/blob/dfe10afdcc6e1eec5e9f5a93d729f12544c38b96/designs/promo-page.md?plain=1#L66">design doc</a>): reading anywhere in the browser, picking words on web pages and sending PDFs from Canvas straight into sentmine.</span>
+  <span>Planned next (<a href="https://github.com/esst-prog2/Sentmine/blob/main/PLANNING_LOG.md?plain=1#L210">planning log</a>): formulas and graphs on cards.</span>
   <span>sentmine, a project for Advanced Programming at ELTE.</span>
   <a href="https://github.com/esst-prog2/Sentmine">Source on GitHub</a>
 </footer>

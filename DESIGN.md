@@ -135,7 +135,7 @@ Source of truth: `docs/index.html` (one file; all CSS inline in its `<style>` bl
 
 **Creative North Star: "The Page Is the Reader"**
 
-The promo page wears sentmine's working interface instead of a marketing skin: a white app header with a hairline under it, paper-coloured ground, white panels with warm grey hairlines, one blue for actions, one yellow for the picked word, and a dotted blue underline for a word that comes back. Interface text is the system UI face; anything that comes from the book is Georgia, usually italic. The visitor meets the product's own objects (a clickable sentence, a card, the card returning on a later page) before any claim.
+The promo page wears sentmine's working interface instead of a marketing skin: a white app header with a hairline under it, paper-coloured ground, white panels with warm grey hairlines, one blue for actions, one yellow for the picked word, and a solid blue underline for a word that comes back. Interface text is the system UI face; anything that comes from the book is Georgia, usually italic. The visitor meets the product's own objects (a clickable sentence, a card, the card returning on a later page) before any claim.
 
 Density is calm and document-like: single column of prose at 60 to 72ch, generous section padding, two-column splits only where two objects belong side by side (sentence card and its return; steps and their deck). Nothing is decorative: every image is a real screenshot, every number links to its source, and the one animation marks a card that just changed.
 
@@ -151,7 +151,7 @@ Density is calm and document-like: single column of prose at 60 to 72ch, generou
 A warm neutral paper interface with one cool blue for action and one yellow that means "this word is picked".
 
 ### Primary
-- **Action Blue** (`action-blue`): links, the main Install button, the opening's "Click any word" hint, focus outlines, the cloze gap `[...]`, and the dotted underline on known words. Hover deepens to **Action Blue Deep** (`action-blue-deep`). White text on it uses `on-accent`.
+- **Action Blue** (`action-blue`): links, the main Install button, the opening's "Click any word" hint, focus outlines, the cloze gap `[...]`, and the solid underline on known words. Hover deepens to **Action Blue Deep** (`action-blue-deep`). White text on it uses `on-accent`.
 
 ### Secondary
 - **Picked Yellow** (`picked-yellow`): only the word the reader has picked (`aria-pressed="true"` in the opening sentence), as in the app. It is a state colour, not a highlight colour for emphasis.
@@ -172,7 +172,7 @@ Supporting tokens: `--code-head` `#2b3036` (install-block header), `--code-selec
 
 **The Yellow Means Picked Rule.** Picked Yellow marks exactly one thing: the word currently chosen to become a card. Never a callout, badge or emphasis fill.
 
-**The Dotted Return Rule.** A 2px dotted Action Blue underline, offset 4px, means "you already have a card for this word" and nothing else. It is one CSS rule, shared by `.known`, `.back-again span` and `.underline-demo`.
+**The Return Line Rule.** A 2px solid Action Blue underline, offset 4px (on the app's PDF pages also a blue dot in the margin and a count at the page's corner), means "you already have a card for this word" and nothing else. It is one CSS rule, shared by `.known`, `.back-again span` and `.underline-demo`.
 
 ## Typography
 
@@ -249,7 +249,7 @@ The study question retyped large in Georgia italic inside a white frame (hairlin
 A panel titled "Cards": the front is the sentence with the word in bold, a dashed hairline, the back with the word and its meaning, then label-size metadata. It is `aria-live="polite"` so a new pick is announced.
 
 ### Return Panel with Popover
-A panel titled "Page 25, twelve pages later": the later sentence in Georgia italic with the word under the dotted blue underline, and below it the known-card popover (see Elevation) showing "Your card from 2026-11-14" and the original card front, its pointer kept on the word by script on resize. The word is `aria-describedby` the popover.
+A panel titled "Page 25, twelve pages later": the later sentence in Georgia italic with the word under the solid blue underline, and below it the known-card popover (see Elevation) showing "Your card from 2026-11-14" and the original card front, its pointer kept on the word by script on resize. The word is `aria-describedby` the popover.
 
 ### Sticky Deck
 A panel beside the five steps that holds one card through them. A soft-ink state line names the step; meaning, cloze card, "Sent to the deck" line and the page-25 return line appear cumulatively as each step crosses the middle of the viewport (IntersectionObserver, root margin -40% / -50%). Without JavaScript or below 900px it shows a fixed state.
@@ -286,12 +286,13 @@ One animation: **settle** (`.5s cubic-bezier(.16, 1, .3, 1)`), a fade from `--pi
 - **Don't** invent users, testimonials, download counts or numbers.
 - **Don't** state what other tools can or cannot do; the page names none now, and any future mention is worded as what a web search found, with the month.
 - **Don't** use generated, stock or AI-made images.
-- **Don't** use Picked Yellow or the dotted blue underline for anything but their app meanings.
+- **Don't** use Picked Yellow or the blue return underline for anything but their app meanings.
 - **Don't** add shadows to panels, cards or buttons; only the popover and screenshot frames lift.
 - **Don't** break the story into a split hero over a row of feature cards; carry one card through.
 - **Don't** load webfonts.
 
 ### Raster provenance
-- `docs/img/1-click-a-word.png` to `docs/img/6-cards-come-back.png`: full screenshots from one real run of sentmine on 2026-11-14 on the solution manual to Pearl, Glymour and Jewell, *Causal Inference in Statistics: A Primer*, with Anki open; captured with headless Edge, untouched.
+- `docs/img/1-click-a-word.png` to `docs/img/6-cards-come-back.png`: full screenshots from one real run of sentmine on 2026-11-14 (5 and 6, and the crop `step-5-again.png`, retaken the same day with the app's new look, on a copy of that run's card memory) on the solution manual to Pearl, Glymour and Jewell, *Causal Inference in Statistics: A Primer*, with Anki open; captured with headless Edge, untouched.
 - `docs/img/step-1-click.png`, `step-2-meaning.png`, `step-3-cloze.png`, `step-4-send.png`, `step-5-again.png`: crops of those screenshots, cut small around the word or card because the book is copyrighted; each is captioned on the page with the book's title and links to its full screenshot.
+- `docs/img/7-side-panel.png`: the extension's side panel at 400 px in a real run, with two clips from Wikipedia's *Causal inference* article (CC BY-SA 4.0), credited on the page.
 - No generated, stock or AI-made images.
