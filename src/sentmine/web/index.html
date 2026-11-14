@@ -154,10 +154,9 @@ try {
   /* Clip mode (/clip): the side panel beside a web page. One column, no paste box, a label on each clip. */
   body.clip nav, body.clip #paste-box, body.clip .spacer { display: none; }
   body.clip main { grid-template-columns: 1fr; }
-  body.clip #text p + p { border-top: 1px solid var(--line); padding-top: 14px; }
-  body.clip #text p::before { display: block; font: 0.8125rem system-ui, sans-serif; color: var(--soft); margin-bottom: 4px; }
-  body.clip #text p[data-kind="word"]::before { content: "Sentence: click a word"; }
-  body.clip #text p[data-kind="definition"]::before { content: "Definition: drag over its term"; }
+  .clip + .clip { border-top: 1px solid var(--line); padding-top: 14px; }
+  .clip-head { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    font: 0.8125rem system-ui, sans-serif; color: var(--soft); margin-bottom: 4px; }
   body > header { view-transition-name: app-header; }
 </style>
 </head>
@@ -358,7 +357,20 @@ function drawText() {
         p.append(word);
       }
     });
-    text.append(p);
+    if (!state.clip_kinds) {
+      text.append(p);
+      return;
+    }
+    // a clip: what to do with it, and a way to take it away
+    const head = element("div", "clip-head");
+    head.append(element("span", "", state.clip_kinds[number] === "definition" ? "Definition: drag over its term" : "Sentence: click a word"));
+    const remove = element("button", "small", "Remove");
+    remove.setAttribute("aria-label", "Remove this clip");
+    remove.addEventListener("click", () => call("DELETE", API + "/clips/" + number));
+    head.append(remove);
+    const clip = element("div", "clip");
+    clip.append(head, p);
+    text.append(clip);
   });
 }
 

@@ -213,8 +213,8 @@ else works. Keep the key out of this repository and out of OneDrive.
 **Open in sentmine, a browser button (optional).** The `extension/` folder is
 an extension for Edge and Chrome. In `edge://extensions` (or
 `chrome://extensions`) switch on Developer mode, choose Load unpacked and pick
-the `extension` folder. With sentmine running, press the button on a PDF or a
-web page: the PDF, or the page's text (only the selected part if you selected
+the `extension` folder. With sentmine running, press the button and choose *Open
+this page in sentmine* on a PDF or a web page: the PDF, or the page's text (only the selected part if you selected
 some; otherwise the article without the site's menus), opens in sentmine's Read page. It reads a tab only when you press the
 button, and sends it nowhere but sentmine on this computer. On Canvas's page about
 a file it sends the file behind the Download link; for files on your computer,
@@ -225,8 +225,11 @@ use Open a file. The article is found with Mozilla's Readability
 right-click it and choose *Word card from this sentence*; or select a
 definition and choose *Definition card from this*. A panel opens beside the
 page with the selection: click a word for a word card, or, in a definition,
-drag over its term. Clips are kept apart from the text in Read, and their
-cards stay until you send or download them from the panel. The right-click
+drag over its term. For a definition, select the whole definition with its
+term on the page; in the panel, drag over just the term. Clips are kept apart
+from the text in Read; *Remove* takes a clip away, and its cards stay until
+you send or download them from the panel. The button's *Show my clips beside
+the page* opens the panel without a new clip. The right-click
 needs no access to the page: the browser hands over only the selected text.
 
 The first design, a command-line tool that picks the words from a

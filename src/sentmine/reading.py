@@ -171,6 +171,25 @@ class Session:
         self.clip_kinds += [kind] * len(parts)
         self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
 
+    def remove_clip(self, number: int) -> None:
+        """Take a clip away. Its cards stay, since they hold their own text; the clicked places of the
+        clips after it move up, so their words stay marked."""
+        if not 0 <= number < len(self.paragraphs):
+            raise Problem("That clip is not there any more.")
+        first = sum(len(paragraph) for paragraph in self.paragraphs[:number])
+        count = len(self.paragraphs[number])
+        del self.paragraphs[number]
+        if number < len(self.clip_kinds):
+            del self.clip_kinds[number]
+        for card in self.cards:
+            if card.place is None:
+                continue
+            sentence, word = card.place
+            if first <= sentence < first + count:
+                card.place = None   # its sentence is gone
+            elif sentence >= first + count:
+                card.place = (sentence - count, word)
+
     def meet(self, cards: list[tuple[str, str]], day: str | None = None) -> None:
         """Record the remembered cards (kind, key) met in this text. A memory that cannot be written records nothing."""
         if self.memory is None or not self.text_id:

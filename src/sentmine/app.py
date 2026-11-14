@@ -305,6 +305,11 @@ def create_app(
         clips.add(sent("text"), (request.get_json(silent=True) or {}).get("kind", "word"))
         return state("Clip added.", count_known=True)
 
+    @app.delete("/clip/api/clips/<int:number>")
+    def remove_clip(number: int):
+        clips.remove_clip(number)
+        return state("Clip removed. Cards made from it stay.")
+
     @app.post("/api/file")
     def load_file():
         upload = request.files.get("file")

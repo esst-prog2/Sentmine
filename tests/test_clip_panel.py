@@ -63,6 +63,25 @@ def test_clip_cards_can_be_edited_downloaded_and_deleted_under_clip(client):
     assert client.delete(f"/clip/api/cards/{card_id}").get_json()["count"] == 0
 
 
+def test_a_clip_can_be_removed_and_cards_stay_marked_where_they_were(client):
+    clip(client, "Causal inference")
+    state = click(client, clip(client, SENTENCE), "skew")
+    state = click(client, state, "mean")
+    state = client.delete("/clip/api/clips/0").get_json()
+    assert len(state["paragraphs"]) == 1 and state["count"] == 2 and state["clip_kinds"] == ["word"]
+    picked = [piece["text"] for p in state["paragraphs"] for s in p for piece in s["pieces"] if piece.get("picked")]
+    assert picked == ["skew", "mean"]   # still marked in the clip that moved up
+    state = click(client, state, "skew")   # and a second click still removes its card
+    assert state["count"] == 1
+
+
+def test_removing_the_clip_a_card_came_from_keeps_the_card(client):
+    click(client, clip(client, SENTENCE), "skew")
+    state = client.delete("/clip/api/clips/0").get_json()
+    assert state["paragraphs"] == [] and state["count"] == 1
+    assert client.delete("/clip/api/clips/5").status_code == 400
+
+
 def test_the_clip_page_holds_the_clips(client):
     clip(client, SENTENCE)
     page = client.get("/clip")

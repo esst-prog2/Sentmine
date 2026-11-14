@@ -12,11 +12,20 @@
   p { margin: 6px 0 0; }
   .warn { color: var(--warn); }
   .soft { color: var(--soft); }
+  .choices { display: grid; gap: 8px; margin-top: 10px; }
+  .choices button { font: inherit; text-align: left; padding: 7px 12px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--line, #d9d6cd); background: transparent; color: var(--ink); }
+  .choices button:hover { background: rgba(127, 127, 127, 0.12); }
+  .choices button.main { background: #1a5fd0; border-color: #1a5fd0; color: #fff; }
 </style>
 </head>
 <body>
 <b>sentmine</b>
-<p id="say" class="soft" role="status">Sending this tab to sentmine…</p>
+<div class="choices">
+  <button type="button" class="main" id="open">Open this page in sentmine</button>
+  <button type="button" id="panel">Show my clips beside the page</button>
+</div>
+<p id="say" class="soft" role="status">To make a card from part of a page, select it and right-click.</p>
 <script type="module" src="popup.js"></script>
 </body>
 </html>
