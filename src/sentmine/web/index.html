@@ -760,6 +760,46 @@ async function download() {
   }
 }
 
+// The reader's place in the text is kept for this tab, so coming back from My cards or
+// reloading shows the same page of the PDF, not the top. It is restored once, when the page opens.
+const PLACE_KEY = "sentmine-place";
+
+function textTop() {   // where the text starts below the header and status line that stay in view
+  return Math.max(0, $("status").getBoundingClientRect().bottom);
+}
+
+function savePlace() {
+  if (!state.text_id) return;
+  let place = { text: state.text_id, y: Math.round(window.scrollY) };
+  if (state.pdf) {
+    const page = [...document.querySelectorAll(".pdf-page")].find((one) => one.getBoundingClientRect().bottom > textTop());
+    if (page) {
+      const r = page.getBoundingClientRect();
+      place = { text: state.text_id, page: Number(page.dataset.page), within: (textTop() - r.top) / r.height };
+    }
+  }
+  try { sessionStorage.setItem(PLACE_KEY, JSON.stringify(place)); } catch (error) {}   // not kept if the browser does not allow it
+}
+
+let placeSaving = null;
+window.addEventListener("scroll", () => {
+  clearTimeout(placeSaving);
+  placeSaving = setTimeout(savePlace, 200);
+}, { passive: true });
+
+function restorePlace() {
+  let place = null;
+  try { place = JSON.parse(sessionStorage.getItem(PLACE_KEY)); } catch (error) {}
+  if (!place || place.text !== state.text_id) return;
+  const page = place.page === undefined ? null : document.querySelectorAll(".pdf-page")[place.page];
+  if (page) {
+    const r = page.getBoundingClientRect();
+    window.scrollTo(0, window.scrollY + r.top + place.within * r.height - textTop());
+  } else if (place.page === undefined) {
+    window.scrollTo(0, place.y);
+  }
+}
+
 call("GET", "/api/state").then((loaded) => {
   if (loaded && loaded.memory_warning) {
     say(loaded.memory_warning + " Earlier cards will not be found, and new ones will not be remembered.", true);
@@ -767,6 +807,7 @@ call("GET", "/api/state").then((loaded) => {
   if (loaded && loaded.paragraphs.length > 0) {
     $("paste-box").open = false;
     $("paste-box").querySelector("summary").textContent = "Paste or open another text";
+    restorePlace();
   }
 });
 </script>

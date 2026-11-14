@@ -167,6 +167,7 @@ def create_app(
             earlier=_earlier_json(earlier) if earlier is not None else None,
             memory_warning=reading.memory.problem if reading.memory is not None else "",
             can_suggest=ask is not None,
+            text_id=reading.text_id,  # names the text read, so the page can keep the reader's place in it
             pdf=None if shown["pages"] is None else {
                 "version": shown["version"],
                 "sizes": [[round(width, 2), round(height, 2)] for width, height in shown["pages"].sizes],
