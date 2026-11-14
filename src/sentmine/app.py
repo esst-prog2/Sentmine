@@ -1,5 +1,6 @@
 """The reading app: a web page served on the reader's own computer."""
 
+import hashlib
 import re
 import socket
 import tempfile
@@ -130,11 +131,13 @@ def create_app(
     app = Flask(__name__, static_folder=None)
     app.config["MAX_CONTENT_LENGTH"] = MOST_BYTES
     reading = session if session is not None else Session()
-    shown: dict = {"pages": None, "version": 0}  # the PDF shown as its own pages, if the text came from one
+    shown: dict = {"pages": None, "version": ""}  # the PDF shown as its own pages, if the text came from one
 
-    def show_pages(pages: Pages | None) -> None:
+    def show_pages(pages: Pages | None, data: bytes = b"") -> None:
         shown["pages"] = pages
-        shown["version"] += 1  # page pictures of an earlier PDF must not come from the browser's cache
+        # The pictures' address carries a fingerprint of the file, so the browser's cache never gives a picture
+        # of another PDF. A counter did not do: it started again at 1 each time sentmine started.
+        shown["version"] = hashlib.sha256(data).hexdigest()[:16] if pages is not None else ""
 
     def pages_of(number: int) -> Pages:
         pages = shown["pages"]
@@ -250,7 +253,7 @@ def create_app(
         name, data = upload.filename or "", upload.read()
         text, message = read_file(name, data)
         reading.load(text)
-        show_pages(locate(data, reading.sentences) if name.lower().endswith(".pdf") else None)
+        show_pages(locate(data, reading.sentences) if name.lower().endswith(".pdf") else None, data)
         return state(message, count_known=True)
 
     @app.get("/api/pages/<int:number>/words")

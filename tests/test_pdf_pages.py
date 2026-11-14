@@ -146,10 +146,17 @@ def test_a_word_picked_on_a_page_makes_its_card():
     assert made["cards"][0]["front"] == "Outliers can skew it considerably in small samples."
 
 
-def test_each_pdf_read_has_a_new_version():
-    client = create_app().test_client()
-    first = upload(client).get_json()["pdf"]["version"]
-    assert upload(client).get_json()["pdf"]["version"] != first
+def test_another_pdf_has_another_version_even_after_a_restart():
+    """The pictures' address carries the version. A counter gave the next run's PDF the same address as
+    an earlier one, so the browser showed the earlier PDF's cached pages (found by the reader, 2026-11-14)."""
+    first = upload(create_app().test_client()).get_json()["pdf"]["version"]
+    other = make_pdf([["A different book."]])
+    assert upload(create_app().test_client(), data=other).get_json()["pdf"]["version"] != first
+
+
+def test_the_same_pdf_keeps_its_version():
+    first = upload(create_app().test_client()).get_json()["pdf"]["version"]
+    assert upload(create_app().test_client()).get_json()["pdf"]["version"] == first
 
 
 @pytest.mark.parametrize("load", [
