@@ -162,6 +162,20 @@ try {
   body.clip nav, body.clip #paste-box, body.clip .spacer { display: none; }
   body.clip main { grid-template-columns: 1fr; }
   .clip + .clip { border-top: 1px solid var(--line); padding-top: 14px; }
+  /* In the side panel the header is one slim row; the deck name, Download and Send to Anki sit in a bar at the
+     bottom, where the reader ends up after making cards. The theme follows the app's own choice. */
+  .mycards { display: none; color: var(--soft); font-size: 0.875rem; text-decoration: none; white-space: nowrap; }
+  .mycards:hover { color: var(--accent); }
+  body.clip .mycards { display: inline; margin-left: auto; }
+  body.clip #theme { display: none; }
+  body.clip header { flex-wrap: nowrap; }
+  body.clip #status { position: sticky; top: var(--header, 0px); z-index: 1; }
+  body.clip header .deck { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; width: auto; display: flex; flex-wrap: nowrap;
+    gap: 8px; padding: 10px 16px; background: var(--panel); border-top: 1px solid var(--line); box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.06); }
+  body.clip header .deck label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  body.clip #deck-name { flex: 1 1 auto; min-width: 0; }
+  body.clip #download, body.clip #send { white-space: nowrap; }
+  body.clip main { padding-bottom: 84px; }
   .clip-head { display: flex; justify-content: space-between; align-items: center; gap: 8px;
     font: 0.8125rem system-ui, sans-serif; color: var(--soft); margin-bottom: 4px; }
   body > header { view-transition-name: app-header; }
@@ -173,10 +187,11 @@ try {
   <h1>sentmine</h1>
   <nav aria-label="Pages"><a href="/" aria-current="page">Read</a><a href="/cards">My cards</a></nav>
   <span id="count">0 cards</span>
+  <a class="mycards" href="/cards" target="_blank" rel="noopener">My cards ↗</a>
   <span class="spacer"></span>
   <div class="deck">
     <label for="deck-name">Deck name</label>
-    <input type="text" id="deck-name" value="new">
+    <input type="text" id="deck-name" value="new" placeholder="Deck name">
     <button id="download">Download</button>
     <button class="main" id="send">Send to Anki</button>
   </div>
@@ -238,7 +253,7 @@ const CLIP = location.pathname.startsWith("/clip");
 const API = CLIP ? "/clip/api" : "/api";
 if (CLIP) document.body.classList.add("clip");
 const HINT = CLIP
-  ? "Select text on a web page and right-click: Word card from this sentence, or Definition card from this."
+  ? "Select text on a page, right-click it, and choose a card."
   : "Click a word for a card; click again to remove it. Drag over a term, then its definition, " +
     "for a definition card. A blue line: you already have a card (point at it).";
 
