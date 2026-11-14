@@ -6,10 +6,10 @@
 
 ## 2. The page
 
-- [ ] 2.1 Dotted underline on text and on PDF boxes; the card shown when pointing; verify in headless Edge on text and on a PDF, and rerun the click and drag checks
+- [x] 2.1 Dotted underline on text and on PDF boxes; the card shown when pointing; verify in headless Edge on text and on a PDF, and rerun the click and drag checks
 
 ## 3. Wrap-up
 
-- [ ] 3.1 Measure the time to read the 166-page book before and after
-- [ ] 3.2 Run the whole suite and `openspec validate known-words --strict`
+- [x] 3.1 Measure the time to read the 166-page book before and after
+- [x] 3.2 Run the whole suite and `openspec validate known-words --strict`
 - [ ] 3.3 The reader reads a text with words they have cards for (needs the reader)
