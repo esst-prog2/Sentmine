@@ -60,7 +60,13 @@
   .page-line .pick:hover { background: var(--hover); }
   .page-line .pick[aria-pressed="true"] { background: var(--picked); }
   .page-line .pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .opening .card { max-width: 40rem; }
+  .meetings { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+  .return .return-line { font: italic 1.15rem/1.6 var(--book); margin: 0 0 14px; }
+  .known { text-decoration: underline dotted var(--accent) 2px; text-underline-offset: 4px; }
+  .known-card { background: var(--page); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; box-shadow: 0 6px 18px rgba(31, 35, 40, 0.08); }
+  .known-card p { margin: 0; }
+  .known-card .made { font-size: 0.8rem; color: var(--soft); margin-bottom: 4px; }
+  .return .meta { font-size: 0.85rem; color: var(--soft); margin: 12px 0 0; }
   .caption { font: 0.82rem/1.5 var(--ui); color: var(--soft); margin-top: 10px; }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; }
   .panel-title { font-weight: 700; margin: 0 0 12px; }
@@ -112,13 +118,19 @@
 
   pre { font: 0.95rem/1.7 var(--code); background: var(--ink); color: #f6f5f1; padding: 18px 22px; border-radius: 8px; overflow-x: auto; max-width: 44em; margin: 0 0 20px; }
   pre ::selection { background: #2d4a7a; color: #fff; }
+  .installs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: 16px; max-width: 64rem; margin-bottom: 20px; }
+  .install pre { margin: 0; border-radius: 0 0 8px 8px; font-size: 0.875rem; padding: 16px 18px; }
+  .install-head { display: flex; justify-content: space-between; align-items: center; background: #2b3036; color: #f6f5f1; padding: 6px 8px 6px 16px; border-radius: 8px 8px 0 0; font-size: 0.9rem; }
+  .install-head .copy { padding: 2px 12px; font-size: 0.85rem; }
+  .optional { max-width: 60ch; margin-top: 8px; }
+  .optional summary { cursor: pointer; font-weight: 600; }
   .options { padding-left: 1.2em; max-width: 60ch; }
   .options li { margin-bottom: 8px; }
 
   footer { padding: 32px var(--gutter) 48px; border-top: 1px solid var(--line); color: var(--soft); font-size: 0.95rem; display: flex; flex-wrap: wrap; gap: 8px 24px; }
 
   @media (max-width: 900px) {
-    .steps, .comes-back { grid-template-columns: 1fr; }
+    .steps, .comes-back, .meetings { grid-template-columns: 1fr; }
     .deck { position: static; }
     .facts li { grid-template-columns: 1fr; }
   }
@@ -145,23 +157,34 @@
 <main id="top">
   <div class="opening">
     <div class="status">
-      <h1>Read the real page. Click a word. It's an Anki card.</h1>
+      <h1>Click a word, get an Anki card. Meet the word again, and your card comes back.</h1>
       <p>sentmine is a reading app for students who read English course books. It turns the words and terms you meet into Anki cards, and brings those cards back when you meet them again.</p>
     </div>
     <div class="stage">
       <figure class="page-line">
         <p class="question">Study question 1.3.7.</p>
         <p class="picks"><button type="button" class="pick" data-s="0" data-back="two" aria-pressed="false">Two</button> <button type="button" class="pick" data-s="0" data-back="fair" aria-pressed="false">fair</button> <button type="button" class="pick" data-s="0" data-back="coins (coin)" aria-pressed="false">coins</button> <button type="button" class="pick" data-s="0" data-back="are (be)" aria-pressed="false">are</button> <button type="button" class="pick" data-s="0" data-back="flipped (flip)" aria-pressed="false">flipped</button> <button type="button" class="pick" data-s="0" data-back="simultaneously" aria-pressed="true">simultaneously</button> <button type="button" class="pick" data-s="0" data-back="to" aria-pressed="false">to</button> <button type="button" class="pick" data-s="0" data-back="determine" aria-pressed="false">determine</button> <button type="button" class="pick" data-s="0" data-back="the" aria-pressed="false">the</button> <button type="button" class="pick" data-s="0" data-back="payoffs (payoff)" aria-pressed="false">payoffs</button> <button type="button" class="pick" data-s="0" data-back="of" aria-pressed="false">of</button> <button type="button" class="pick" data-s="0" data-back="two" aria-pressed="false">two</button> <button type="button" class="pick" data-s="0" data-back="players (player)" aria-pressed="false">players</button> <button type="button" class="pick" data-s="0" data-back="in" aria-pressed="false">in</button> <button type="button" class="pick" data-s="0" data-back="the" aria-pressed="false">the</button> <button type="button" class="pick" data-s="0" data-back="town’s (town)" aria-pressed="false">town’s</button> <button type="button" class="pick" data-s="0" data-back="casino" aria-pressed="false">casino</button>. <button type="button" class="pick" data-s="1" data-back="player" aria-pressed="false">Player</button> 1 <button type="button" class="pick" data-s="1" data-back="wins (win)" aria-pressed="false">wins</button> <button type="button" class="pick" data-s="1" data-back="a" aria-pressed="false">a</button> <button type="button" class="pick" data-s="1" data-back="dollar" aria-pressed="false">dollar</button> <button type="button" class="pick" data-s="1" data-back="if" aria-pressed="false">if</button> <button type="button" class="pick" data-s="1" data-back="and" aria-pressed="false">and</button> <button type="button" class="pick" data-s="1" data-back="only" aria-pressed="false">only</button> <button type="button" class="pick" data-s="1" data-back="if" aria-pressed="false">if</button> <button type="button" class="pick" data-s="1" data-back="at" aria-pressed="false">at</button> <button type="button" class="pick" data-s="1" data-back="least (less)" aria-pressed="false">least</button> <button type="button" class="pick" data-s="1" data-back="one" aria-pressed="false">one</button> <button type="button" class="pick" data-s="1" data-back="coin" aria-pressed="false">coin</button> <button type="button" class="pick" data-s="1" data-back="lands (land)" aria-pressed="false">lands</button> <button type="button" class="pick" data-s="1" data-back="on" aria-pressed="false">on</button> <button type="button" class="pick" data-s="1" data-back="head" aria-pressed="false">head</button>.</p>
-        <figcaption class="caption">From page 13 of the solution manual to Pearl, Glymour and Jewell, <cite>Causal Inference in Statistics: A Primer</cite>, set large on this page. In sentmine you read the PDF page itself (step 1). Click any word to see the card sentmine would make from it.</figcaption>
+        <figcaption class="caption">From page 13 of the solution manual to Pearl, Glymour and Jewell, <cite>Causal Inference in Statistics: A Primer</cite>, set large on this page. In sentmine you read the PDF page itself (step 1). Click any word: the card is made with sentmine’s own rules, its base form included as sentmine’s word list gives it, which is not always right (<i>least</i> gives <i>less</i>).</figcaption>
       </figure>
+      <div class="meetings">
       <aside class="panel card hero-card" aria-label="The card sentmine made" aria-live="polite">
         <p class="panel-title">Cards</p>
         <div class="front">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</div>
         <div class="back"><span class="word">simultaneously</span><span class="meaning"><br>Two things happening at the same time.</span></div>
         <div class="meta">Word card · the meaning came from Suggest meaning (step 2)</div>
       </aside>
+      <aside class="panel return" aria-label="The same word, twelve pages later">
+        <p class="panel-title">Page 25, twelve pages later</p>
+        <p class="return-line">… a certain fatal syndrome Z, which <span class="known">simultaneously</span> makes it uncomfortable for them to take a life-prolonging drug X.</p>
+        <div class="known-card">
+          <p class="made">Your card from 2026-11-14</p>
+          <p>Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</p>
+        </div>
+        <p class="meta">The word is underlined because you already have a card; pointing at it shows the card. From the same real run (step 5).</p>
+      </aside>
+      </div>
     </div>
-    <p class="try-line">Runs on your own computer. You need Python 3.10 or newer and git. <a href="#try">How to install</a></p>
+    <p class="try-line">Runs on your own computer, with Python 3.10 or newer. Reads PDFs that have selectable text, not scans. <a href="#try">How to install</a></p>
   </div>
 
   <section id="how" aria-labelledby="how-title">
@@ -251,21 +274,38 @@
 
   <section id="try" aria-labelledby="try-title">
     <h2 id="try-title">Try it</h2>
-    <p class="lede">sentmine runs on your own computer. You need Python 3.10 or newer and git. Open a terminal and run:</p>
-    <pre><code>git clone https://github.com/esst-prog2/Sentmine
+    <p class="lede">sentmine runs on your own computer. You need Python 3.10 or newer. Open a terminal, then copy the lines for your system.</p>
+    <div class="installs">
+      <div class="install">
+        <div class="install-head"><span>Windows</span><button type="button" class="button copy" data-for="win">Copy</button></div>
+        <pre id="win"><code>git clone https://github.com/esst-prog2/Sentmine
 cd Sentmine
 python -m venv .venv
 .venv\Scripts\activate
 pip install .
 sentmine</code></pre>
-    <p class="measure">On macOS or Linux, the fourth line is <code>source .venv/bin/activate</code> instead. sentmine was built and tested on Windows.</p>
-    <p class="measure"><b>What opens:</b> sentmine’s reading page, in your browser, at <code>http://127.0.0.1:8000</code> (or the next free port up to 8010). Paste a text, or open a PDF that has text in it. Scanned PDFs cannot be read yet.</p>
+      </div>
+      <div class="install">
+        <div class="install-head"><span>macOS or Linux</span><button type="button" class="button copy" data-for="unix">Copy</button></div>
+        <pre id="unix"><code>git clone https://github.com/esst-prog2/Sentmine
+cd Sentmine
+python3 -m venv .venv
+source .venv/bin/activate
+pip install .
+sentmine</code></pre>
+      </div>
+    </div>
+    <p class="measure"><b>No git?</b> On the <a href="https://github.com/esst-prog2/Sentmine">GitHub page</a> choose Code, then Download ZIP, unzip it, open a terminal in that folder and start from the third line. sentmine was built and tested on Windows.</p>
+    <p class="measure"><b>What opens:</b> sentmine’s reading page, in your browser, at <code>http://127.0.0.1:8000</code> (or the next free port up to 8010). Paste a text, or open a PDF that has selectable text. Scanned PDFs cannot be read yet.</p>
     <p class="measure"><b>If the terminal says it cannot find <code>sentmine</code></b>, the virtual environment is not active: run the activate line again, then <code>sentmine</code>.</p>
-    <ul class="options">
-      <li><b>Anki is optional.</b> With the AnkiConnect add-on, Send to Anki adds cards straight to your deck; without it, Download writes a deck file.</li>
-      <li><b>Suggest meaning needs your own OpenAI key</b>: set <code>OPENAI_API_KEY</code>, or put the line <code>OPENAI_API_KEY=...</code> in <code>.env</code> in sentmine’s user folder (<code>%APPDATA%\sentmine</code> on Windows).</li>
-      <li><b>Your text stays on your computer</b>, except one thing: when you press Suggest meaning, that word and its sentence are sent to OpenAI.</li>
-    </ul>
+    <details class="optional">
+      <summary>Optional: Anki and AI meanings</summary>
+      <ul class="options">
+        <li><b>Anki is optional.</b> With the AnkiConnect add-on, Send to Anki adds cards straight to your deck; without it, Download writes a deck file.</li>
+        <li><b>Suggest meaning needs your own OpenAI key</b>, a paid service: set <code>OPENAI_API_KEY</code>, or put the line <code>OPENAI_API_KEY=...</code> in <code>.env</code> in sentmine’s user folder (<code>%APPDATA%\sentmine</code> on Windows).</li>
+        <li><b>Your text stays on your computer</b>, except one thing: when you press Suggest meaning, that word and its sentence are sent to OpenAI.</li>
+      </ul>
+    </details>
   </section>
 
 </main>
@@ -302,6 +342,19 @@ sentmine</code></pre>
       heroCard.querySelector(".meta").textContent = real
         ? "Word card · the meaning came from Suggest meaning (step 2)"
         : "Word card · a preview on this page; in sentmine, Suggest meaning can add a meaning";
+    });
+  });
+
+  // Copy buttons on the install blocks
+  document.querySelectorAll(".copy").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(document.getElementById(button.dataset.for).textContent);
+        button.textContent = "Copied";
+      } catch (error) {
+        button.textContent = "Select and copy";
+      }
+      setTimeout(() => { button.textContent = "Copy"; }, 2000);
     });
   });
 
