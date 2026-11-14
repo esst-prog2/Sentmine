@@ -56,7 +56,10 @@
   .page-line { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: clamp(24px, 4vw, 48px) clamp(20px, 5vw, 64px); margin: 0; }
   .page-line .question { font: 700 1.1rem var(--book); margin: 0 0 10px; color: var(--soft); }
   .page-line p { font: italic clamp(1.7rem, 4.2vw, 2.6rem)/1.3 var(--book); letter-spacing: -0.01em; margin: 0 0 18px; text-wrap: pretty; }
-  .page-line mark { background: var(--picked); color: var(--ink); padding: 0 .12em; border-radius: 3px; }
+  .page-line .pick { font: inherit; color: inherit; background: none; border: 0; padding: 0 .06em; margin: 0; cursor: pointer; border-radius: 3px; transition: background-color .15s; }
+  .page-line .pick:hover { background: var(--hover); }
+  .page-line .pick[aria-pressed="true"] { background: var(--picked); }
+  .page-line .pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .opening .card { max-width: 40rem; }
   .caption { font: 0.82rem/1.5 var(--ui); color: var(--soft); margin-top: 10px; }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; }
@@ -99,7 +102,11 @@
   .comes-back li { margin-bottom: 10px; }
   .underline-demo { text-decoration: underline dotted var(--accent) 2px; text-underline-offset: 4px; }
 
-  .facts { list-style: none; padding: 0; margin: 0; max-width: 60em; border-top: 1px solid var(--line); }
+  .facts-panel { max-width: 60em; padding: 4px 24px; }
+  .facts { list-style: none; padding: 0; margin: 0; }
+  .facts li:last-child { border-bottom: 0; }
+  #try { background: var(--panel); }
+  #try h2 { font-size: clamp(1.9rem, 3.6vw, 2.8rem); }
   .facts li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 15rem); gap: 8px 24px; padding: 16px 0; border-bottom: 1px solid var(--line); }
   .facts .source { color: var(--soft); font-size: 0.9rem; }
 
@@ -144,13 +151,13 @@
     <div class="stage">
       <figure class="page-line">
         <p class="question">Study question 1.3.7.</p>
-        <p>Two fair coins are flipped <mark>simultaneously</mark> to determine the payoffs of two players in the town’s casino. Player 1 wins a dollar if and only if at least one coin lands on head.</p>
-        <figcaption class="caption">From page 13 of the solution manual to Pearl, Glymour and Jewell, <cite>Causal Inference in Statistics: A Primer</cite>, set large on this page. In sentmine you read the PDF page itself (step 1).</figcaption>
+        <p class="picks"><button type="button" class="pick" data-s="0" data-back="two" aria-pressed="false">Two</button> <button type="button" class="pick" data-s="0" data-back="fair" aria-pressed="false">fair</button> <button type="button" class="pick" data-s="0" data-back="coins (coin)" aria-pressed="false">coins</button> <button type="button" class="pick" data-s="0" data-back="are (be)" aria-pressed="false">are</button> <button type="button" class="pick" data-s="0" data-back="flipped (flip)" aria-pressed="false">flipped</button> <button type="button" class="pick" data-s="0" data-back="simultaneously" aria-pressed="true">simultaneously</button> <button type="button" class="pick" data-s="0" data-back="to" aria-pressed="false">to</button> <button type="button" class="pick" data-s="0" data-back="determine" aria-pressed="false">determine</button> <button type="button" class="pick" data-s="0" data-back="the" aria-pressed="false">the</button> <button type="button" class="pick" data-s="0" data-back="payoffs (payoff)" aria-pressed="false">payoffs</button> <button type="button" class="pick" data-s="0" data-back="of" aria-pressed="false">of</button> <button type="button" class="pick" data-s="0" data-back="two" aria-pressed="false">two</button> <button type="button" class="pick" data-s="0" data-back="players (player)" aria-pressed="false">players</button> <button type="button" class="pick" data-s="0" data-back="in" aria-pressed="false">in</button> <button type="button" class="pick" data-s="0" data-back="the" aria-pressed="false">the</button> <button type="button" class="pick" data-s="0" data-back="town’s (town)" aria-pressed="false">town’s</button> <button type="button" class="pick" data-s="0" data-back="casino" aria-pressed="false">casino</button>. <button type="button" class="pick" data-s="1" data-back="player" aria-pressed="false">Player</button> 1 <button type="button" class="pick" data-s="1" data-back="wins (win)" aria-pressed="false">wins</button> <button type="button" class="pick" data-s="1" data-back="a" aria-pressed="false">a</button> <button type="button" class="pick" data-s="1" data-back="dollar" aria-pressed="false">dollar</button> <button type="button" class="pick" data-s="1" data-back="if" aria-pressed="false">if</button> <button type="button" class="pick" data-s="1" data-back="and" aria-pressed="false">and</button> <button type="button" class="pick" data-s="1" data-back="only" aria-pressed="false">only</button> <button type="button" class="pick" data-s="1" data-back="if" aria-pressed="false">if</button> <button type="button" class="pick" data-s="1" data-back="at" aria-pressed="false">at</button> <button type="button" class="pick" data-s="1" data-back="least (less)" aria-pressed="false">least</button> <button type="button" class="pick" data-s="1" data-back="one" aria-pressed="false">one</button> <button type="button" class="pick" data-s="1" data-back="coin" aria-pressed="false">coin</button> <button type="button" class="pick" data-s="1" data-back="lands (land)" aria-pressed="false">lands</button> <button type="button" class="pick" data-s="1" data-back="on" aria-pressed="false">on</button> <button type="button" class="pick" data-s="1" data-back="head" aria-pressed="false">head</button>.</p>
+        <figcaption class="caption">From page 13 of the solution manual to Pearl, Glymour and Jewell, <cite>Causal Inference in Statistics: A Primer</cite>, set large on this page. In sentmine you read the PDF page itself (step 1). Click any word to see the card sentmine would make from it.</figcaption>
       </figure>
-      <aside class="panel card" aria-label="The card sentmine made">
+      <aside class="panel card hero-card" aria-label="The card sentmine made" aria-live="polite">
         <p class="panel-title">Cards</p>
         <div class="front">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</div>
-        <div class="back">simultaneously<br>Two things happening at the same time.</div>
+        <div class="back"><span class="word">simultaneously</span><span class="meaning"><br>Two things happening at the same time.</span></div>
         <div class="meta">Word card · the meaning came from Suggest meaning (step 2)</div>
       </aside>
     </div>
@@ -228,11 +235,13 @@
 
   <section aria-labelledby="facts-title">
     <h2 id="facts-title">Measured, with sources</h2>
+    <div class="panel facts-panel">
     <ul class="facts">
       <li><span>Ten cards: about 30 seconds to download and import the deck, about 5 seconds with Send to Anki. One timing by hand.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/blob/main/PLANNING_LOG.md">Planning log, 3 November 2026</a></li>
       <li><span>On four real PDFs of 10 to 166 pages, sentmine found the printed place of 99.9 to 100% of the words it read from them, so those words can be clicked on the page itself.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/blob/main/PLANNING_LOG.md">Planning log, 6 November 2026</a></li>
       <li><span>555 automated tests pass.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/tree/main/tests">pytest, 14 November 2026</a></li>
     </ul>
+    </div>
   </section>
 
   <section aria-labelledby="similar-title">
@@ -259,19 +268,43 @@ sentmine</code></pre>
     </ul>
   </section>
 
-  <section aria-labelledby="next-title">
-    <h2 id="next-title">What’s next</h2>
-    <p class="measure">Reading anywhere in the browser: picking words on web pages, and sending PDFs from Canvas straight into sentmine.</p>
-  </section>
 </main>
 
 <footer>
+  <span>Next: reading anywhere in the browser, picking words on web pages and sending PDFs from Canvas straight into sentmine.</span>
   <span>sentmine, a project for Advanced Programming at ELTE.</span>
   <a href="https://github.com/esst-prog2/Sentmine">Source on GitHub</a>
 </footer>
 
 <script>
   // The deck beside the steps follows the step in view; without JavaScript it simply shows step 1.
+  // The opening's sentence: a click on any word rebuilds the card the way sentmine makes it,
+  // the word in bold in its sentence and, on the back, the word with its base form.
+  const sentences = [
+    "Two fair coins are flipped simultaneously to determine the payoffs of two players in the town’s casino.",
+    "Player 1 wins a dollar if and only if at least one coin lands on head.",
+  ];
+  const heroCard = document.querySelector(".hero-card");
+  document.querySelectorAll(".picks .pick").forEach((pick) => {
+    pick.addEventListener("click", () => {
+      document.querySelectorAll(".picks .pick").forEach((other) => other.setAttribute("aria-pressed", String(other === pick)));
+      const sentence = sentences[Number(pick.dataset.s)];
+      const before = [...pick.parentNode.querySelectorAll(".pick")].filter((other) => other.dataset.s === pick.dataset.s);
+      const nth = before.filter((other) => other.textContent === pick.textContent).indexOf(pick);
+      // the nth place of the word as a whole word, so "a" is never the "a" inside "Player"
+      const whole = new RegExp("(?<![A-Za-z’])" + pick.textContent + "(?![A-Za-z’])", "g");
+      const at = [...sentence.matchAll(whole)][nth].index;
+      const front = heroCard.querySelector(".front");
+      front.replaceChildren(sentence.slice(0, at), Object.assign(document.createElement("b"), { textContent: pick.textContent }), sentence.slice(at + pick.textContent.length));
+      heroCard.querySelector(".word").textContent = pick.dataset.back;
+      const real = pick.textContent === "simultaneously";
+      heroCard.querySelector(".meaning").hidden = !real;
+      heroCard.querySelector(".meta").textContent = real
+        ? "Word card · the meaning came from Suggest meaning (step 2)"
+        : "Word card · a preview on this page; in sentmine, Suggest meaning can add a meaning";
+    });
+  });
+
   const deck = document.querySelector(".deck");
   const states = {
     1: "Step 1: a word card from its sentence.",
