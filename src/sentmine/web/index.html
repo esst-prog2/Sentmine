@@ -622,7 +622,8 @@ document.addEventListener("mouseup", (event) => {
 function chose(selected) {   // a drag: the term, or the definition of the waiting term
   if (!selected) return;
   if (term === null) {
-    term = selected.replace(/\s+/g, " ");
+    // a term keeps no full stop, comma or colon after it: "Simpson's reversal:" would hide the colon in a cloze card
+    term = selected.replace(/\s+/g, " ").replace(/[.,;:!?]+$/, "") || selected;
     say("");
     return;
   }
