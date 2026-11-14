@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      /* sentmine's own world: paper, ink, action blue, picked-word yellow (DESIGN.md). */
+      :root {
+        --ground: #f6f5f1;
+        --panel: #ffffff;
+        --ink: #1f2328;
+        --soft: #5c6470;
+        --line: #d9d6cd;
+        --accent: #1a5fd0;
+        --font-display: "Segoe UI", system-ui, sans-serif;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--ground); }
+      #root { position: relative; width: 100%; height: 100%; font-family: var(--font-display); color: var(--ink); }
+      .clip { position: absolute; inset: 0; }
+
+      /* one line of text at a time, always in the same place */
+      .caption { position: absolute; left: 120px; right: 120px; top: 96px; font-size: 64px; font-weight: 700;
+        letter-spacing: -0.02em; line-height: 1.15; opacity: 0; }
+      .beat { position: absolute; left: 120px; top: 64px; font-size: 26px; font-weight: 600; color: var(--accent);
+        letter-spacing: 0.02em; opacity: 0; }
+
+      /* a real screen, framed like the promo page's screenshots */
+      .shot { position: absolute; left: 50%; background: var(--panel); border: 2px solid var(--line); border-radius: 16px;
+        overflow: hidden; box-shadow: 0 24px 60px rgba(31, 35, 40, 0.14); opacity: 0; }
+      .shot img { display: block; width: 100%; height: auto; }
+
+      #s-intro .name { position: absolute; left: 0; right: 0; top: 380px; text-align: center; font-size: 160px; font-weight: 800;
+        letter-spacing: -0.04em; opacity: 0; }
+      #s-intro .line { position: absolute; left: 0; right: 0; top: 600px; text-align: center; font-size: 48px; color: var(--soft); opacity: 0; }
+      #s-end .name { position: absolute; left: 0; right: 0; top: 360px; text-align: center; font-size: 120px; font-weight: 800;
+        letter-spacing: -0.04em; opacity: 0; }
+      #s-end .line { position: absolute; left: 0; right: 0; top: 560px; text-align: center; font-size: 52px; font-weight: 600;
+        color: var(--accent); opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="30" data-width="1920" data-height="1080">
+
+      <div id="s-intro" class="clip" data-start="0" data-duration="3" data-track-index="0">
+        <div class="name">sentmine</div>
+        <div class="line">for students reading English course books</div>
+      </div>
+
+      <div id="s-click" class="clip" data-start="3" data-duration="8" data-track-index="0">
+        <div class="beat">1 · CLICK</div>
+        <div class="caption">Click a word on the real page.</div>
+        <div class="shot" style="top: 250px; width: 1720px; margin-left: -860px; transform-origin: 18% 70%;"><img src="assets/step-1-click.png" alt="Study question 1.3.7 in sentmine, with simultaneously marked yellow and its new card in the Cards panel." /></div>
+      </div>
+
+      <div id="s-card" class="clip" data-start="11" data-duration="4.5" data-track-index="0">
+        <div class="beat">2 · ANKI</div>
+        <div class="caption">It becomes a card, with its meaning.</div>
+        <div class="shot" style="top: 250px; width: 1180px; margin-left: -590px;"><img src="assets/step-2-meaning.png" alt="The card in sentmine's Cards panel, with the meaning on its back: Two things happening at the same time." /></div>
+      </div>
+
+      <div id="s-send" class="clip" data-start="15.5" data-duration="4.5" data-track-index="0">
+        <div class="beat">2 · ANKI</div>
+        <div class="caption">Send it to Anki in one click.</div>
+        <div class="shot" style="top: 470px; width: 1840px; margin-left: -920px;"><img src="assets/step-4-send.png" alt="The status line: Sent to the deck sentmine demo in Anki: 2 cards added." /></div>
+      </div>
+
+      <div id="s-back" class="clip" data-start="20" data-duration="7.5" data-track-index="0">
+        <div class="beat">3 · COMES BACK</div>
+        <div class="caption">Meet the word again: your card comes back.</div>
+        <div class="shot" style="top: 280px; width: 1720px; margin-left: -860px; transform-origin: 30% 20%;"><img src="assets/6-cards-come-back.png" alt="On a later page, Simpson's reversal has a solid blue line under it and a dot in the margin; pointing at it shows the card made earlier." /></div>
+      </div>
+
+      <div id="s-end" class="clip" data-start="27.5" data-duration="2.5" data-track-index="0">
+        <div class="name">sentmine</div>
+        <div class="line">esst-prog2.github.io/Sentmine</div>
+      </div>
+    </div>
+    <script>
+      // One paused root timeline. Each scene: the label and the line fade up, then the real screen rises in;
+      // a slow push toward the part that matters; a short fade out before the next scene.
+      const tl = gsap.timeline({ paused: true });
+      const ease = "power3.out";
+
+      tl.fromTo("#s-intro .name", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7, ease }, 0.2);
+      tl.fromTo("#s-intro .line", { opacity: 0 }, { opacity: 1, duration: 0.6, ease }, 0.8);
+      tl.to("#s-intro .name, #s-intro .line", { opacity: 0, duration: 0.35 }, 2.6);
+
+      function scene(id, start, length, push) {
+        tl.fromTo(id + " .beat", { opacity: 0 }, { opacity: 1, duration: 0.4, ease }, start + 0.1);
+        tl.fromTo(id + " .caption", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease }, start + 0.15);
+        tl.fromTo(id + " .shot", { opacity: 0, y: 40, scale: 0.98 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease }, start + 0.4);
+        if (push) tl.to(id + " .shot", { scale: push, duration: length - 1.6, ease: "none" }, start + 1.1);
+        tl.to(id + " .beat, " + id + " .caption, " + id + " .shot", { opacity: 0, duration: 0.35 }, start + length - 0.4);
+      }
+      scene("#s-click", 3, 8, 1.14);
+      scene("#s-card", 11, 4.5, 1.03);
+      scene("#s-send", 15.5, 4.5, 1.02);
+      scene("#s-back", 20, 7.5, 1.08);
+
+      tl.fromTo("#s-end .name", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease }, 27.6);
+      tl.fromTo("#s-end .line", { opacity: 0 }, { opacity: 1, duration: 0.5, ease }, 28.0);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
