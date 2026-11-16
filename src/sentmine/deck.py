@@ -2,6 +2,7 @@
 
 import html
 import os
+import tempfile
 import zlib
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -51,6 +52,7 @@ class Note:
 
     fields: tuple[str, ...]
     cloze: bool = False
+    media: tuple[tuple[str, bytes], ...] = ()  # pictures the fields refer to: (file name, PNG)
 
     @property
     def model(self) -> genanki.Model:
@@ -101,13 +103,19 @@ def write_deck(cards: Sequence[Card], path: Path) -> None:
 def write_notes(notes: Sequence[Note | tuple[str, str]], path: Path) -> None:
     """Write notes, or (front, back) pairs of HTML, to `path`; the file appears only once it is complete."""
     path = Path(path)
+    notes = list(map(as_note, notes))
     deck = genanki.Deck(deck_id_for(path.stem), path.stem)
-    for note in map(as_note, notes):
+    for note in notes:
         deck.add_note(_Note(model=note.model, fields=list(note.fields)))
     partial = path.with_name(path.name + ".part")
-    try:
-        genanki.Package(deck).write_to_file(str(partial))
-        os.replace(partial, path)
-    finally:
-        if partial.exists():
-            partial.unlink()
+    with tempfile.TemporaryDirectory() as folder:   # the deck file takes its pictures from files
+        media = []
+        for name, data in {name: data for note in notes for name, data in note.media}.items():
+            (Path(folder) / name).write_bytes(data)
+            media.append(str(Path(folder) / name))
+        try:
+            genanki.Package(deck, media_files=media).write_to_file(str(partial))
+            os.replace(partial, path)
+        finally:
+            if partial.exists():
+                partial.unlink()

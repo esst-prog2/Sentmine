@@ -105,6 +105,13 @@ try {
   .pdf-page .w.picked, .pdf-page .w.picked:hover { background: rgba(255, 196, 0, 0.45); }
   .pdf-page .w.dragged, .pdf-page .w.dragged:hover { background: rgba(26, 95, 208, 0.3); }
   #text .w.dragged { background: var(--selection); }
+  /* a formula or graph from the page, on the back of a card */
+  .card .pictures { display: grid; gap: 8px; margin-top: 8px; }
+  .card .picture { position: relative; border: 1px solid var(--line); border-radius: 6px; background: #ffffff; padding: 6px; }
+  .card .picture img { display: block; max-width: 100%; height: auto; }
+  .card .picture button { position: absolute; top: 4px; right: 4px; }
+  body.boxing .pdf-page, body.boxing .pdf-page .w { cursor: crosshair; }
+  .pdf-page .box-drawn { position: absolute; border: 2px solid var(--accent); background: rgba(26, 95, 208, 0.1); pointer-events: none; }
   /* the keyboard: one stop on the text, then the arrow keys from word to word */
   #text:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   #text .w:focus { outline: none; }
@@ -722,9 +729,93 @@ function drawCard(card) {
     });
     buttons.append(suggest);
   }
-  box.append(front, back, buttons);
+  if (state.pdf && !CLIP) {
+    const add = element("button", "small", "Add a picture");
+    add.title = "Drag a box around a formula or graph on the page";
+    add.addEventListener("click", () => startBox(card.id));
+    buttons.append(add);
+  }
+  box.append(front, back);
+  if (card.pictures && card.pictures.length) {
+    const pictures = element("div", "pictures");
+    card.pictures.forEach((address, number) => {
+      const holder = element("div", "picture");
+      const image = element("img");
+      image.src = address;
+      image.alt = "A part of the page, on the back of this card";
+      const drop = element("button", "small", "×");
+      drop.setAttribute("aria-label", "Remove this picture");
+      drop.addEventListener("click", () => call("DELETE", "/api/cards/" + card.id + "/pictures/" + number));
+      holder.append(image, drop);
+      pictures.append(holder);
+    });
+    box.append(pictures);
+  }
+  box.append(buttons);
   return box;
 }
+
+// Add a picture: the reader drags a box around a formula or graph on a page of the PDF; that part of the page,
+// drawn from the PDF itself, goes on the back of the card. Esc cancels.
+let boxFor = null;     // the card the box is for, while one is being drawn
+let boxing = null;     // { page, x, y, mark } while the mouse is down
+
+function startBox(cardId) {
+  boxFor = cardId;
+  document.body.classList.add("boxing");
+  say("Drag a box around the formula or graph on the page. Esc cancels.");
+}
+
+function stopBox(message) {
+  boxFor = null;
+  if (boxing) boxing.mark.remove();
+  boxing = null;
+  document.body.classList.remove("boxing");
+  if (message !== undefined) say(message);
+}
+
+function pageFraction(page, event) {
+  const r = page.getBoundingClientRect();
+  return [Math.min(Math.max((event.clientX - r.left) / r.width, 0), 1), Math.min(Math.max((event.clientY - r.top) / r.height, 0), 1)];
+}
+
+// Capture phase, so that while a box is drawn the clicks and drags on the words do nothing else.
+document.addEventListener("mousedown", (event) => {
+  if (boxFor === null || event.button !== 0) return;
+  const page = event.target.closest && event.target.closest(".pdf-page");
+  if (!page) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const [x, y] = pageFraction(page, event);
+  const mark = element("div", "box-drawn");
+  page.append(mark);
+  boxing = { page, x, y, mark };
+}, true);
+
+document.addEventListener("mousemove", (event) => {
+  if (!boxing) return;
+  event.stopImmediatePropagation();
+  const [x, y] = pageFraction(boxing.page, event);
+  const [left, top] = [Math.min(x, boxing.x), Math.min(y, boxing.y)];
+  Object.assign(boxing.mark.style, { left: left * 100 + "%", top: top * 100 + "%",
+    width: Math.abs(x - boxing.x) * 100 + "%", height: Math.abs(y - boxing.y) * 100 + "%" });
+}, true);
+
+document.addEventListener("mouseup", async (event) => {
+  if (!boxing) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const [x, y] = pageFraction(boxing.page, event);
+  const box = [Math.min(x, boxing.x), Math.min(y, boxing.y), Math.abs(x - boxing.x), Math.abs(y - boxing.y)];
+  const page = Number(boxing.page.dataset.page);
+  const card = boxFor;
+  stopBox();
+  await call("POST", "/api/cards/" + card + "/pictures", { page, box });
+}, true);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && boxFor !== null) stopBox("No picture added.");
+});
 
 function draw() {
   const hadKeys = keyPlace !== null && $("text").contains(document.activeElement);

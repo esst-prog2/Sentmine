@@ -19,6 +19,8 @@ from sentmine.document import PDFIUM
 from sentmine.reading import clickable_words
 
 PICTURE_WIDTH = 1600  # pixels; sharp enough for a wide panel on a high-density screen
+PART_SCALE = 3  # a part of a page for a card, drawn at 216 dpi: sharp on any screen in Anki
+SMALLEST_PART = 0.005  # of the page's width or height: a box smaller than this is a slip, not a choice
 CHUNK = 1500  # runs of letters matched at a time, so a long book does not take long
 _LETTERS = re.compile(r"[^\W\d_]+")
 
@@ -160,15 +162,44 @@ def _png(width: int, height: int, rows: bytes) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(rows, 6)) + chunk(b"IEND", b"")
 
 
+def _drawn(page, **render) -> bytes:
+    """A page, or part of it, drawn as a PNG; call while holding PDFIUM."""
+    bitmap = page.render(rev_byteorder=True, **render)  # RGB, no alpha
+    stride, drawn_width, drawn_height = bitmap.stride, bitmap.width, bitmap.height
+    buffer = bytes(bitmap.buffer)
+    bitmap.close()
+    row = drawn_width * 3
+    rows = b"".join(b"\x00" + buffer[y * stride : y * stride + row] for y in range(drawn_height))
+    return _png(drawn_width, drawn_height, rows)
+
+
 def picture(pages: Pages, number: int, width: int = PICTURE_WIDTH) -> bytes:
     """Page `number` (from 0) drawn as a PNG about `width` pixels wide."""
     with PDFIUM:
         page = pages.document[number]
-        bitmap = page.render(scale=width / page.get_width(), rev_byteorder=True)  # RGB, no alpha
-        stride, drawn_width, drawn_height = bitmap.stride, bitmap.width, bitmap.height
-        buffer = bytes(bitmap.buffer)
-        bitmap.close()
-        page.close()
-    row = drawn_width * 3
-    rows = b"".join(b"\x00" + buffer[y * stride : y * stride + row] for y in range(drawn_height))
-    return _png(drawn_width, drawn_height, rows)
+        try:
+            return _drawn(page, scale=width / page.get_width())
+        finally:
+            page.close()
+
+
+def part(pages: Pages, number: int, box: tuple[float, float, float, float]) -> bytes:
+    """The part of page `number` inside `box` (left, top, width, height, fractions of the page, as the word
+    boxes are), drawn from the PDF itself as a sharp PNG: a formula or a graph for a card."""
+    left, top, width, height = box
+    if not 0 <= number < len(pages.sizes):
+        raise ValueError("That page is not in the PDF being read.")
+    if width < SMALLEST_PART or height < SMALLEST_PART:
+        raise ValueError("Draw a larger box around the formula or graph.")
+    if left < 0 or top < 0 or left + width > 1.0001 or top + height > 1.0001:
+        raise ValueError("Draw the box inside one page.")
+    with PDFIUM:
+        page = pages.document[number]
+        try:
+            page_width, page_height = page.get_width(), page.get_height()
+            # pdfium crops by how much to cut from each side, in points: left, bottom, right, top
+            crop = (left * page_width, max(0.0, 1 - top - height) * page_height,
+                    max(0.0, 1 - left - width) * page_width, top * page_height)
+            return _drawn(page, scale=PART_SCALE, crop=crop)
+        finally:
+            page.close()

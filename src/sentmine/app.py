@@ -20,7 +20,7 @@ from sentmine.document import MOST_BYTES, DocumentProblem, read_file
 from sentmine.history import Entry
 from sentmine.meaning import MeaningProblem, find_api_key, suggest_meaning
 from sentmine.memory import CardMemory, MemoryProblem, RememberedCard, default_memory_path
-from sentmine.pages import Pages, locate, picture
+from sentmine.pages import Pages, locate, part, picture
 from sentmine.reading import DUPLICATE, EARLIER, REMOVED, Flashcard, Problem, Session, entry_card
 from sentmine.words import plural
 
@@ -60,6 +60,8 @@ def _card_json(card: Flashcard) -> dict:
         "earlier": card.earlier,
         "cloze": card.cloze,
         "can_cloze": card.can_cloze,
+        # the address carries the picture's name, which comes from its content, so the browser never shows an old one
+        "pictures": [f"/api/cards/{card.id}/pictures/{number}.png?n={name}" for number, (name, _) in enumerate(card.pictures)],
     }
 
 
@@ -369,6 +371,31 @@ def create_app(
             raise Problem("Suggesting a meaning needs an API key.")
         reading.suggest(card_id, ask)
         return state("Meaning suggested. Check it, and edit it if you like.")
+
+    @app.post("/api/cards/<int:card_id>/pictures")
+    def add_picture(card_id: int):
+        """A box drawn on a page of the PDF in Read: that part of the page goes on the back of the card."""
+        number = sent("page", int)
+        box = (request.get_json(silent=True) or {}).get("box")
+        if not (isinstance(box, list) and len(box) == 4 and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in box)):
+            raise Problem("The request has no usable 'box'.")
+        try:
+            png = part(pages_of(number), number, tuple(float(v) for v in box))
+        except ValueError as error:
+            raise Problem(str(error)) from error
+        read.add_picture(card_id, png)
+        return state("Picture added under the answer.")
+
+    @app.delete("/api/cards/<int:card_id>/pictures/<int:number>")
+    def remove_picture(card_id: int, number: int):
+        read.remove_picture(card_id, number)
+        return state("Picture removed.")
+
+    @app.get("/api/cards/<int:card_id>/pictures/<int:number>.png")
+    def card_picture(card_id: int, number: int):
+        response = Response(read.picture(card_id, number), mimetype="image/png")
+        response.headers["Cache-Control"] = "private, max-age=3600"  # the address carries the picture's name
+        return response
 
     @both("POST", "/api/send")
     def send_to_anki():

@@ -4,7 +4,7 @@ import hashlib
 import html
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
@@ -43,6 +43,7 @@ class Flashcard:
     earlier: str = ""  # made anyway: the date of the earlier card in the memory
     heading: str = ""  # word cards: the first line of the back; a suggested meaning goes under it
     cloze: bool = False  # definition cards: the passage with the term hidden, instead of term -> passage
+    pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a PDF page, on the back: (file name, PNG)
 
     @property
     def history_key(self) -> str:
@@ -69,11 +70,17 @@ class Flashcard:
         return _plain_html(self.back)
 
     @property
+    def pictures_html(self) -> str:
+        return "".join(f'<div><img src="{name}"></div>' for name, _ in self.pictures)
+
+    @property
     def note(self) -> Note:
-        """The card as Download and Send to Anki write it."""
+        """The card as Download and Send to Anki write it; pictures go under the answer."""
+        media = tuple(self.pictures)
         if self.cloze:
-            return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), ""), cloze=True)
-        return Note((self.front_html, self.back_html))
+            return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), self.pictures_html),
+                        cloze=True, media=media)
+        return Note((self.front_html, self.back_html + self.pictures_html), media=media)
 
 
 def entry_card(entry: Entry) -> Flashcard:
@@ -321,6 +328,27 @@ class Session:
 
     def delete(self, card_id: int) -> None:
         self.cards.remove(self._card(card_id))
+
+    def add_picture(self, card_id: int, png: bytes) -> Flashcard:
+        """Put a picture (a part of a PDF page) on the back of a card; its file name comes from its content."""
+        card = self._card(card_id)
+        name = "sentmine-" + hashlib.sha256(png).hexdigest()[:16] + ".png"
+        if name not in {known for known, _ in card.pictures}:
+            card.pictures.append((name, png))
+        return card
+
+    def picture(self, card_id: int, number: int) -> bytes:
+        """The PNG of a card's picture."""
+        pictures = self._card(card_id).pictures
+        if not 0 <= number < len(pictures):
+            raise Problem("That picture is not on the card any more.")
+        return pictures[number][1]
+
+    def remove_picture(self, card_id: int, number: int) -> Flashcard:
+        card = self._card(card_id)
+        self.picture(card_id, number)   # says so if it is gone
+        del card.pictures[number]
+        return card
 
     def suggest(self, card_id: int, ask: Callable[[str, str], str]) -> Flashcard:
         """Put a meaning from `ask(word, sentence)` on the back, under the word, replacing any earlier one."""
