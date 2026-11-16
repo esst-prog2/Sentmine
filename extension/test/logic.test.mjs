@@ -70,3 +70,16 @@ test("sentmine is found by its answer, not by its port", async () => {
   assert.equal(await findSentmine(fakeFetch({ 8003: { app: "sentmine" }, 8005: { app: "sentmine" } })), "http://127.0.0.1:8003");
   assert.equal(await findSentmine(fakeFetch({})), null);
 });
+
+import { boxOnShot, storedSize, WIDEST_PICTURE } from "../logic.js";
+
+test("a box on the page becomes the same box on a screenshot drawn at twice the size", () => {
+  assert.deepEqual(boxOnShot({ x: 10, y: 20, width: 100, height: 50 }, 800, 1600, 1200), { x: 20, y: 40, width: 200, height: 100 });
+  assert.deepEqual(boxOnShot({ x: 750, y: 0, width: 100, height: 50 }, 800, 800, 600), { x: 750, y: 0, width: 50, height: 50 });
+  assert.equal(boxOnShot({ x: 900, y: 0, width: 100, height: 50 }, 800, 800, 600), null);
+});
+
+test("a wide picture is made narrower, keeping its shape", () => {
+  assert.deepEqual(storedSize(800, 600), { width: 800, height: 600 });
+  assert.deepEqual(storedSize(3200, 1000), { width: WIDEST_PICTURE, height: 500 });
+});

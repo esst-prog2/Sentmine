@@ -1,5 +1,6 @@
 """The reading app: a web page served on the reader's own computer."""
 
+import base64
 import hashlib
 import re
 import socket
@@ -49,7 +50,11 @@ def deck_file_name(name: str) -> str:
     return deck_name(name) + ".apkg"
 
 
-def _card_json(card: Flashcard) -> dict:
+PNG_START = b"\x89PNG\r\n\x1a\n"
+MOST_PICTURE_BYTES = 5 * 1024 * 1024  # a picture from a web page; a formula or a photo is far smaller
+
+
+def _card_json(card: Flashcard, prefix: str = "") -> dict:
     return {
         "id": card.id,
         "kind": card.kind,
@@ -61,8 +66,22 @@ def _card_json(card: Flashcard) -> dict:
         "cloze": card.cloze,
         "can_cloze": card.can_cloze,
         # the address carries the picture's name, which comes from its content, so the browser never shows an old one
-        "pictures": [f"/api/cards/{card.id}/pictures/{number}.png?n={name}" for number, (name, _) in enumerate(card.pictures)],
+        "pictures": [f"{prefix}/api/cards/{card.id}/pictures/{number}.png?n={name}" for number, (name, _) in enumerate(card.pictures)],
+        "picture_only": card.picture_only,
     }
+
+
+def _png_sent(value) -> bytes:
+    """A PNG sent in base64 by the browser extension, checked before it goes on a card."""
+    if not isinstance(value, str) or len(value) > MOST_PICTURE_BYTES * 4 // 3 + 4:
+        raise Problem("The picture is too large: at most 5 MB.")
+    try:
+        png = base64.b64decode(value, validate=True)
+    except ValueError as error:
+        raise Problem("The picture could not be read.") from error
+    if not png.startswith(PNG_START):
+        raise Problem("Only PNG pictures can be added.")
+    return png
 
 
 def _earlier_json(entry: Entry) -> dict:
@@ -186,7 +205,7 @@ def create_app(
                     else (known[key], met.get(("word", key)))
                 )) for key in in_text
             },
-            cards=[_card_json(card) for card in reading.cards],
+            cards=[_card_json(card, "/clip" if now() is clips else "") for card in reading.cards],
             count=len(reading.cards),
             count_text=plural(len(reading.cards), "card"),
             message=message,
@@ -372,30 +391,45 @@ def create_app(
         reading.suggest(card_id, ask)
         return state("Meaning suggested. Check it, and edit it if you like.")
 
-    @app.post("/api/cards/<int:card_id>/pictures")
+    @both("POST", "/api/cards/<int:card_id>/pictures")
     def add_picture(card_id: int):
-        """A box drawn on a page of the PDF in Read: that part of the page goes on the back of the card."""
-        number = sent("page", int)
-        box = (request.get_json(silent=True) or {}).get("box")
-        if not (isinstance(box, list) and len(box) == 4 and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in box)):
-            raise Problem("The request has no usable 'box'.")
-        try:
-            png = part(pages_of(number), number, tuple(float(v) for v in box))
-        except ValueError as error:
-            raise Problem(str(error)) from error
-        read.add_picture(card_id, png)
+        """A picture for the back of a card: a box drawn on a page of the PDF in Read ({page, box}), or a PNG
+        the browser extension took from a web page ({png}, in base64)."""
+        body = request.get_json(silent=True) or {}
+        if "png" in body:
+            png = _png_sent(body["png"])
+        else:
+            if now() is clips:
+                raise Problem("There is no PDF here: add a picture from the web page with a right-click.")
+            number = sent("page", int)
+            box = body.get("box")
+            if not (isinstance(box, list) and len(box) == 4 and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in box)):
+                raise Problem("The request has no usable 'box'.")
+            try:
+                png = part(pages_of(number), number, tuple(float(v) for v in box))
+            except ValueError as error:
+                raise Problem(str(error)) from error
+        reading.add_picture(card_id, png)
         return state("Picture added under the answer.")
 
-    @app.delete("/api/cards/<int:card_id>/pictures/<int:number>")
+    @both("DELETE", "/api/cards/<int:card_id>/pictures/<int:number>")
     def remove_picture(card_id: int, number: int):
-        read.remove_picture(card_id, number)
+        reading.remove_picture(card_id, number)
         return state("Picture removed.")
 
-    @app.get("/api/cards/<int:card_id>/pictures/<int:number>.png")
+    @both("GET", "/api/cards/<int:card_id>/pictures/<int:number>.png")
     def card_picture(card_id: int, number: int):
-        response = Response(read.picture(card_id, number), mimetype="image/png")
+        response = Response(reading.picture(card_id, number), mimetype="image/png")
         response.headers["Cache-Control"] = "private, max-age=3600"  # the address carries the picture's name
         return response
+
+    @both("PUT", "/api/cards/<int:card_id>/picture-only")
+    def picture_only(card_id: int):
+        on = (request.get_json(silent=True) or {}).get("on")
+        if not isinstance(on, bool):
+            raise Problem("The request has no usable 'on'.")
+        card = reading.set_picture_only(card_id, on)
+        return state("Only the picture is on the back." if card.picture_only else "The text and the picture are on the back.")
 
     @both("POST", "/api/send")
     def send_to_anki():

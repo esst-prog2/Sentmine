@@ -13,7 +13,13 @@
 - [x] 3.2 Add a picture: draw a box on the page, Esc cancels; the picture on the card with a remove button
 - [x] 3.3 Headless Edge: add a picture to a card on the course PDF; the deck file contains it
 
-## 4. Wrap-up
+## 4. Web pages and picture only
 
-- [x] 4.1 README, the whole suite, `openspec validate card-pictures --strict`
-- [ ] 4.2 The reader tries it on a formula and a graph (needs the reader)
+- [x] 4.1 The app takes a PNG for a card (both sessions), at most 5 MB; picture only on the back; tests
+- [x] 4.2 The extension: right-click an image, and right-click to drag a box on the page; both to the newest clip card; the panel shows it
+- [x] 4.3 Headless Edge: both on a page, and picture only in the deck
+
+## 5. Wrap-up
+
+- [x] 5.1 README, the whole suite, `openspec validate card-pictures --strict`
+- [ ] 5.2 The reader tries it on a formula and a graph (needs the reader)

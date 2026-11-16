@@ -745,11 +745,17 @@ function drawCard(card) {
       image.alt = "A part of the page, on the back of this card";
       const drop = element("button", "small", "×");
       drop.setAttribute("aria-label", "Remove this picture");
-      drop.addEventListener("click", () => call("DELETE", "/api/cards/" + card.id + "/pictures/" + number));
+      drop.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id + "/pictures/" + number));
       holder.append(image, drop);
       pictures.append(holder);
     });
     box.append(pictures);
+    if (!card.cloze) {
+      const only = element("button", "small", card.picture_only ? "Text and picture on the back" : "Picture only on the back");
+      only.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/picture-only", { on: !card.picture_only }));
+      buttons.append(only);
+    }
+    if (card.picture_only) back.hidden = true;   // the back of this card is only its pictures
   }
   box.append(buttons);
   return box;

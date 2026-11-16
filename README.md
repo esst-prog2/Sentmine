@@ -122,8 +122,8 @@ network    the app runs only on my own computer, and the text stays
   card, and I can skip it or make it anyway
 - edit, delete, switch a definition card to cloze, or ask for a suggested
   meaning (with my own OpenAI key)
-- on a PDF, add a formula or a graph from the page to a card, as a picture
-  under the answer
+- add a formula, graph or picture to a card, from a PDF page or a web page,
+  under the answer or alone on the back
 - send the cards to Anki in one click, or download a deck
 - the cards I keep are remembered; in the next text the words and terms I
   have cards for are marked, and each card counts the texts it came back in
@@ -134,7 +134,7 @@ network    the app runs only on my own computer, and the text stays
 
 **Not yet**
 
-- formulas from web pages on cards (formulas and graphs from a PDF work)
+- formulas from web pages as real formulas (they come as pictures now)
 - scanned PDFs (there is no text to read in them)
 - marking the words I have cards for on the web page itself
 - reading my Anki review results back into the app
@@ -229,7 +229,11 @@ a card for shows that card when the keyboard reaches it.
 On a PDF, **Add a picture** on a card puts a formula or a graph from the
 page on the card: drag a box around it on the page (Esc cancels). It is cut
 from the PDF itself, so it stays sharp, and it goes under the answer, in the
-deck file and in Anki.
+deck file and in Anki. On a web page, right-click an image and choose *Add
+this picture to the last card*, or right-click the page and choose *Add a
+part of this page to the last card* and drag a box: the picture goes on the
+newest card in the side panel. A card with a picture can show *Picture only
+on the back*.
 
 Instead of pasting, you can open a PDF that contains text, or a `.txt` file.
 Running heads and page numbers are removed and hyphenated words rejoined;

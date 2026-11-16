@@ -24,6 +24,34 @@ export async function findSentmine(fetchFn, ports = PORTS, wait = 600) {
 // The right-click items on selected text, by the kind of clip each one makes.
 export const MENU = { word: "Word card from this sentence", definition: "Definition card from this" };
 
+// The right-click items that put a picture on the newest card in the side panel.
+export const PICTURE_MENU = {
+  picture: "Add this picture to the last card",
+  part: "Add a part of this page to the last card",
+};
+
+export const NO_CARD_YET =
+  "Make a card in the side panel first: select a sentence, right-click it, and choose Word card from this sentence.";
+
+export const WIDEST_PICTURE = 1600;   // pixels; a picture wider than this is made smaller, as Anki shows it no wider
+
+// A box drawn on the visible page (CSS pixels of a window `viewportWidth` wide), in the pixels of a screenshot
+// of that window, kept inside the screenshot.
+export function boxOnShot(box, viewportWidth, shotWidth, shotHeight) {
+  const scale = shotWidth / viewportWidth;
+  const x = Math.max(0, Math.round(box.x * scale));
+  const y = Math.max(0, Math.round(box.y * scale));
+  const width = Math.min(shotWidth - x, Math.round(box.width * scale));
+  const height = Math.min(shotHeight - y, Math.round(box.height * scale));
+  return width > 0 && height > 0 ? { x, y, width, height } : null;
+}
+
+// The size a picture is stored at: as it is, or narrowed to WIDEST_PICTURE keeping its shape.
+export function storedSize(width, height) {
+  if (width <= WIDEST_PICTURE) return { width, height };
+  return { width: WIDEST_PICTURE, height: Math.round(height * WIDEST_PICTURE / width) };
+}
+
 export const LONGEST_CLIP = 3000;   // characters: a sentence or a definition, not a whole page
 
 // The clip for a right-click item and the selected text, or a reason not to send it.

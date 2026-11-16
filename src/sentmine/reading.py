@@ -43,7 +43,8 @@ class Flashcard:
     earlier: str = ""  # made anyway: the date of the earlier card in the memory
     heading: str = ""  # word cards: the first line of the back; a suggested meaning goes under it
     cloze: bool = False  # definition cards: the passage with the term hidden, instead of term -> passage
-    pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a PDF page, on the back: (file name, PNG)
+    pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a page, on the back: (file name, PNG)
+    picture_only: bool = False  # the back shows only the pictures, not the text
 
     @property
     def history_key(self) -> str:
@@ -80,6 +81,8 @@ class Flashcard:
         if self.cloze:
             return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), self.pictures_html),
                         cloze=True, media=media)
+        if self.picture_only and self.pictures:
+            return Note((self.front_html, self.pictures_html), media=media)
         return Note((self.front_html, self.back_html + self.pictures_html), media=media)
 
 
@@ -348,6 +351,15 @@ class Session:
         card = self._card(card_id)
         self.picture(card_id, number)   # says so if it is gone
         del card.pictures[number]
+        card.picture_only = card.picture_only and bool(card.pictures)
+        return card
+
+    def set_picture_only(self, card_id: int, on: bool) -> Flashcard:
+        """Show only the pictures on the back of a card, or the text with the pictures under it."""
+        card = self._card(card_id)
+        if on and not card.pictures:
+            raise Problem("Add a picture to the card first.")
+        card.picture_only = on
         return card
 
     def suggest(self, card_id: int, ask: Callable[[str, str], str]) -> Flashcard:

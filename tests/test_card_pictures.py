@@ -175,3 +175,63 @@ def test_a_bad_box_is_refused_with_a_message(client, body):
     card = client.post("/api/word", json={"sentence": sentence, "word": word}).get_json()["cards"][0]
     response = client.post(f"/api/cards/{card['id']}/pictures", json=body)
     assert response.status_code == 400 and response.get_json()["error"]
+
+
+# --- pictures from web pages, and picture only ----------------------------------------------
+
+import base64
+
+
+def clip_card(client):
+    state = client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word"}).get_json()
+    sentence, word = place_of(state["paragraphs"], "cured")
+    return client.post("/clip/api/word", json={"sentence": sentence, "word": word}).get_json()["cards"][-1]
+
+
+def test_a_png_from_a_web_page_goes_on_a_clip_card(client):
+    card = clip_card(client)
+    real = part(locate(make_pdf(TEXT), [" ".join(TEXT[0])]), 0, (0.1, 0.1, 0.3, 0.1))
+    state = client.post(f"/clip/api/cards/{card['id']}/pictures", json={"png": base64.b64encode(real).decode()}).get_json()
+    address = state["cards"][-1]["pictures"][0]
+    assert address.startswith("/clip/api/cards/")
+    assert client.get(address).data == real
+    assert client.get("/api/state").get_json()["cards"] == []   # Read is untouched
+
+
+@pytest.mark.parametrize("png, message", [
+    (base64.b64encode(b"GIF89a not a png").decode(), "Only PNG"),
+    ("not base64 !!", "could not be read"),
+    ("huge", "too large"),
+])
+def test_a_picture_that_is_not_a_small_png_is_refused(client, png, message):
+    if png == "huge":
+        png = "A" * (8 * 1024 * 1024)   # built here: as a parameter it would become the test's (too long) name
+    card = clip_card(client)
+    response = client.post(f"/clip/api/cards/{card['id']}/pictures", json={"png": png})
+    assert response.status_code == 400 and message in response.get_json()["error"]
+
+
+def test_a_clip_has_no_pdf_to_draw_a_box_on(client):
+    card = clip_card(client)
+    response = client.post(f"/clip/api/cards/{card['id']}/pictures", json={"page": 0, "box": [0.1, 0.1, 0.5, 0.2]})
+    assert response.status_code == 400 and "right-click" in response.get_json()["error"]
+
+
+def test_picture_only_leaves_the_text_off_the_back():
+    session = Session()
+    card = word_card(session)
+    with pytest.raises(Problem):
+        session.set_picture_only(card.id, True)   # no picture yet
+    session.add_picture(card.id, PNG)
+    session.set_picture_only(card.id, True)
+    assert card.note.fields == (card.front_html, f'<div><img src="{card.pictures[0][0]}"></div>')
+    session.remove_picture(card.id, 0)
+    assert not card.picture_only and card.note.fields[1] == "skew"
+
+
+def test_picture_only_through_the_app(client):
+    card = clip_card(client)
+    client.post(f"/clip/api/cards/{card['id']}/pictures", json={"png": base64.b64encode(PNG).decode()})
+    state = client.put(f"/clip/api/cards/{card['id']}/picture-only", json={"on": True}).get_json()
+    assert state["cards"][-1]["picture_only"] is True
+    assert client.put(f"/clip/api/cards/{card['id']}/picture-only", json={"on": "yes"}).status_code == 400
