@@ -111,7 +111,8 @@ try {
   .card .picture img { display: block; max-width: 100%; height: auto; }
   .card .picture button { position: absolute; top: 4px; right: 4px; }
   /* the side panel: the card that pictures from the web page go to */
-  body.clip .card.chosen { box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; margin-left: -12px; }
+  .card.chosen { box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; margin-left: -12px; }
+  .card .origin { font-size: 0.8125rem; color: var(--soft); margin-bottom: 4px; }
   .chosen-mark { font-size: 0.8125rem; font-weight: 600; color: var(--accent); }
   body.boxing .pdf-page, body.boxing .pdf-page .w { cursor: crosshair; }
   .pdf-page .box-drawn { position: absolute; border: 2px solid var(--accent); background: rgba(26, 95, 208, 0.1); pointer-events: none; }
@@ -714,6 +715,7 @@ function drawCard(card) {
   remove.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id));
   const buttons = element("div", "buttons");
   buttons.append(kind, edit, remove);
+  if (card.origin) box.append(element("div", "origin", "From " + card.origin));
   if (card.kind === "definition" && (card.cloze || card.can_cloze)) {
     const other = element("button", "small", card.cloze ? "Make it term → passage" : "Make it cloze");
     other.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/cloze", { cloze: !card.cloze }));
@@ -732,7 +734,7 @@ function drawCard(card) {
     });
     buttons.append(suggest);
   }
-  if (CLIP) {   // pictures from the web page go to the chosen card; a new card is chosen by itself
+  {   // pictures from a web page go to the chosen card; a new card is chosen by itself
     if (card.id === state.chosen_card) {
       box.classList.add("chosen");
       buttons.append(element("span", "chosen-mark", "Pictures go here"));
@@ -999,9 +1001,10 @@ $("text").addEventListener("keydown", (event) => {
   if (event.key === "Escape" && marked().length > 0) clearMarks();
 });
 
-function mayReplaceCards() {
-  return state.cards.length === 0 ||
-    window.confirm("Reading a new text removes the " + state.count_text + " you have not downloaded. Continue?");
+function mayReplaceCards() {   // only the cards from the text in Read go; cards from web pages stay
+  const going = state.cards.filter((card) => card.source === "read").length;
+  return going === 0 || window.confirm("Reading a new text removes the " + going + (going === 1 ? " card" : " cards") +
+    " made from this text that you have not downloaded. Cards from web pages stay. Continue?");
 }
 
 function textLoaded() {

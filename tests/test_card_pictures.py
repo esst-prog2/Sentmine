@@ -195,7 +195,7 @@ def test_a_png_from_a_web_page_goes_on_a_clip_card(client):
     address = state["cards"][-1]["pictures"][0]
     assert address.startswith("/clip/api/cards/")
     assert client.get(address).data == real
-    assert client.get("/api/state").get_json()["cards"] == []   # Read is untouched
+    assert client.get("/api/state").get_json()["paragraphs"] == []   # the text in Read is untouched
 
 
 @pytest.mark.parametrize("png, message", [

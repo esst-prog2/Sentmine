@@ -68,6 +68,8 @@ def _card_json(card: Flashcard, prefix: str = "") -> dict:
         # the address carries the picture's name, which comes from its content, so the browser never shows an old one
         "pictures": [f"{prefix}/api/cards/{card.id}/pictures/{number}.png?n={name}" for number, (name, _) in enumerate(card.pictures)],
         "picture_only": card.picture_only,
+        "source": card.source,  # "read" or "clip"
+        "origin": card.origin,  # where it came from: a PDF's name, a pasted text, a web page
     }
 
 
@@ -154,7 +156,9 @@ def create_app(
     app = Flask(__name__, static_folder=None)
     app.config["MAX_CONTENT_LENGTH"] = MOST_BYTES
     read = session if session is not None else Session()
-    clips = Session(read.memory)  # clips from web pages, kept apart from the text in Read
+    # Clips from web pages have a text of their own, apart from the text in Read; the cards are one deck.
+    clips = Session(read.memory, deck=read.deck, name="clip")
+    clips.origin = "a web page"
 
     def now() -> Session:
         """The session a request is about: under /clip the clips, otherwise the text in Read."""
@@ -319,6 +323,7 @@ def create_app(
     @app.post("/api/text")
     def load_text():
         reading.load(sent("text"))
+        read.origin = "a pasted text"
         show_pages(None)
         return state("Text loaded.", count_known=True)
 
@@ -340,6 +345,7 @@ def create_app(
         name, data = upload.filename or "", upload.read()
         text, message = read_file(name, data)
         reading.load(text)
+        read.origin = name or "a file"
         show_pages(locate(data, reading.sentences) if name.lower().endswith(".pdf") else None, data)
         return state(message, count_known=True)
 

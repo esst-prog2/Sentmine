@@ -45,6 +45,9 @@ class Flashcard:
     cloze: bool = False  # definition cards: the passage with the term hidden, instead of term -> passage
     pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a page, on the back: (file name, PNG)
     picture_only: bool = False  # the back shows only the pictures, not the text
+    source: str = ""  # the session that made it ("read" or "clip"), so only its own text marks its word
+    origin: str = ""  # where it came from, as the deck shows it: a PDF's name, a pasted text, a web page
+    text_id: str = ""  # the text it was made from, for the met-again count
 
     @property
     def history_key(self) -> str:
@@ -143,17 +146,35 @@ def clickable_words(sentence: str) -> list[Word]:
 CLIP_KINDS = ("word", "definition")
 
 
+class Deck:
+    """The cards being made, one list for the text in Read and the clips from web pages."""
+
+    def __init__(self) -> None:
+        self.cards: list[Flashcard] = []
+        self.next_id = 1
+        self.chosen: int | None = None  # the card pictures from a web page go to; the newest one unless chosen
+
+
 class Session:
     """One text and its cards, kept in memory for one reader."""
 
-    def __init__(self, memory: CardMemory | None = None) -> None:
+    def __init__(self, memory: CardMemory | None = None, deck: Deck | None = None, name: str = "read") -> None:
         self.paragraphs: list[list[str]] = []  # each paragraph is a list of sentences
-        self.cards: list[Flashcard] = []
-        self._chosen: int | None = None  # the card pictures from a web page go to; the newest one unless chosen
+        self.deck = deck if deck is not None else Deck()  # shared with the other session when there is one
+        self.name = name  # "read" or "clip": which cards are this session's own
+        self.origin = "a text"  # what its cards say they came from
         self.memory = memory  # None: the session remembers nothing between runs
         self.text_id = ""  # which text is read: the same words give the same id
         self.clip_kinds: list[str] = []  # for clips from web pages: "word" or "definition", one per paragraph
-        self._next_id = 1
+
+    @property
+    def cards(self) -> list[Flashcard]:
+        """Every card of the deck, this session's and the other's."""
+        return self.deck.cards
+
+    @property
+    def own_cards(self) -> list[Flashcard]:
+        return [card for card in self.deck.cards if card.source == self.name]
 
     @property
     def sentences(self) -> list[str]:
@@ -165,7 +186,7 @@ class Session:
         if not tidied:
             raise Problem("There is no text to read: paste a text first.")
         self.paragraphs = [split_sentences(paragraph) for paragraph in tidied.split("\n\n")]
-        self.cards = []
+        self.deck.cards[:] = [card for card in self.deck.cards if card.source != self.name]   # the old text's cards go
         self.clip_kinds = []
         self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
 
@@ -192,7 +213,7 @@ class Session:
         del self.paragraphs[number]
         if number < len(self.clip_kinds):
             del self.clip_kinds[number]
-        for card in self.cards:
+        for card in self.own_cards:
             if card.place is None:
                 continue
             sentence, word = card.place
@@ -225,7 +246,7 @@ class Session:
         term when it is part of a remembered term (`terms`), else its base form when that is
         in `known` (remembered word cards).
         """
-        picked = {card.place for card in self.cards if card.place is not None}
+        picked = {card.place for card in self.own_cards if card.place is not None}
         known = known or {}
         find_terms = _terms_pattern(terms or {})
         paragraphs = []
@@ -287,7 +308,7 @@ class Session:
                 earlier=earlier.date if earlier else "", heading=back,
             )
             return ADDED, self._add(card)
-        if existing.place == (sentence, word):
+        if existing.place == (sentence, word) and existing.source == self.name:
             self.cards.remove(existing)
             return REMOVED, existing
         return DUPLICATE, existing
@@ -403,30 +424,33 @@ class Session:
         ]
         try:
             self.memory.add(entries)
-            if self.text_id:  # the text they were made from does not count as meeting them again
-                self.memory.made_from([(entry.kind, entry.key) for entry in entries], self.text_id, day)
+            # the text each card was made from does not count as meeting it again
+            for text_id in {card.text_id for card in self.cards if card.text_id}:
+                made = [(card.kind, card.history_key) for card in self.cards if card.text_id == text_id]
+                self.memory.made_from(made, text_id, day)
         except MemoryProblem as error:
             return f"{done}, but these cards were not remembered. {error}"
         return ""
 
     def _add(self, card: Flashcard) -> Flashcard:
-        card.id = self._next_id
-        self._next_id += 1
+        card.id = self.deck.next_id
+        self.deck.next_id += 1
+        card.source, card.origin, card.text_id = self.name, self.origin, self.text_id
         self.cards.append(card)
-        self._chosen = card.id   # a new card is the one its picture is usually for
+        self.deck.chosen = card.id   # a new card is the one its picture is usually for
         return card
 
     @property
     def chosen_card(self) -> int | None:
         """The card pictures from a web page go to: the one the reader chose, else the newest; None without cards."""
         ids = [card.id for card in self.cards]
-        if self._chosen in ids:
-            return self._chosen
+        if self.deck.chosen in ids:
+            return self.deck.chosen
         return ids[-1] if ids else None
 
     def choose_card(self, card_id: int) -> Flashcard:
         card = self._card(card_id)
-        self._chosen = card.id
+        self.deck.chosen = card.id
         return card
 
     def _card(self, card_id: int) -> Flashcard:
