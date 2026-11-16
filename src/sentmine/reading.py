@@ -149,6 +149,7 @@ class Session:
     def __init__(self, memory: CardMemory | None = None) -> None:
         self.paragraphs: list[list[str]] = []  # each paragraph is a list of sentences
         self.cards: list[Flashcard] = []
+        self._chosen: int | None = None  # the card pictures from a web page go to; the newest one unless chosen
         self.memory = memory  # None: the session remembers nothing between runs
         self.text_id = ""  # which text is read: the same words give the same id
         self.clip_kinds: list[str] = []  # for clips from web pages: "word" or "definition", one per paragraph
@@ -412,6 +413,20 @@ class Session:
         card.id = self._next_id
         self._next_id += 1
         self.cards.append(card)
+        self._chosen = card.id   # a new card is the one its picture is usually for
+        return card
+
+    @property
+    def chosen_card(self) -> int | None:
+        """The card pictures from a web page go to: the one the reader chose, else the newest; None without cards."""
+        ids = [card.id for card in self.cards]
+        if self._chosen in ids:
+            return self._chosen
+        return ids[-1] if ids else None
+
+    def choose_card(self, card_id: int) -> Flashcard:
+        card = self._card(card_id)
+        self._chosen = card.id
         return card
 
     def _card(self, card_id: int) -> Flashcard:

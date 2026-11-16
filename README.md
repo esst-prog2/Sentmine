@@ -230,9 +230,10 @@ On a PDF, **Add a picture** on a card puts a formula or a graph from the
 page on the card: drag a box around it on the page (Esc cancels). It is cut
 from the PDF itself, so it stays sharp, and it goes under the answer, in the
 deck file and in Anki. On a web page, right-click an image and choose *Add
-this picture to the last card*, or right-click the page and choose *Add a
-part of this page to the last card* and drag a box: the picture goes on the
-newest card in the side panel. A card with a picture can show *Picture only
+this picture to the chosen card*, or right-click the page and choose *Add a
+part of this page to the chosen card* and drag a box. A new card is chosen by
+itself; to add to another card, press *Pictures go here* on it in the side
+panel first. A card with a picture can show *Picture only
 on the back*.
 
 Instead of pasting, you can open a PDF that contains text, or a `.txt` file.

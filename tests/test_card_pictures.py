@@ -235,3 +235,16 @@ def test_picture_only_through_the_app(client):
     state = client.put(f"/clip/api/cards/{card['id']}/picture-only", json={"on": True}).get_json()
     assert state["cards"][-1]["picture_only"] is True
     assert client.put(f"/clip/api/cards/{card['id']}/picture-only", json={"on": "yes"}).status_code == 400
+
+
+def test_pictures_go_to_the_chosen_card_and_a_new_card_is_chosen_by_itself(client):
+    first = clip_card(client)
+    state = client.post("/clip/api/text", json={"text": "Pork is the meat of pigs.", "kind": "word"}).get_json()
+    sentence, word = place_of(state["paragraphs"], "meat")
+    second = client.post("/clip/api/word", json={"sentence": sentence, "word": word}).get_json()["cards"][-1]
+    assert client.get("/clip/api/state").get_json()["chosen_card"] == second["id"]
+    state = client.put(f"/clip/api/cards/{first['id']}/chosen").get_json()
+    assert state["chosen_card"] == first["id"]
+    client.delete(f"/clip/api/cards/{first['id']}")
+    assert client.get("/clip/api/state").get_json()["chosen_card"] == second["id"]   # gone: the newest again
+    assert client.put("/clip/api/cards/99/chosen").status_code == 400

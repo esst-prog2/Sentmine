@@ -45,7 +45,7 @@ export async function addPicture(info, tab) {
   let card;
   try {
     const state = await (await fetch(base + "/clip/api/state")).json();
-    card = state.cards[state.cards.length - 1];
+    card = state.cards.find((one) => one.id === state.chosen_card) || state.cards[state.cards.length - 1];
   } catch (error) {
     return { clip: "no-sentmine" };
   }
@@ -74,7 +74,7 @@ async function imagePng(source, tab) {
     // the site does not allow it (or the format cannot be read here): take it from the screen
   }
   const [result] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: placeOfImage, args: [source] });
-  if (!result.result) throw new Error("The picture could not be found on the page.");
+  if (!result.result) throw new Error("This picture is not shown on the page, so it cannot be taken. Scroll to it, or drag a box around it.");
   return shotOf(tab, result.result);
 }
 
@@ -110,7 +110,7 @@ function base64(bytes) {
 // Where the image is in the window, once it is scrolled into view.
 function placeOfImage(source) {
   const image = [...document.images].find((one) => one.currentSrc === source || one.src === source);
-  if (!image) return null;
+  if (!image || image.getBoundingClientRect().width < 2 || image.getBoundingClientRect().height < 2) return null;   // hidden
   image.scrollIntoView({ block: "center" });
   return new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => {
     const r = image.getBoundingClientRect();

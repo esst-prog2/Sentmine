@@ -215,6 +215,7 @@ def create_app(
             can_suggest=ask is not None,
             text_id=reading.text_id,  # names the text read, so the page can keep the reader's place in it
             clip_kinds=clips.clip_kinds if now() is clips else None,
+            chosen_card=reading.chosen_card,  # where pictures from a web page go
             pdf=None if shown["pages"] is None or now() is clips else {
                 "version": shown["version"],
                 "sizes": [[round(width, 2), round(height, 2)] for width, height in shown["pages"].sizes],
@@ -422,6 +423,11 @@ def create_app(
         response = Response(reading.picture(card_id, number), mimetype="image/png")
         response.headers["Cache-Control"] = "private, max-age=3600"  # the address carries the picture's name
         return response
+
+    @app.put("/clip/api/cards/<int:card_id>/chosen")
+    def choose_card(card_id: int):
+        clips.choose_card(card_id)
+        return state("Pictures from the page go to this card now.")
 
     @both("PUT", "/api/cards/<int:card_id>/picture-only")
     def picture_only(card_id: int):

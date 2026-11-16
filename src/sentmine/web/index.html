@@ -110,6 +110,9 @@ try {
   .card .picture { position: relative; border: 1px solid var(--line); border-radius: 6px; background: #ffffff; padding: 6px; }
   .card .picture img { display: block; max-width: 100%; height: auto; }
   .card .picture button { position: absolute; top: 4px; right: 4px; }
+  /* the side panel: the card that pictures from the web page go to */
+  body.clip .card.chosen { box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; margin-left: -12px; }
+  .chosen-mark { font-size: 0.8125rem; font-weight: 600; color: var(--accent); }
   body.boxing .pdf-page, body.boxing .pdf-page .w { cursor: crosshair; }
   .pdf-page .box-drawn { position: absolute; border: 2px solid var(--accent); background: rgba(26, 95, 208, 0.1); pointer-events: none; }
   /* the keyboard: one stop on the text, then the arrow keys from word to word */
@@ -728,6 +731,17 @@ function drawCard(card) {
       }
     });
     buttons.append(suggest);
+  }
+  if (CLIP) {   // pictures from the web page go to the chosen card; a new card is chosen by itself
+    if (card.id === state.chosen_card) {
+      box.classList.add("chosen");
+      buttons.append(element("span", "chosen-mark", "Pictures go here"));
+    } else {
+      const choose = element("button", "small", "Pictures go here");
+      choose.title = "Right-click a picture or the page to add to this card";
+      choose.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/chosen"));
+      buttons.append(choose);
+    }
   }
   if (state.pdf && !CLIP) {
     const add = element("button", "small", "Add a picture");

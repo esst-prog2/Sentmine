@@ -12,15 +12,19 @@ While a PDF is open, the reader SHALL be able to add to any card a picture of a 
 - **THEN** no picture is added and the page works as before
 
 ### Requirement: Pictures from web pages
-On a web page, the extension SHALL offer *Add this picture to the last card* on an image and *Add a part of this page to the last card* on the page. The first SHALL put that image on the back of the newest card of the clips; the second SHALL let the reader drag a box on the page and put that part, as seen on screen, on the same card. Esc SHALL cancel the box. When there is no card yet, the extension SHALL say to make one first. The app SHALL accept only PNG pictures of at most 5 MB this way.
+On a web page, the extension SHALL offer *Add this picture to the chosen card* on an image and *Add a part of this page to the chosen card* on the page. The chosen card SHALL be the newest card of the clips unless the reader chose another with *Pictures go here* in the side panel, and a new card SHALL become the chosen one. The first item SHALL put that image on the back of the chosen card; the second SHALL let the reader drag a box on the page and put that part, as seen on screen, on the same card. Esc SHALL cancel the box. When there is no card yet, the extension SHALL say to make one first. The app SHALL accept only PNG pictures of at most 5 MB this way.
 
 #### Scenario: An image on Wikipedia
-- **WHEN** the reader has made a word card in the side panel and right-clicks the article's photo and chooses Add this picture to the last card
+- **WHEN** the reader has made a word card in the side panel and right-clicks the article's photo and chooses Add this picture to the chosen card
 - **THEN** that card's back shows the photo
 
 #### Scenario: A formula on a web page
-- **WHEN** the reader chooses Add a part of this page to the last card and drags a box around a formula
+- **WHEN** the reader chooses Add a part of this page to the chosen card and drags a box around a formula
 - **THEN** that card's back shows the formula as it looked on the page
+
+#### Scenario: A card in the middle
+- **WHEN** the reader has made three cards, presses Pictures go here on the second, and adds a picture from the page
+- **THEN** the picture goes on the second card, not the newest
 
 ### Requirement: Picture only on the back
 A card that has a picture SHALL have a switch to show only its pictures on the back, leaving out the text there. Switched off, the back SHALL be the text with the pictures under it.
