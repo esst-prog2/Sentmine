@@ -129,6 +129,8 @@ network    the app runs only on my own computer, and the text stays
   have cards for are marked, and each card counts the texts it came back in
 - My cards: search, progress, delete
 - my place in the text is kept when I switch to My cards and back
+- a PDF's own links work (to its pages, or to websites in a new tab); a page
+  bar jumps to a page or, when the PDF has bookmarks, to a chapter
 - a browser extension: open the current tab in sentmine, or right-click a
   selected sentence or definition and make its card in a side panel
 

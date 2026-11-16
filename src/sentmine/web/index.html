@@ -105,6 +105,23 @@ try {
   .pdf-page .w.picked, .pdf-page .w.picked:hover { background: rgba(255, 196, 0, 0.45); }
   .pdf-page .w.dragged, .pdf-page .w.dragged:hover { background: rgba(26, 95, 208, 0.3); }
   #text .w.dragged { background: var(--selection); }
+  /* the PDF's own links: to another page in sentmine, or to a website in a new tab */
+  .pdf-page .pdf-link { position: absolute; z-index: 2; border-radius: 2px; cursor: pointer; }
+  .pdf-page .pdf-link:hover, .pdf-page .pdf-link:focus-visible { background: rgba(26, 95, 208, 0.14); outline: 1px solid rgba(26, 95, 208, 0.5); }
+  /* the page bar, at the bottom of the reading area while a PDF is open */
+  #pdf-nav { position: sticky; bottom: 12px; z-index: 3; display: flex; align-items: center; gap: 14px; width: fit-content;
+    margin: 12px auto 0; padding: 6px 8px 6px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); font-size: 0.9375rem; }
+  #pdf-nav[hidden] { display: none; }
+  #pdf-nav input { width: 4.2em; padding: 3px 6px; }
+  #contents { position: relative; }
+  #contents summary { cursor: pointer; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); list-style: none; }
+  #contents summary::-webkit-details-marker { display: none; }
+  #contents ol { position: absolute; bottom: calc(100% + 10px); right: 0; width: min(26rem, 80vw); max-height: 60vh; overflow: auto;
+    margin: 0; padding: 8px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18); }
+  #contents li button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 5px 8px; border-radius: 6px; font: inherit; color: var(--ink); cursor: pointer; }
+  #contents li button:hover { background: var(--hover); }
   /* a formula or graph from the page, on the back of a card */
   .card .pictures { display: grid; gap: 8px; margin-top: 8px; }
   .card .picture { position: relative; border: 1px solid var(--line); border-radius: 6px; background: #ffffff; padding: 6px; }
@@ -229,6 +246,10 @@ try {
       </label>
     </details>
     <div id="text" class="empty" tabindex="0" aria-label="The text. Arrow keys move from word to word; Enter makes a card from the word; Shift and the arrow keys mark a term or a definition, then Enter.">No text yet.</div>
+    <div id="pdf-nav" hidden>
+      <label>Page <input type="number" id="page-number" min="1" value="1" aria-label="Go to page"> of <span id="page-count">1</span></label>
+      <details id="contents" hidden><summary>Contents</summary><ol id="contents-list"></ol></details>
+    </div>
   </section>
 
   <section>
@@ -454,14 +475,17 @@ function drawPages(text) {
 
 async function fillPage(page) {
   const version = shownPdf;
-  let boxes;
+  let boxes, links;
   try {
     const response = await fetch("/api/pages/" + page.dataset.page + "/words?v=" + version);
-    boxes = (await response.json()).boxes;
+    const answer = await response.json();
+    boxes = answer.boxes;
+    links = answer.links || [];
   } catch (error) {
     return;   // the page stays a picture; its words cannot be picked
   }
   if (version !== shownPdf || !boxes) return;   // another text was read meanwhile
+  for (const link of links) drawLink(page, link);
   for (const [sentence, word, left, top, width, height] of boxes) {
     const box = element("span", "w", wordText(sentence, word));
     box.dataset.sentence = sentence;
@@ -472,6 +496,64 @@ async function fillPage(page) {
   }
   markPicked();
 }
+
+// The PDF's own links: inside the PDF, to the page they point at; to a website, in a new tab.
+function drawLink(page, link) {
+  const [left, top, width, height] = link.box;
+  const anchor = element("a", "pdf-link");
+  Object.assign(anchor.style, { left: left * 100 + "%", top: top * 100 + "%", width: width * 100 + "%", height: height * 100 + "%" });
+  anchor.tabIndex = -1;   // the page bar and the words are the keyboard's way through; 100 links would be 100 stops
+  if (link.url) {
+    anchor.href = link.url;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.title = link.url;
+  } else {
+    anchor.href = "#page-" + (link.page + 1);
+    anchor.title = "Go to page " + (link.page + 1);
+    anchor.addEventListener("click", (event) => { event.preventDefault(); goToPage(link.page, link.y || 0); });
+  }
+  page.append(anchor);
+}
+
+// The page bar: which page is in view, a page to jump to, and the PDF's contents when it has bookmarks.
+function goToPage(number, within = 0) {
+  const pages = document.querySelectorAll(".pdf-page");
+  const page = pages[Math.min(Math.max(number, 0), pages.length - 1)];
+  if (!page) return;
+  const r = page.getBoundingClientRect();
+  window.scrollTo(0, window.scrollY + r.top + within * r.height - textTop() - 8);
+}
+
+function drawPdfNav() {
+  const nav = $("pdf-nav");
+  nav.hidden = !state.pdf || CLIP;
+  if (nav.hidden) return;
+  $("page-count").textContent = state.pdf.sizes.length;
+  $("page-number").max = state.pdf.sizes.length;
+  const outline = state.pdf.outline || [];
+  $("contents").hidden = outline.length === 0;
+  $("contents-list").replaceChildren(...outline.map((item) => {
+    const row = element("li");
+    const go = element("button", "", item.title);
+    go.style.paddingLeft = 8 + item.level * 16 + "px";
+    go.addEventListener("click", () => { $("contents").open = false; goToPage(item.page); });
+    row.append(go);
+    return row;
+  }));
+}
+
+function pageInView() {
+  const top = textTop();
+  const page = [...document.querySelectorAll(".pdf-page")].find((one) => one.getBoundingClientRect().bottom > top + 40);
+  return page ? Number(page.dataset.page) : 0;
+}
+
+$("page-number").addEventListener("change", () => goToPage(Number($("page-number").value) - 1));
+window.addEventListener("scroll", () => {
+  if (!state.pdf || document.activeElement === $("page-number")) return;
+  $("page-number").value = pageInView() + 1;
+}, { passive: true });
 
 function wordText(sentence, word) {
   for (const paragraph of state.paragraphs) {
@@ -636,6 +718,7 @@ function scrollWhileDragging() {
 
 $("text").addEventListener("mousedown", (event) => {
   if (event.button !== 0 || event.detail >= 2 || !state.pdf) return;
+  if (event.target.closest && event.target.closest(".pdf-link")) return;   // the link takes the click
   const from = nearestBox(event.clientX, event.clientY);
   if (!from) return;
   event.preventDefault();   // no browser selection: sentmine marks the words itself
@@ -840,6 +923,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 function draw() {
+  drawPdfNav();
   const hadKeys = keyPlace !== null && $("text").contains(document.activeElement);
   drawText();
   if (hadKeys) {   // pasted text is drawn again after each card: keep the keyboard on its word

@@ -223,6 +223,7 @@ def create_app(
             pdf=None if shown["pages"] is None or now() is clips else {
                 "version": shown["version"],
                 "sizes": [[round(width, 2), round(height, 2)] for width, height in shown["pages"].sizes],
+                "outline": [{"level": level, "title": title, "page": page} for level, title, page in shown["pages"].outline or []],
             },
         )
 
@@ -351,7 +352,8 @@ def create_app(
 
     @app.get("/api/pages/<int:number>/words")
     def page_words(number: int):
-        response = jsonify(boxes=pages_of(number).boxes[number])
+        pages = pages_of(number)
+        response = jsonify(boxes=pages.boxes[number], links=(pages.links or [[]] * len(pages.sizes))[number])
         # Cached only when asked for with this PDF's fingerprint, like the pictures, so another PDF never gets them.
         cached = shown["version"] != "" and request.args.get("v") == shown["version"]
         response.headers["Cache-Control"] = "private, max-age=3600" if cached else "no-store"
