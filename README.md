@@ -1,5 +1,7 @@
 # sentmine
 
+Promo page: https://esst-prog2.github.io/Sentmine/
+
 A small reading app that runs on my own computer. I open a PDF or paste a
 text I am reading and turn parts of it into Anki flashcards as I go: a new
 word inside its real sentence, or a term with the passage that defines it.
@@ -86,7 +88,8 @@ on screen  the text on the left; in Word mode a click picks a word and a
            the preview on the right shows each card and lets me edit or
            delete it; Download writes the deck
 on disk    nothing is saved until I press Download; the app runs only on
-           my own computer and sends the text nowhere
+           my own computer, and the text stays there, except that Suggest
+           meaning sends the word and its sentence to OpenAI
 ```
 
 ## 3. The size
@@ -187,8 +190,10 @@ sentmine             # starts the reading app and opens it in the browser
 ```
 
 The page is at http://127.0.0.1:8000 and is served only to this computer.
-Stop the app with Ctrl+C in the terminal. The text and cards on the page
-are not kept between runs, so download the deck before closing.
+Stop the app with Ctrl+C in the terminal. The text on the page and the
+cards not yet sent or downloaded are not kept between runs, so send or
+download them before closing; the cards you send or download are kept in
+your card memory (below).
 
 Every card you download is remembered in your card memory, a SQLite
 database in your own user folder (on Windows `%APPDATA%\sentmine\cards.db`;
