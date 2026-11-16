@@ -75,110 +75,124 @@ hand, so now I choose what becomes a card myself, while reading.
 
 ## 2. The shape
 
+These sections describe the app as it is now (November 2026). The plan
+from September is in the git history.
+
 ```
-in         a text, pasted into the page (plain text, any length)
-out        new.apkg   an Anki-importable deck with two kinds of card:
-                      word card        front = the sentence with the word
-                                       in bold, back = the word
-                      definition card  front = the term, back = the
-                                       passage I marked, of any length
-on screen  the text on the left; in Word mode a click picks a word and a
-           second click unpicks it; in Definition mode I select a term,
-           then drag over its definition; the header counts the cards;
-           the preview on the right shows each card and lets me edit or
-           delete it; Download writes the deck
-on disk    nothing is saved until I press Download; the app runs only on
-           my own computer, and the text stays there, except that Suggest
-           meaning sends the word and its sentence to OpenAI
+in         a PDF that contains text, shown as its own pages; a .txt file;
+           a pasted text; or, with the browser extension, the PDF or
+           article in a browser tab, or a sentence or definition I select
+           on a web page
+out        cards for Anki, two kinds:
+             word card        front = the sentence with the word in bold,
+                              back = the word with its base form, and a
+                              meaning if I ask for one
+             definition card  front = the term, back = the passage I
+                              marked; or a cloze card, the term hidden in
+                              its own passage
+           sent straight into my Anki deck (AnkiConnect), or downloaded
+           as a deck file (.apkg)
+on screen  Read: the text or the PDF's pages; a click on a word makes a
+           card, a second click removes it; a drag over a term, then over
+           its definition, makes a definition card; the same with the
+           keyboard; the Cards panel shows each card to edit, delete,
+           make cloze or give a suggested meaning; a word I already have
+           a card for has a blue line, and pointing at it shows my card.
+           My cards: every card I kept, searchable, with my progress.
+           Beside a web page: a side panel for the parts I selected
+on disk    the card memory, one SQLite file in my user folder, holds the
+           cards I sent or downloaded and where I met them again; the
+           text I read is not saved
+network    the app runs only on my own computer, and the text stays
+           there, except that Suggest meaning sends the word and its
+           sentence to OpenAI (only with my own key); Send to Anki talks
+           to Anki on this computer
 ```
 
 ## 3. The size
 
-**First useful version**
+**What it does now**
 
-- start the app with one command and open the reading page in the browser
-- paste a text; tidy it with simple rules (join lines broken inside a
-  sentence, remove extra spaces and blank lines)
-- Word mode: click a word to make a card from its sentence; click again
-  to remove it
-- Definition mode: select a term of one or more words, then mark the
-  passage that defines it - one sentence, several, or a whole paragraph;
-  line breaks inside the passage are kept
-- one card per word or term: picking the same one again tells me so and
-  makes no second card
-- a preview of every card, where I can edit the front and the back or
-  delete the card
-- a count of the cards so far
-- download a valid `.apkg` deck of the cards as they appear in the preview
+- start with one command (`sentmine`); the page opens in the browser
+- open a PDF with text and read it as its real pages, or open a `.txt`
+  file, or paste a text (tidied: broken lines joined, extra spaces gone)
+- word cards by clicking, definition cards by dragging over a term and
+  then its definition, with the mouse or the keyboard
+- one card per word or term: picking one I already have shows my earlier
+  card, and I can skip it or make it anyway
+- edit, delete, switch a definition card to cloze, or ask for a suggested
+  meaning (with my own OpenAI key)
+- send the cards to Anki in one click, or download a deck
+- the cards I keep are remembered; in the next text the words and terms I
+  have cards for are marked, and each card counts the texts it came back in
+- My cards: search, progress, delete
+- my place in the text is kept when I switch to My cards and back
+- a browser extension: open the current tab in sentmine, or right-click a
+  selected sentence or definition and make its card in a side panel
 
-**Not this term** (the first four are the planned next changes, in order)
+**Not yet**
 
-- loading a PDF that contains text, such as lecture slides
-- suggesting with AI the meaning of a word, or the passage that defines a
-  term, to accept or edit in the preview
-- reading scanned PDF pages with AI
-- loading an article from a web link
-- sending cards straight into Anki (AnkiConnect), without the download
-- a browser extension for picking words on the original website
-- remembering between sessions which cards I already made
-- highlighting words that are probably new to me, from a known-words list
-  (the first design's filter)
+- formulas and graphs on cards (planned next)
+- scanned PDFs (there is no text to read in them)
+- marking the words I have cards for on the web page itself
+- reading my Anki review results back into the app
 - languages written without spaces between words, such as Chinese or
   Japanese
-- audio, images, formulas, or a phone app
+- audio, or a phone app
 
 ## 4. How we would know it works
 
-- Given the paragraph above, clicking `skew` in Word mode makes a card
-  whose front is exactly `Outliers can skew it considerably.` with `skew`
-  in bold, and whose back is `skew`.
-- Given the term `standard deviation` selected and the first two
-  sentences marked, the card's front is `standard deviation` and its back
-  is exactly those two sentences, joined across the line break.
-- Given a marked passage that spans two paragraphs, the back keeps the
-  break between them.
+The checks are automated: `pip install -e ".[dev]"`, then `pytest` (579
+tests on 14 November 2026). Some of them:
+
+- Given the text `Outliers can skew it considerably.`, clicking `skew`
+  makes a card whose front is exactly that sentence with `skew` in bold,
+  and whose back is `skew`.
 - Given a word or term that already has a card, picking it again makes no
-  new card and the count stays the same.
-- Given a picked word, clicking it again removes its card and the count
-  goes down by one.
-- Given a card edited in the preview, the downloaded deck contains the
-  edited text, not the original.
+  new card, and the count stays the same.
+- Given a picked word, clicking it again removes its card.
+- Given a card edited in the preview, the deck contains the edited text.
 - Given no cards, Download writes no file and says why.
-- Given the downloaded `.apkg`, importing it into Anki succeeds and the
-  number of cards matches the header.
+- Given a card for `run` in the memory, `ran` in a new text is marked as
+  a word I already have a card for.
+- Given a PDF, each word is found on its page where it is printed; on
+  four real PDFs of 10 to 166 pages, 99.9 to 100% of the words were found
+  (planning log, 6 November 2026).
+- Given a clip from a web page, the text and cards in Read do not change.
+- Given a request from another website, the app refuses to change
+  anything.
 
 ## 5. What could stop this
 
-Pasted text is messy. Text copied from slides or a website brings titles,
-page numbers and broken lines with it, and a damaged sentence makes a
-damaged card. The simple tidy-up rules will not catch everything. The
-preview is the defence: I see every card before it is saved and can fix
-it. Formulas and tables do not survive copying at all, so a definition
-that depends on one will be incomplete.
+A PDF's text is not always clean. Scanned pages have no text at all, and
+formulas and tables come out of the text layer as they are, so a card
+from a sentence with a formula can be incomplete. The page itself is
+shown as a picture, so what I read is right even when the text behind it
+is not.
 
-It may not be faster than making cards by hand. The claim is that a click
-or a drag beats copying text into Anki, but pasting the text first is an
-extra step. I will measure it: ten cards made by hand against ten made in
-the app, from the same text.
+Web pages are messy too: menus, boxes and line breaks cut sentences. That
+is why the extension does not guess sentences on a web page; I select
+what I want and right-click it.
 
-Two kinds of card in one page could make both awkward. If switching
-between Word and Definition mode gets in the way of reading, the first
-version keeps Definition mode and Word mode moves to a later change.
+The base form comes from a word list and is not always right (`least`
+gives `less`). The card shows it, so I can edit it.
 
-Similar tools exist for vocabulary: Readlang lets a reader click a word
-to save a flashcard. It is built around translating foreign words. Mine
-also makes cards from the definitions in my own course material, stays on
-my computer, and puts everything in the Anki deck I already use.
+Speed was measured, not assumed: ten cards by hand took about 3 minutes,
+ten in the app about 1 minute (9 October 2026); ten cards into Anki took
+about 30 seconds by downloading and importing the deck and about 5
+seconds with Send to Anki (4 November 2026). Each was one timing by hand.
 
-A web page is new ground for this project. The first version was a
-command-line tool; the sentence splitting and the deck writing carry over
-and are already tested, but the page itself is new work.
+Similar tools exist: a web search on 14 November 2026 found Pick2anki (a
+plugin for Zotero's PDF reader), Vocabsieve and browser add-ons that send
+a word with its sentence to Anki. sentmine also makes cards from the
+definitions in my own course book, on its real pages, and brings my
+cards back while I read.
 
-The first version needs no network, account or API, and handles no
-personal data. Course material may be copyrighted, so the demo uses a
-short text I wrote myself. The planned AI features will need an API key
-and will send text to an outside service, so they stay switched off
-unless a key is present, and the app must work fully without them.
+Course material is copyrighted, so the demo and the promo page show only
+small parts of it, with the book named. Suggest meaning needs an API key
+and sends text to an outside service, so it stays off without a key, and
+everything else works without it. The app was built and tested on
+Windows.
 
 ## 6. Install and run
 
