@@ -81,3 +81,12 @@ def test_sending_remembers_each_card_with_the_text_it_came_from(client, tmp_path
     assert client.get("/api/deck?name=both").status_code == 200
     memory_cards = client.get("/api/memory").get_json()["cards"]
     assert sorted(c["back_html"] for c in memory_cards) == ["cured (cure)", "skew"]
+
+
+def test_pictures_go_here_works_from_read_too(client):
+    client.post("/api/text", json={"text": "Outliers can skew the mean."})
+    first = click(client, "", "skew")["cards"][-1]
+    click(client, "", "mean")
+    state = client.put(f"/api/cards/{first['id']}/chosen")
+    assert state.status_code == 200 and state.get_json()["chosen_card"] == first["id"]
+    assert client.get("/clip/api/state").get_json()["chosen_card"] == first["id"]   # one choice, both views

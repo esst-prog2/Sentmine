@@ -467,9 +467,9 @@ def create_app(
         response.headers["Cache-Control"] = "private, max-age=3600"  # the address carries the picture's name
         return response
 
-    @app.put("/clip/api/cards/<int:card_id>/chosen")
+    @both("PUT", "/api/cards/<int:card_id>/chosen")
     def choose_card(card_id: int):
-        clips.choose_card(card_id)
+        reading.choose_card(card_id)
         return state("Pictures from the page go to this card now.")
 
     @both("POST", "/api/send")
