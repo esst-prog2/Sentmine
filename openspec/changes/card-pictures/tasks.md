@@ -15,9 +15,9 @@
 
 ## 4. Web pages and picture only
 
-- [x] 4.1 The app takes a PNG for a card (both sessions), at most 5 MB; picture only on the back; tests
-- [x] 4.2 The extension: right-click an image, and right-click to drag a box on the page; both to the newest clip card; the panel shows it
-- [x] 4.3 Headless Edge: both on a page, and picture only in the deck
+- [x] 4.1 The app takes a PNG for a card, at most 5 MB; tests
+- [x] 4.2 The extension: right-click an image, to the chosen card; the panel shows it
+- [x] 4.3 Headless Edge on a Wikipedia page; the deck holds the pictures
 
 ## 5. Wrap-up
 

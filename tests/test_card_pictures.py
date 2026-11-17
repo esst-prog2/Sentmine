@@ -217,26 +217,6 @@ def test_a_clip_has_no_pdf_to_draw_a_box_on(client):
     assert response.status_code == 400 and "right-click" in response.get_json()["error"]
 
 
-def test_picture_only_leaves_the_text_off_the_back():
-    session = Session()
-    card = word_card(session)
-    with pytest.raises(Problem):
-        session.set_picture_only(card.id, True)   # no picture yet
-    session.add_picture(card.id, PNG)
-    session.set_picture_only(card.id, True)
-    assert card.note.fields == (card.front_html, f'<div><img src="{card.pictures[0][0]}"></div>')
-    session.remove_picture(card.id, 0)
-    assert not card.picture_only and card.note.fields[1] == "skew"
-
-
-def test_picture_only_through_the_app(client):
-    card = clip_card(client)
-    client.post(f"/clip/api/cards/{card['id']}/pictures", json={"png": base64.b64encode(PNG).decode()})
-    state = client.put(f"/clip/api/cards/{card['id']}/picture-only", json={"on": True}).get_json()
-    assert state["cards"][-1]["picture_only"] is True
-    assert client.put(f"/clip/api/cards/{card['id']}/picture-only", json={"on": "yes"}).status_code == 400
-
-
 def test_pictures_go_to_the_chosen_card_and_a_new_card_is_chosen_by_itself(client):
     first = clip_card(client)
     state = client.post("/clip/api/text", json={"text": "Pork is the meat of pigs.", "kind": "word"}).get_json()

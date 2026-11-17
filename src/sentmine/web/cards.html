@@ -72,6 +72,8 @@ try {
   .card .met { margin-top: 6px; font-size: 0.875rem; color: var(--accent); }
   .card .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; font-size: 0.875rem; color: var(--soft); }
   .card .meta time { font-variant-numeric: tabular-nums; margin-right: auto; }
+  .card .source { font-size: 0.875rem; color: var(--soft); margin-top: 6px; overflow-wrap: anywhere; }
+  #sources { margin-top: 6px; overflow-wrap: anywhere; }
   button {
     font: inherit; font-size: 0.875rem; color: inherit; background: var(--page); border: 1px solid var(--line);
     border-radius: 6px; padding: 2px 10px; cursor: pointer; transition: background-color .15s, border-color .15s;
@@ -115,6 +117,7 @@ try {
       <div class="number"><strong id="week">0</strong><span>this week</span></div>
     </div>
     <div id="months"></div>
+    <div id="sources" hidden></div>
   </section>
 
   <section aria-labelledby="cards-title">
@@ -194,6 +197,13 @@ function drawProgress(progress) {
     const [year, month] = item.month.split("-");
     months.append(MONTH_NAMES[Number(month) - 1] + " " + year + " ", element("b", "", String(item.cards)));
   });
+  const sources = $("sources");
+  sources.hidden = !progress.sources || progress.sources.length === 0;
+  sources.replaceChildren("Most cards from: ");
+  (progress.sources || []).forEach((item, index) => {
+    if (index > 0) sources.append(" · ");
+    sources.append(item.source + " ", element("b", "", String(item.cards)));
+  });
 }
 
 function drawCard(card) {
@@ -215,6 +225,19 @@ function drawCard(card) {
   });
   meta.append(element("span", "", card.kind === "word" ? "Word" : "Definition"), date, remove);
   box.append(front, back);
+  if (card.source) {   // where the card came from; a web page's title links to it
+    const from = element("div", "source", "From ");
+    if (card.source_url) {
+      const link = element("a", "", card.source);
+      link.href = card.source_url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      from.append(link);
+    } else {
+      from.append(card.source);
+    }
+    box.append(from);
+  }
   if (card.met_again) box.append(element("div", "met", card.met_again));
   box.append(meta);
   return box;

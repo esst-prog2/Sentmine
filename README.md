@@ -118,16 +118,20 @@ network    the app runs only on my own computer, and the text stays
   file, or paste a text (tidied: broken lines joined, extra spaces gone)
 - word cards by clicking, definition cards by dragging over a term and
   then its definition, with the mouse or the keyboard
+- one deck for everything: cards from the PDF and from web pages are listed
+  together, in Read and in the browser's side panel
 - one card per word or term: picking one I already have shows my earlier
   card, and I can skip it or make it anyway
 - edit, delete, switch a definition card to cloze, or ask for a suggested
   meaning (with my own OpenAI key)
-- add a formula, graph or picture to a card, from a PDF page or a web page,
-  under the answer or alone on the back
+- add a formula, graph or picture to a card, from a PDF page (drag a box) or
+  a web page (right-click an image), under the answer
 - send the cards to Anki in one click, or download a deck
 - the cards I keep are remembered; in the next text the words and terms I
   have cards for are marked, and each card counts the texts it came back in
-- My cards: search, progress, delete
+- every card keeps its source (the PDF's name and page, or the web page's
+  title and address): on the Anki card, and in My cards
+- My cards: search, progress, the sources most cards came from, delete
 - my place in the text is kept when I switch to My cards and back
 - a PDF's own links work (to its pages, or to websites in a new tab); a page
   bar jumps to a page or, when the PDF has bookmarks, to a chapter
@@ -232,11 +236,8 @@ On a PDF, **Add a picture** on a card puts a formula or a graph from the
 page on the card: drag a box around it on the page (Esc cancels). It is cut
 from the PDF itself, so it stays sharp, and it goes under the answer, in the
 deck file and in Anki. On a web page, right-click an image and choose *Add
-this picture to the chosen card*, or right-click the page and choose *Add a
-part of this page to the chosen card* and drag a box. A new card is chosen by
-itself; to add to another card, press *Pictures go here* on it in the side
-panel first. A card with a picture can show *Picture only
-on the back*.
+this picture to the chosen card*. A new card is chosen by itself; to add to
+another card, press *Pictures go here* on it first.
 
 Instead of pasting, you can open a PDF that contains text, or a `.txt` file.
 Running heads and page numbers are removed and hyphenated words rejoined;

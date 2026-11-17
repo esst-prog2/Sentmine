@@ -849,12 +849,6 @@ function drawCard(card) {
       pictures.append(holder);
     });
     box.append(pictures);
-    if (!card.cloze) {
-      const only = element("button", "small", card.picture_only ? "Text and picture on the back" : "Picture only on the back");
-      only.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/picture-only", { on: !card.picture_only }));
-      buttons.append(only);
-    }
-    if (card.picture_only) back.hidden = true;   // the back of this card is only its pictures
   }
   box.append(buttons);
   return box;
@@ -1084,6 +1078,24 @@ $("text").addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && marked().length > 0) clearMarks();
 });
+
+// One deck, two views: Read and the side panel each ask now and then whether the other changed the deck,
+// and draw it again if so, unless the reader is in the middle of something here.
+async function refreshIfChanged() {
+  if (document.visibilityState !== "visible" || editing !== null || term !== null || boxFor !== null || pageDrag) return;
+  try {
+    const seen = await (await fetch(API + "/version")).json();
+    if (seen.deck === state.deck_version) return;
+    const fresh = await (await fetch(API + "/state")).json();
+    if (editing !== null || term !== null || boxFor !== null || pageDrag) return;   // something started meanwhile
+    state = fresh;
+    draw();   // quietly: the status line keeps what it said
+  } catch (error) {
+    // the app is not answering; the next action here says so
+  }
+}
+setInterval(refreshIfChanged, 2000);
+document.addEventListener("visibilitychange", refreshIfChanged);
 
 function mayReplaceCards() {   // only the cards from the text in Read go; cards from web pages stay
   const going = state.cards.filter((card) => card.source === "read").length;

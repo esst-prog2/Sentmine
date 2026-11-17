@@ -22,7 +22,7 @@ from sentmine.history import Entry
 from sentmine.meaning import MeaningProblem, find_api_key, suggest_meaning
 from sentmine.memory import CardMemory, MemoryProblem, RememberedCard, default_memory_path
 from sentmine.pages import Pages, locate, part, picture
-from sentmine.reading import DUPLICATE, EARLIER, REMOVED, Flashcard, Problem, Session, entry_card
+from sentmine.reading import ADDED, DUPLICATE, EARLIER, REMOVED, Flashcard, Problem, Session, entry_card
 from sentmine.words import plural
 
 HOST = "127.0.0.1"  # this computer only
@@ -67,9 +67,9 @@ def _card_json(card: Flashcard, prefix: str = "") -> dict:
         "can_cloze": card.can_cloze,
         # the address carries the picture's name, which comes from its content, so the browser never shows an old one
         "pictures": [f"{prefix}/api/cards/{card.id}/pictures/{number}.png?n={name}" for number, (name, _) in enumerate(card.pictures)],
-        "picture_only": card.picture_only,
         "source": card.source,  # "read" or "clip"
-        "origin": card.origin,  # where it came from: a PDF's name, a pasted text, a web page
+        "origin": card.origin_text,  # where it came from: "primer.pdf, p. 13", a web page's title
+        "origin_url": card.origin_url,
     }
 
 
@@ -104,6 +104,8 @@ def _remembered_json(card: RememberedCard, met: tuple[int, str] | None = None) -
         "front_html": shown.front_html,
         "back_html": shown.back_html,
         "date": card.entry.date,
+        "source": ", ".join(part for part in (card.entry.source, card.entry.source_place) if part),
+        "source_url": card.entry.source_url,
         "met_again": _met_again_line(met),
     }
 
@@ -158,7 +160,27 @@ def create_app(
     read = session if session is not None else Session()
     # Clips from web pages have a text of their own, apart from the text in Read; the cards are one deck.
     clips = Session(read.memory, deck=read.deck, name="clip")
-    clips.origin = "a web page"
+    web_address = re.compile(r"^https?://", re.IGNORECASE)
+
+    def deck_version() -> str:
+        """A fingerprint of the deck: Read and the side panel ask for it to see when the other changed a card."""
+        seen = hashlib.sha256()
+        for card in read.deck.cards:
+            seen.update(repr((card.id, card.front, card.back, card.cloze, card.earlier, card.origin_text,
+                              [name for name, _ in card.pictures])).encode("utf-8"))
+        seen.update(repr(read.chosen_card).encode("utf-8"))
+        return seen.hexdigest()[:16]
+
+    def place_in_pdf(result: str, card) -> None:
+        """A new card from the PDF in Read says which page it came from."""
+        pages = shown["pages"]
+        if result != ADDED or now() is not read or pages is None:
+            return
+        sentence = read.sentence_of(card)
+        for number, boxes in enumerate(pages.boxes):
+            if any(box[0] == sentence for box in boxes):
+                card.origin_place = f"p. {number + 1}"
+                return
 
     def now() -> Session:
         """The session a request is about: under /clip the clips, otherwise the text in Read."""
@@ -220,6 +242,7 @@ def create_app(
             text_id=reading.text_id,  # names the text read, so the page can keep the reader's place in it
             clip_kinds=clips.clip_kinds if now() is clips else None,
             chosen_card=reading.chosen_card,  # where pictures from a web page go
+            deck_version=deck_version(),  # changes whenever the deck does, here or in the other view
             pdf=None if shown["pages"] is None or now() is clips else {
                 "version": shown["version"],
                 "sizes": [[round(width, 2), round(height, 2)] for width, height in shown["pages"].sizes],
@@ -312,6 +335,10 @@ def create_app(
         reading.memory.delete(card_id)
         return remembered()
 
+    @both("GET", "/api/version")
+    def version():
+        return jsonify(deck=deck_version())
+
     @app.get("/api/hello")
     def hello():
         """Tells the browser extension that this port is sentmine, not another program."""
@@ -324,13 +351,17 @@ def create_app(
     @app.post("/api/text")
     def load_text():
         reading.load(sent("text"))
-        read.origin = "a pasted text"
+        read.origin = ""
         show_pages(None)
         return state("Text loaded.", count_known=True)
 
     @app.post("/clip/api/text")
     def add_clip():
-        clips.add(sent("text"), (request.get_json(silent=True) or {}).get("kind", "word"))
+        body = request.get_json(silent=True) or {}
+        source = body.get("source") if isinstance(body.get("source"), dict) else {}
+        title = " ".join(str(source.get("title") or "").split())[:200]
+        url = str(source.get("url") or "")[:2000]
+        clips.add(sent("text"), body.get("kind", "word"), title, url if web_address.match(url) else "")
         return state("Clip added.", count_known=True)
 
     @app.delete("/clip/api/clips/<int:number>")
@@ -367,11 +398,15 @@ def create_app(
 
     @both("POST", "/api/word")
     def pick_word():
-        return answer(*reading.pick_word(sent("sentence", int), sent("word", int), anyway()))
+        result, card = reading.pick_word(sent("sentence", int), sent("word", int), anyway())
+        place_in_pdf(result, card)
+        return answer(result, card)
 
     @both("POST", "/api/definition")
     def add_definition():
-        return answer(*reading.add_definition(sent("term"), sent("passage"), anyway()))
+        result, card = reading.add_definition(sent("term"), sent("passage"), anyway())
+        place_in_pdf(result, card)
+        return answer(result, card)
 
     @both("PUT", "/api/cards/<int:card_id>")
     def edit_card(card_id: int):
@@ -436,14 +471,6 @@ def create_app(
     def choose_card(card_id: int):
         clips.choose_card(card_id)
         return state("Pictures from the page go to this card now.")
-
-    @both("PUT", "/api/cards/<int:card_id>/picture-only")
-    def picture_only(card_id: int):
-        on = (request.get_json(silent=True) or {}).get("on")
-        if not isinstance(on, bool):
-            raise Problem("The request has no usable 'on'.")
-        card = reading.set_picture_only(card_id, on)
-        return state("Only the picture is on the back." if card.picture_only else "The text and the picture are on the back.")
 
     @both("POST", "/api/send")
     def send_to_anki():

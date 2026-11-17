@@ -6,9 +6,7 @@ Course books carry much of their meaning in formulas and graphs, and those do no
 
 - While a PDF is open, each card in the Cards panel has **Add a picture**. The reader drags a box around a formula or graph on the page; sentmine cuts that part out of the PDF, drawn sharp from the PDF itself, and puts it on the back of the card, under the answer. Esc cancels; the picture can be removed from the card.
 - A cloze card shows the picture after the answer (its Back Extra field).
-- On a web page, two more right-click items put a picture on the chosen card in the side panel (a new card is chosen by itself; *Pictures go here* chooses another): *Add this picture to the chosen card* on an image, and *Add a part of this page to the chosen card* anywhere, which lets the reader drag a box on the page. The image is taken as it is when the site allows it, otherwise from a screenshot of the tab; the extension still reads a tab only after the reader's right-click.
-- A card with a picture can be switched to *Picture only on the back*.
-- Download puts the pictures in the deck file; Send to Anki stores them in Anki's media before adding the notes.
+- On a web page, a right-click item on an image, *Add this picture to the chosen card*, puts it on the chosen card (a new card is chosen by itself; *Pictures go here* chooses another). Dragging a box on a web page and *Picture only on the back* were built and then removed on 2026-11-17, to keep the app simple.
 
 ## Capabilities
 

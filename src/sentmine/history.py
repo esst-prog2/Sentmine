@@ -24,6 +24,9 @@ class Entry:
     back: str  # as downloaded
     word: str  # word cards: the word as clicked; "" for a definition card
     date: str  # the day of the download, YYYY-MM-DD
+    source: str = ""  # where it came from: a PDF's file name, or a web page's title
+    source_url: str = ""  # a web page's address
+    source_place: str = ""  # where in the source: "p. 13"
 
 
 def read_history_file(path: Path) -> list[Entry]:

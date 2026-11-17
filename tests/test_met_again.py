@@ -8,7 +8,7 @@ from reading_helper import place_of
 
 from sentmine.app import create_app
 from sentmine.history import Entry
-from sentmine.memory import CardMemory
+from sentmine.memory import SCHEMA_VERSION, CardMemory
 from sentmine.reading import Session
 
 TODAY = date.today().isoformat()
@@ -102,7 +102,7 @@ def test_the_card_shown_when_pointing_has_the_line(memory, tmp_path):
     assert state["known_cards"]["skew"]["met_again"] == f"Met again in 2 texts, last on {TODAY}"
 
 
-def test_a_memory_of_layout_2_is_brought_to_3_keeping_its_cards(tmp_path):
+def test_a_memory_of_layout_2_is_brought_up_keeping_its_cards(tmp_path):
     path = tmp_path / "cards.db"
     words = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", "juliet"]
     CardMemory(path).add([Entry("word", w, f"The {w} front.", w, w, "2026-11-01") for w in words])
@@ -112,7 +112,7 @@ def test_a_memory_of_layout_2_is_brought_to_3_keeping_its_cards(tmp_path):
     memory = CardMemory(path)
     with sqlite3.connect(path) as db:
         version = db.execute("PRAGMA user_version").fetchone()[0]
-    assert (memory.problem, version, memory.count()) == ("", 3, 10)
+    assert (memory.problem, version, memory.count()) == ("", SCHEMA_VERSION, 10)
     read(memory, "A text with delta in it.")
     assert memory.met_again() == {("word", "delta"): (1, TODAY)}
 

@@ -27,7 +27,6 @@ export const MENU = { word: "Word card from this sentence", definition: "Definit
 // The right-click items that put a picture on the newest card in the side panel.
 export const PICTURE_MENU = {
   picture: "Add this picture to the chosen card",
-  part: "Add a part of this page to the chosen card",
 };
 
 export const NO_CARD_YET =

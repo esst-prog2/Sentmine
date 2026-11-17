@@ -38,7 +38,7 @@ def test_cards_from_read_and_the_web_are_one_deck_in_both_places(client):
     click(client, "/clip", "cured")
     read, clip = client.get("/api/state").get_json(), client.get("/clip/api/state").get_json()
     assert [c["back"] for c in read["cards"]] == [c["back"] for c in clip["cards"]] == ["skew", "cured (cure)"]
-    assert [c["origin"] for c in read["cards"]] == ["primer.pdf", "a web page"]
+    assert [c["origin"] for c in read["cards"]] == ["primer.pdf, p. 1", "a web page"]
     assert read["count_text"] == clip["count_text"] == "2 cards"
 
 

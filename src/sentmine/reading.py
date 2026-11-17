@@ -44,9 +44,10 @@ class Flashcard:
     heading: str = ""  # word cards: the first line of the back; a suggested meaning goes under it
     cloze: bool = False  # definition cards: the passage with the term hidden, instead of term -> passage
     pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a page, on the back: (file name, PNG)
-    picture_only: bool = False  # the back shows only the pictures, not the text
     source: str = ""  # the session that made it ("read" or "clip"), so only its own text marks its word
-    origin: str = ""  # where it came from, as the deck shows it: a PDF's name, a pasted text, a web page
+    origin: str = ""  # where it came from: a PDF's file name, a web page's title; "" for a pasted text
+    origin_url: str = ""  # a web page's address
+    origin_place: str = ""  # where in it: "p. 13"
     text_id: str = ""  # the text it was made from, for the met-again count
 
     @property
@@ -78,15 +79,29 @@ class Flashcard:
         return "".join(f'<div><img src="{name}"></div>' for name, _ in self.pictures)
 
     @property
+    def origin_text(self) -> str:
+        """Where the card came from, as shown: "primer.pdf, p. 13"."""
+        return ", ".join(part for part in (self.origin, self.origin_place) if part)
+
+    @property
+    def source_html(self) -> str:
+        """A small line for the back of the Anki card, so the passage can be found again; none without a real source."""
+        if not self.origin or (self.origin == UNNAMED_PAGE and not self.origin_url):
+            return ""
+        text = html.escape(self.origin_text)
+        if self.origin_url:
+            text = f'<a href="{html.escape(self.origin_url, quote=True)}">{text}</a>'
+        return f'<div style="font-size: 0.8em; color: #777; margin-top: 0.8em">Source: {text}</div>'
+
+    @property
     def note(self) -> Note:
-        """The card as Download and Send to Anki write it; pictures go under the answer."""
+        """The card as Download and Send to Anki write it; pictures and the source go under the answer."""
         media = tuple(self.pictures)
+        under = self.pictures_html + self.source_html
         if self.cloze:
-            return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), self.pictures_html),
+            return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), under),
                         cloze=True, media=media)
-        if self.picture_only and self.pictures:
-            return Note((self.front_html, self.pictures_html), media=media)
-        return Note((self.front_html, self.back_html + self.pictures_html), media=media)
+        return Note((self.front_html, self.back_html + under), media=media)
 
 
 def entry_card(entry: Entry) -> Flashcard:
@@ -144,6 +159,7 @@ def clickable_words(sentence: str) -> list[Word]:
 
 
 CLIP_KINDS = ("word", "definition")
+UNNAMED_PAGE = "a web page"  # a clip whose page gave no title
 
 
 class Deck:
@@ -162,7 +178,8 @@ class Session:
         self.paragraphs: list[list[str]] = []  # each paragraph is a list of sentences
         self.deck = deck if deck is not None else Deck()  # shared with the other session when there is one
         self.name = name  # "read" or "clip": which cards are this session's own
-        self.origin = "a text"  # what its cards say they came from
+        self.origin = ""  # what its cards say they came from: a file's name; "" for a pasted text
+        self.clip_sources: list[tuple[str, str]] = []  # for clips: the page's title and address, one per paragraph
         self.memory = memory  # None: the session remembers nothing between runs
         self.text_id = ""  # which text is read: the same words give the same id
         self.clip_kinds: list[str] = []  # for clips from web pages: "word" or "definition", one per paragraph
@@ -188,11 +205,12 @@ class Session:
         self.paragraphs = [split_sentences(paragraph) for paragraph in tidied.split("\n\n")]
         self.deck.cards[:] = [card for card in self.deck.cards if card.source != self.name]   # the old text's cards go
         self.clip_kinds = []
+        self.clip_sources = []
         self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
 
-    def add(self, text: str, kind: str = "word") -> None:
-        """A clip from a web page: added after the clips before it, whose cards stay. A definition clip is kept
-        as one paragraph, since all of it is the definition."""
+    def add(self, text: str, kind: str = "word", title: str = "", url: str = "") -> None:
+        """A clip from a web page (its title and address, when known): added after the clips before it, whose
+        cards stay. A definition clip is kept as one paragraph, since all of it is the definition."""
         if kind not in CLIP_KINDS:
             raise Problem(f"A clip is a {' or a '.join(CLIP_KINDS)}.")
         tidied = tidy(text)
@@ -201,6 +219,7 @@ class Session:
         parts = [" ".join(tidied.split())] if kind == "definition" else tidied.split("\n\n")
         self.paragraphs += [split_sentences(part) for part in parts]
         self.clip_kinds += [kind] * len(parts)
+        self.clip_sources += [(title or UNNAMED_PAGE, url)] * len(parts)
         self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
 
     def remove_clip(self, number: int) -> None:
@@ -213,6 +232,8 @@ class Session:
         del self.paragraphs[number]
         if number < len(self.clip_kinds):
             del self.clip_kinds[number]
+        if number < len(self.clip_sources):
+            del self.clip_sources[number]
         for card in self.own_cards:
             if card.place is None:
                 continue
@@ -373,15 +394,6 @@ class Session:
         card = self._card(card_id)
         self.picture(card_id, number)   # says so if it is gone
         del card.pictures[number]
-        card.picture_only = card.picture_only and bool(card.pictures)
-        return card
-
-    def set_picture_only(self, card_id: int, on: bool) -> Flashcard:
-        """Show only the pictures on the back of a card, or the text with the pictures under it."""
-        card = self._card(card_id)
-        if on and not card.pictures:
-            raise Problem("Add a picture to the card first.")
-        card.picture_only = on
         return card
 
     def suggest(self, card_id: int, ask: Callable[[str, str], str]) -> Flashcard:
@@ -420,7 +432,9 @@ class Session:
             return ""
         day = day or date.today().isoformat()
         entries = [
-            Entry(card.kind, card.history_key, card.front, card.back, card.word, day) for card in self.cards
+            Entry(card.kind, card.history_key, card.front, card.back, card.word, day,
+                  "" if card.origin == UNNAMED_PAGE and not card.origin_url else card.origin,   # no name, no source
+                  card.origin_url, card.origin_place) for card in self.cards
         ]
         try:
             self.memory.add(entries)
@@ -432,10 +446,31 @@ class Session:
             return f"{done}, but these cards were not remembered. {error}"
         return ""
 
+    def sentence_of(self, card: Flashcard) -> int | None:
+        """The sentence of this session's text a card was made from: the clicked one, or the one a marked
+        passage starts in; None when it cannot be told."""
+        if card.place is not None:
+            return card.place[0]
+        start = " ".join(card.back.split())[:40]
+        for number, sentence in enumerate(self.sentences):
+            flat = " ".join(sentence.split())
+            if start and (start in flat or flat[:40] in " ".join(card.back.split())):
+                return number
+        return None
+
     def _add(self, card: Flashcard) -> Flashcard:
         card.id = self.deck.next_id
         self.deck.next_id += 1
         card.source, card.origin, card.text_id = self.name, self.origin, self.text_id
+        sentence = self.sentence_of(card)
+        if self.clip_sources and sentence is not None:   # a clip's card comes from that clip's page
+            paragraph, seen = 0, 0
+            for paragraph, sentences in enumerate(self.paragraphs):
+                seen += len(sentences)
+                if sentence < seen:
+                    break
+            if paragraph < len(self.clip_sources):
+                card.origin, card.origin_url = self.clip_sources[paragraph]
         self.cards.append(card)
         self.deck.chosen = card.id   # a new card is the one its picture is usually for
         return card
