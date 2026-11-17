@@ -22,6 +22,13 @@ On a web page, the extension SHALL offer *Add this picture to the chosen card* o
 - **WHEN** the reader has made three cards, presses Pictures go here on the second, and adds a picture from the page
 - **THEN** the picture goes on the second card, not the newest
 
+### Requirement: Pasting a picture
+Pasting an image (a copied picture or a screenshot) in Read or in the side panel SHALL put it on the card being edited, or else on the chosen card, stored as a PNG no wider than 1600 pixels. What is typed in the editor SHALL be kept. Pasted text SHALL be pasted as usual. With no card, the page SHALL say to make one first.
+
+#### Scenario: A screenshot while editing
+- **WHEN** the reader is editing a card, has typed a new back, and pastes a screenshot
+- **THEN** the picture is on that card and the typed text is still in the editor
+
 ### Requirement: Pictures go to Anki
 A downloaded deck SHALL contain the pictures of its cards as media files, and Send to Anki SHALL store them in Anki's media before adding the notes, so the notes show them. A picture's file name SHALL come from its content, so the same picture is stored once.
 

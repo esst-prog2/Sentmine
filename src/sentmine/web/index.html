@@ -127,6 +127,7 @@ try {
   .card .picture { position: relative; border: 1px solid var(--line); border-radius: 6px; background: #ffffff; padding: 6px; }
   .card .picture img { display: block; max-width: 100%; height: auto; }
   .card .picture button { position: absolute; top: 4px; right: 4px; }
+  .card .paste-hint { font-size: 0.8125rem; color: var(--soft); margin-top: 8px; }
   /* the side panel: the card that pictures from the web page go to */
   .card.chosen { box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; margin-left: -12px; }
   .card .origin { font-size: 0.8125rem; color: var(--soft); margin-bottom: 4px; }
@@ -301,6 +302,7 @@ const HINT = CLIP
 let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let term = null;       // the term dragged over, while its definition is still to be marked
 let editing = null;    // the id of the card being edited
+let draft = null;      // what is typed in Edit, kept while the card is drawn again: { id, front, back }
 let lastPick = null;   // the last word click or definition sent, so "Make it anyway" can send it again
 let shownPdf = null;   // the version of the PDF whose pages are drawn, so its pictures are not drawn again
 
@@ -769,21 +771,27 @@ function drawCard(card) {
     card.kind === "word" ? "Word" : card.cloze ? "Definition · cloze" : "Definition · term → passage");
 
   if (editing === card.id) {
+    if (!draft || draft.id !== card.id) draft = { id: card.id, front: card.front, back: card.back };
     const front = element("textarea");
-    front.value = card.front;
+    front.value = draft.front;
+    front.addEventListener("input", () => { draft.front = front.value; });
     const back = element("textarea");
-    back.value = card.back;
+    back.value = draft.back;
+    back.addEventListener("input", () => { draft.back = back.value; });
     const save = element("button", "main small", "Save");
     save.addEventListener("click", async () => {
       const done = await call("PUT", API + "/cards/" + card.id, { front: front.value, back: back.value });
-      if (done) { editing = null; draw(); }
+      if (done) { editing = null; draft = null; draw(); }
     });
     const cancel = element("button", "small", "Cancel");
-    cancel.addEventListener("click", () => { editing = null; draw(); });
+    cancel.addEventListener("click", () => { editing = null; draft = null; draw(); });
     const buttons = element("div", "buttons");
     buttons.append(kind, save, cancel);
     const names = card.kind === "word" ? ["Front", "Back"] : ["Term", "Passage"];
-    box.append(element("span", "side-name", names[0]), front, element("span", "side-name", names[1]), back, buttons);
+    box.append(element("span", "side-name", names[0]), front, element("span", "side-name", names[1]), back);
+    const pictures = drawPictures(card);
+    if (pictures) box.append(pictures);
+    box.append(element("div", "paste-hint", "To add a picture, copy it or take a screenshot, then paste here (Ctrl+V)."), buttons);
     return box;
   }
 
@@ -793,7 +801,7 @@ function drawCard(card) {
   back.innerHTML = card.back_html;
   if (card.earlier) box.append(element("div", "made-before", "Made before, on " + card.earlier + "."));
   const edit = element("button", "small", "Edit");
-  edit.addEventListener("click", () => { editing = card.id; draw(); });
+  edit.addEventListener("click", () => { editing = card.id; draft = null; draw(); });
   const remove = element("button", "small", "Delete");
   remove.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id));
   const buttons = element("div", "buttons");
@@ -835,24 +843,61 @@ function drawCard(card) {
     buttons.append(add);
   }
   box.append(front, back);
-  if (card.pictures && card.pictures.length) {
-    const pictures = element("div", "pictures");
-    card.pictures.forEach((address, number) => {
-      const holder = element("div", "picture");
-      const image = element("img");
-      image.src = address;
-      image.alt = "A part of the page, on the back of this card";
-      const drop = element("button", "small", "×");
-      drop.setAttribute("aria-label", "Remove this picture");
-      drop.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id + "/pictures/" + number));
-      holder.append(image, drop);
-      pictures.append(holder);
-    });
-    box.append(pictures);
-  }
+  const pictures = drawPictures(card);
+  if (pictures) box.append(pictures);
   box.append(buttons);
   return box;
 }
+
+function drawPictures(card) {   // the pictures on the back of a card, each with a way to take it off
+  if (!card.pictures || card.pictures.length === 0) return null;
+  const pictures = element("div", "pictures");
+  card.pictures.forEach((address, number) => {
+    const holder = element("div", "picture");
+    const image = element("img");
+    image.src = address;
+    image.alt = "A picture on the back of this card";
+    const drop = element("button", "small", "×");
+    drop.setAttribute("aria-label", "Remove this picture");
+    drop.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id + "/pictures/" + number));
+    holder.append(image, drop);
+    pictures.append(holder);
+  });
+  return pictures;
+}
+
+// Paste a picture (Ctrl+V): a copied image or a screenshot goes on the card being edited, or else on the
+// chosen card. Pasted text is left alone.
+const WIDEST_PICTURE = 1600;   // pixels; Anki shows it no wider
+
+async function pastedPng(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, WIDEST_PICTURE / bitmap.width);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/png").split(",")[1];
+}
+
+document.addEventListener("paste", async (event) => {
+  const item = [...((event.clipboardData && event.clipboardData.items) || [])].find((one) => one.kind === "file" && one.type.startsWith("image/"));
+  if (!item) return;   // text: the browser pastes it as usual
+  event.preventDefault();
+  const card = editing !== null ? editing : state.chosen_card;
+  if (card === null || card === undefined) {
+    say("Make a card first; then paste the picture.", true);
+    return;
+  }
+  let png;
+  try {
+    png = await pastedPng(item.getAsFile());
+  } catch (error) {
+    say("That picture could not be read.", true);
+    return;
+  }
+  await call("POST", API + "/cards/" + card + "/pictures", { png });
+});
 
 // Add a picture: the reader drags a box around a formula or graph on a page of the PDF; that part of the page,
 // drawn from the PDF itself, goes on the back of the card. Esc cancels.

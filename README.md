@@ -237,7 +237,9 @@ page on the card: drag a box around it on the page (Esc cancels). It is cut
 from the PDF itself, so it stays sharp, and it goes under the answer, in the
 deck file and in Anki. On a web page, right-click an image and choose *Add
 this picture to the chosen card*. A new card is chosen by itself; to add to
-another card, press *Pictures go here* on it first.
+another card, press *Pictures go here* on it first. Or paste: copy a picture
+or take a screenshot (Win+Shift+S) and press Ctrl+V in sentmine; it goes on
+the card you are editing, or else on the chosen card.
 
 Instead of pasting, you can open a PDF that contains text, or a `.txt` file.
 Running heads and page numbers are removed and hyphenated words rejoined;

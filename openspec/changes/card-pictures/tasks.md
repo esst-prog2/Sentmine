@@ -19,6 +19,8 @@
 - [x] 4.2 The extension: right-click an image, to the chosen card; the panel shows it
 - [x] 4.3 Headless Edge on a Wikipedia page; the deck holds the pictures
 
+- [x] 4.4 Paste a picture (Ctrl+V) onto the card being edited or the chosen card; the editor keeps what is typed; headless Edge
+
 ## 5. Wrap-up
 
 - [x] 5.1 README, the whole suite, `openspec validate card-pictures --strict`
