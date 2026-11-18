@@ -1,7 +1,7 @@
 """clip-panel: clips from web pages go to a session of their own, beside the text in Read."""
 
 import pytest
-from reading_helper import place_of
+from reading_helper import place_of, post_clip
 
 from sentmine.app import create_app
 from sentmine.memory import CardMemory
@@ -17,9 +17,37 @@ def client(tmp_path):
 
 
 def clip(client, text, **around):
-    response = client.post("/clip/api/text", json={"text": text, **around})
+    response = post_clip(client, {"text": text, **around})
     assert response.status_code == 200, response.get_json()
     return response.get_json()
+
+
+def test_a_sentence_with_no_term_in_it_makes_a_card_open_in_edit_for_its_term(client):
+    state = client.post("/clip/api/text", json={"text": "can skew the mean. The median resists", "before": "Outliers ",
+                                                "after": " them."}).get_json()
+    card = state["cards"][0]
+    assert (card["front"], card["back"]) == ("", "Outliers can skew the mean. The median resists them.")
+    assert state["editing"] == card["id"] and "give it its term" in state["message"]
+    # more text right-clicked now goes to it, at its cursor, as for any card open in Edit
+    state = client.post("/clip/api/text", json={"text": "Another sentence."}).get_json()
+    assert state["count"] == 1 and state["inbox"][0]["text"] == "Another sentence."
+    # a deck cannot be made while it has no term
+    response = client.get("/clip/api/deck?name=web")
+    assert response.status_code == 400 and "no term yet" in response.get_json()["error"]
+    # its term, given in Edit, makes it a card like any other
+    state = client.put(f"/clip/api/cards/{card['id']}", json={"front": "outliers", "back": card["back"]}).get_json()
+    assert state["cards"][0]["front"] == "outliers" and state["cards"][0]["can_cloze"]
+    assert client.get("/clip/api/deck?name=web").status_code == 200
+
+
+def test_a_term_that_already_has_a_card_is_refused(client):
+    clip(client, "skew", before="Outliers can ", after=" the mean.")
+    state = client.post("/clip/api/text", json={"text": "The median resists outliers. It is robust."}).get_json()
+    waiting = next(card for card in state["cards"] if card["front"] == "")
+    response = client.put(f"/clip/api/cards/{waiting['id']}", json={"front": "skew", "back": waiting["back"]})
+    assert response.status_code == 200   # a word card's key is its base form, not the term: no clash
+    response = client.put(f"/clip/api/cards/{waiting['id']}", json={"front": "Skew", "back": waiting["back"]})
+    assert response.status_code == 200
 
 
 def click(client, state, word, prefix="/clip"):
@@ -51,7 +79,6 @@ def test_read_is_never_touched_by_a_clip(client):
 def test_a_clip_is_one_paragraph_and_a_drag_over_its_term_makes_the_card(client):
     state = clip(client, "A confounder is a variable\n\nthat influences both the treatment and the outcome.")
     assert len(state["paragraphs"]) == 1 and state["count"] == 0
-    assert "Click a word" in state["message"]
     state = client.post("/clip/api/definition", json={"term": "confounder", "passage": DEFINITION}).get_json()
     assert state["count"] == 1 and (state["cards"][0]["front"], state["cards"][0]["back"]) == ("confounder", DEFINITION)
 
@@ -75,9 +102,6 @@ def test_a_selection_with_a_bold_term_makes_its_card_from_the_whole_sentences(cl
     assert "<b>confounder</b>" in card["back_html"]
 
 
-def test_without_a_term_a_long_selection_waits_for_the_reader(client):
-    state = clip(client, "can skew the mean. The median resists", before="Outliers ", after=" them.")
-    assert state["count"] == 0 and state["paragraphs"][0][0]["pieces"][0]["text"] == "Outliers"
 
 
 def test_a_few_words_in_one_sentence_make_their_card(client):

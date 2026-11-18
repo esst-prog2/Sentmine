@@ -136,6 +136,8 @@ try {
     background: var(--page); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; }
   .back-editor { min-height: 4.5em; }
   .doc-editor:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  .front-editor:empty::before { content: "Type the term, or select it on the page and right-click it"; color: var(--soft); }
+  .no-term { color: var(--soft); font-style: italic; }
   .doc-editor img { cursor: pointer; }
   .card .paste-hint { font-size: 0.8125rem; color: var(--soft); margin-top: 8px; }
   /* the side panel: the card that pictures from the web page go to */
@@ -824,6 +826,11 @@ function drawCard(card) {
     cancel.addEventListener("click", async () => {
       const now = state.cards.find((one) => one.id === card.id);
       const { original } = draft;   // a picture added meanwhile is on the card already: put the card back as it was
+      if (now && !original.front) {   // made for its term, and given none: no card (gone first, so it is not opened again)
+        await call("DELETE", API + "/cards/" + card.id);
+        closeEditing();
+        return;
+      }
       if (now && (now.front !== original.front || now.back !== original.back)) await call("PUT", API + "/cards/" + card.id, original);
       closeEditing();
     });
@@ -846,21 +853,12 @@ function drawCard(card) {
 
   const front = element("div", "front");
   front.innerHTML = card.front_html;   // escaped by the server; only <b>, <br> and its own pictures are real tags
+  if (!card.front) front.append(element("span", "no-term", "(no term yet: press Edit to give it one)"));
   const back = element("div", "back");
   back.innerHTML = card.back_html;
   if (card.earlier) box.append(element("div", "made-before", "Made before, on " + card.earlier + "."));
   const edit = element("button", "small", "Edit");
-  edit.addEventListener("click", () => {
-    editing = card.id;
-    draft = null;
-    lastCaret = null;
-    undoSteps = [];
-    redoSteps = [];
-    editPictures = {};
-    tellEditing(card.id);   // text and pictures from a web page now go to this card, at its cursor
-    say("Editing: whatever you add goes in where the cursor is. Save when the card is right.");
-    draw();
-  });
+  edit.addEventListener("click", () => startEditing(card.id));
   const remove = element("button", "small", "Delete");
   remove.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id));
   const buttons = element("div", "buttons");
@@ -1129,7 +1127,7 @@ document.addEventListener("mouseup", async (event) => {
   stopBox();
   if (box[2] < 0.004 && box[3] < 0.004) {   // a click, not a box: the sentence of the word clicked
     const word = document.elementsFromPoint(event.clientX, event.clientY).find((one) => one.classList && one.classList.contains("w"));
-    if (word) insertSentences(Number(word.dataset.sentence), Number(word.dataset.sentence));
+    if (word) putIn(Number(word.dataset.sentence), Number(word.dataset.sentence), word.textContent);
     return;
   }
   markCursor();   // the picture goes where the cursor was
@@ -1157,6 +1155,7 @@ function draw() {
   document.body.classList.toggle("editing-pdf", editing !== null && !!state.pdf && !CLIP);
   showCaretMark();
   showUndo();
+  openWaitingCard();
 }
 
 // One handler tells a click from a drag. It listens on the document because a drag may end
@@ -1180,7 +1179,7 @@ document.addEventListener("mouseup", (event) => {
     const over = [...$("text").querySelectorAll(".w")].filter((word) => selection.containsNode(word, true));
     selection.removeAllRanges();
     if (editing !== null) {
-      if (over.length) insertSentences(Number(over[0].dataset.sentence), Number(over[over.length - 1].dataset.sentence));
+      if (over.length) putIn(Number(over[0].dataset.sentence), Number(over[over.length - 1].dataset.sentence), termOf(selected));
     } else if (clipped) {
       pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
     } else if (over.length) {
@@ -1209,7 +1208,7 @@ const LONGEST_TERM = 8;   // words
 function chose(selected, first, last) {
   if (!selected) return;
   if (editing !== null) {
-    insertSentences(first, last);
+    putIn(first, last, termOf(selected));
     return;
   }
   if (selected.trim().split(/\s+/).length > LONGEST_TERM) {
@@ -1223,7 +1222,7 @@ function chose(selected, first, last) {
 function pickWord(box) {
   term = null;
   if (editing !== null) {   // in Edit, a click is for the sentence, put in at the cursor, not a card for the word
-    insertSentences(Number(box.dataset.sentence), Number(box.dataset.sentence));
+    putIn(Number(box.dataset.sentence), Number(box.dataset.sentence), box.textContent);
     return;
   }
   pick(API + "/word", { sentence: Number(box.dataset.sentence), word: Number(box.dataset.word) });
@@ -1350,7 +1349,8 @@ function addArrived(fresh) {
   const mine = (fresh.inbox || []).filter((item) => item.card === editing && !taken.has(item.id));
   for (const item of mine) {
     taken.add(item.id);
-    insertAtCursor(item.text);
+    const caret = caretInCard();
+    insertAtCursor(caret && caret.editor.dataset.side === "front" && item.exact ? item.exact : item.text);
   }
   if (mine.length) fetch(API + "/inbox/taken", { method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ids: mine.map((item) => item.id) }) }).catch(() => {});
@@ -1380,6 +1380,38 @@ function addArrived(fresh) {
     }
   }   // the rest of the deck is drawn after Save or Cancel
   showCaretMark();
+}
+
+function startEditing(id, inTerm = false) {
+  editing = id;
+  draft = null;
+  lastCaret = null;
+  undoSteps = [];
+  redoSteps = [];
+  editPictures = {};
+  tellEditing(id);   // text and pictures from a web page now go to this card, at its cursor
+  say(inTerm ? "A card for these sentences: give it its term. Type it, or select it on the page and right-click it."
+    : "Editing: whatever you add goes in where the cursor is. Save when the card is right.");
+  draw();
+  if (inTerm) {   // the cursor in the Term, so the term right-clicked on the page goes there
+    const term = document.querySelector(".front-editor");
+    if (term) {
+      term.focus();
+      const range = document.createRange();
+      range.selectNodeContents(term);
+      range.collapse(false);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      lastCaret = { editor: term, range: range.cloneRange() };
+    }
+  }
+}
+
+// A card the app made for sentences with no term in them opens in Edit by itself, in the side panel.
+function openWaitingCard() {
+  if (!CLIP || editing !== null || !state.editing) return;
+  const card = state.cards.find((one) => one.id === state.editing);
+  if (card && !card.front) startEditing(card.id, true);
 }
 
 // Undo in Edit: Ctrl+Z takes back the last thing put in, deleted or typed, one step at a time, and Ctrl+Y (or
@@ -1517,6 +1549,14 @@ function sentencesText(first, last) {
     if (chosen.length) paragraphs.push(chosen.join(" "));
   }
   return paragraphs.join("\n\n");
+}
+
+// What a click or a drag in the text puts in at the cursor: in the Term, the words themselves (the term); in the
+// Passage, their whole sentences.
+function putIn(first, last, words) {
+  const caret = caretInCard();
+  if (caret && caret.editor.dataset.side === "front" && words) insertAtCursor(words);
+  else insertSentences(first, last);
 }
 
 function insertSentences(first, last) {

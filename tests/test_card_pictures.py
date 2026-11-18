@@ -8,7 +8,7 @@ import zipfile
 import pytest
 from apkg_helper import read_notes
 from pdf_helper import make_pdf
-from reading_helper import place_of
+from reading_helper import place_of, post_clip
 from test_send_to_anki import FakeAnki
 
 from sentmine.anki import send_notes
@@ -253,7 +253,7 @@ import base64
 
 
 def clip_card(client):
-    state = client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word"}).get_json()
+    state = post_clip(client, {"text": "Salami is a cured sausage.", "kind": "word"}).get_json()
     sentence, word = place_of(state["paragraphs"], "cured")
     return client.post("/clip/api/word", json={"sentence": sentence, "word": word}).get_json()["cards"][-1]
 
@@ -289,7 +289,7 @@ def test_a_clip_has_no_pdf_to_draw_a_box_on(client):
 
 def test_pictures_go_to_the_chosen_card_and_a_new_card_is_chosen_by_itself(client):
     first = clip_card(client)
-    state = client.post("/clip/api/text", json={"text": "Pork is the meat of pigs.", "kind": "word"}).get_json()
+    state = post_clip(client, {"text": "Pork is the meat of pigs.", "kind": "word"}).get_json()
     sentence, word = place_of(state["paragraphs"], "meat")
     second = client.post("/clip/api/word", json={"sentence": sentence, "word": word}).get_json()["cards"][-1]
     assert client.get("/clip/api/state").get_json()["chosen_card"] == second["id"]

@@ -253,6 +253,7 @@ def _with_pictures(text: str, render: Callable[[str], str]) -> str:
     return "".join(parts)
 UNNAMED_PAGE = "a web page"  # a clip whose page gave no title
 LONGEST_TERM = 8  # words: a longer selection is a passage, not a term
+PASSAGE_KEY = "passage:"  # the key of a card that has its passage but no term yet; its term gives it its real key
 EDITING_SECONDS = 180  # a page with a card open in Edit says so every 30 seconds; after this, Edit counts as closed
 
 
@@ -315,11 +316,12 @@ class Session:
         self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
 
     def add_clip(self, selected: str, before: str = "", after: str = "", term: str = "", title: str = "",
-                 url: str = "") -> tuple[str, Flashcard | Entry] | None:
+                 url: str = "") -> tuple[str, Flashcard | Entry]:
         """A selection from a web page, made whole sentences, as a clip; with a card at once when the selection
         is one word (a card for it, from its sentence), a few words inside one sentence (a card for them as a
         term, from that sentence, as a drag in Read does) or holds a term in bold (a card for the term, the clip
-        as its passage). None when the reader is still to say what the card is for."""
+        as its passage). Otherwise a card for the sentences with no term yet, opened in Edit for the reader to
+        give it one."""
         passage, word = whole_sentences(selected, before, after)
         if not passage:
             raise Problem("The selection has no text to read.")
@@ -337,7 +339,10 @@ class Session:
         term = " ".join(term.split())
         if term and len(term) <= 100 and _term_pattern(term).search(" ".join(self.paragraphs[-1])):
             return self.add_definition(term, " ".join(self.paragraphs[-1]))
-        return None
+        # no term to be seen: a card for the sentences, opened in Edit for the reader to give it its term
+        card = self._add(Flashcard(0, DEFINITION, "", " ".join(self.paragraphs[-1]), PASSAGE_KEY + str(self.deck.next_id)))
+        self.set_editing(card.id)
+        return ADDED, card
 
     def remove_clip(self, number: int) -> None:
         """Take a clip away. Its cards stay, since they hold their own text; the clicked places of the
@@ -512,6 +517,12 @@ class Session:
                        for side in (front, back))   # only its own pictures, on either side; never the page's cursor mark
         if not front or not back:
             raise Problem("A card needs a front and a back; delete the card to remove it.")
+        if card.key.startswith(PASSAGE_KEY) and without_pictures(front):   # its term at last: the card it is
+            key = DEFINITION + ":" + " ".join(without_pictures(front).split()).casefold()
+            other = self._card_with_key(key)
+            if other is not None and other is not card:
+                raise Problem(f"'{without_pictures(front)}' already has a card; delete this one, or give it another term.")
+            card.key = key
         card.front, card.back = front, back
         placed = set(PICTURE.findall(front)) | set(PICTURE.findall(back))
         card.pictures[:] = [(name, png) for name, png in card.pictures if name in placed]   # a picture taken out of the text is gone
@@ -582,6 +593,10 @@ class Session:
     def _notes(self) -> list[Note]:
         if not self.cards:
             raise Problem("There are no cards yet: pick a word or mark a definition first.")
+        waiting = [card for card in self.cards if not card.front.strip()]
+        if waiting:
+            raise Problem(f"A card has no term yet ('{without_pictures(waiting[0].back)[:60]}…'): press Edit on it and "
+                          "give it one, or delete it.")
         return [card.note for card in self.cards]
 
     def _remember(self, day: str | None, done: str) -> str:
@@ -665,7 +680,8 @@ class Session:
         passage, _ = whole_sentences(selected, before, after)
         if not passage:
             raise Problem("The selection has no text to read.")
-        self.deck.inbox.append({"id": self.deck.next_inbox, "card": card, "text": passage})
+        exact = " ".join(selected.split()).strip(".,;:!? ")   # for the Term: what was selected, no more
+        self.deck.inbox.append({"id": self.deck.next_inbox, "card": card, "text": passage, "exact": exact})
         self.deck.next_inbox += 1
         return passage
 

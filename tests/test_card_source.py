@@ -6,7 +6,7 @@ import sqlite3
 import pytest
 from apkg_helper import read_notes
 from pdf_helper import make_pdf
-from reading_helper import place_of
+from reading_helper import place_of, post_clip
 
 from sentmine.app import create_app
 from sentmine.history import Entry
@@ -64,8 +64,8 @@ def test_a_card_from_a_pdf_says_its_file_and_page(client, tmp_path):
 
 def test_a_card_from_a_web_page_says_its_title_and_links_its_address(client, tmp_path):
     source = {"title": "Salami - Wikipedia", "url": "https://en.wikipedia.org/wiki/Salami"}
-    client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word", "source": source})
-    client.post("/clip/api/text", json={"text": "Pork is the meat of pigs.", "kind": "word",
+    post_clip(client, {"text": "Salami is a cured sausage.", "kind": "word", "source": source})
+    post_clip(client, {"text": "Pork is the meat of pigs.", "kind": "word",
                                         "source": {"title": "<b>Pork</b>", "url": "javascript:alert(1)"}})
     first = click(client, "/clip", "cured")["cards"][-1]
     second = click(client, "/clip", "meat")["cards"][-1]

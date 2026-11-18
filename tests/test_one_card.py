@@ -111,9 +111,11 @@ def test_a_few_words_selected_on_a_web_page_make_their_card_with_the_sentence():
     ("may be terminated. More", "The company ", " text follows."),          # runs over two sentences
     ("The company may be terminated.", "", ""),                             # the whole sentence
 ])
-def test_a_longer_selection_waits_in_the_panel(selected, before, after):
+def test_a_longer_selection_makes_a_card_open_in_edit_for_its_term(selected, before, after):
     clips = Session(name="clip")
-    assert clips.add_clip(selected, before, after) is None and clips.cards == []
+    result, card = clips.add_clip(selected, before, after)
+    assert result == "added" and card.front == "" and card.key.startswith("passage:")
+    assert clips.editing_card() == card.id
 
 
 def test_the_picture_route_names_the_picture_it_added():

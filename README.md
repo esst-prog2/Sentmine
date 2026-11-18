@@ -304,8 +304,12 @@ the page:
 - a selection with a term in **bold** in it, as Wikipedia and course books
   mark the term they define: the card for that term is made at once, with
   the sentences as its passage;
-- anything else waits in the panel as a clip: click a word for its card, or
-  drag over the term it explains.
+- anything else (a whole paragraph, or the end of one sentence and the start
+  of the next): a card for those whole sentences is made at once and opens in
+  Edit with the cursor in its empty Term. Type the term, or select it on the
+  page and right-click it (with the cursor in the Term, it goes in exactly as
+  selected). Cancel takes the card away; a deck cannot be made while a card
+  has no term.
 
 Every card has the same shape: the term on the front, the passage on the
 back with the term in bold; **Make it cloze** hides the term instead.

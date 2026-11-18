@@ -4,7 +4,7 @@ import io
 
 import pytest
 from pdf_helper import make_pdf
-from reading_helper import place_of
+from reading_helper import place_of, post_clip
 
 from sentmine.app import create_app
 from sentmine.memory import CardMemory
@@ -34,7 +34,7 @@ def read_pdf(client, sentences):
 def test_cards_from_read_and_the_web_are_one_deck_in_both_places(client):
     read_pdf(client, ["Outliers can skew the mean considerably."])
     click(client, "", "skew")
-    client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word"})
+    post_clip(client, {"text": "Salami is a cured sausage.", "kind": "word"})
     click(client, "/clip", "cured")
     read, clip = client.get("/api/state").get_json(), client.get("/clip/api/state").get_json()
     assert [c["front"] for c in read["cards"]] == [c["front"] for c in clip["cards"]] == ["skew", "cured (cure)"]
@@ -44,7 +44,7 @@ def test_cards_from_read_and_the_web_are_one_deck_in_both_places(client):
 
 def test_each_text_marks_only_its_own_cards(client):
     client.post("/api/text", json={"text": "The data were cured of errors."})
-    client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word"})
+    post_clip(client, {"text": "Salami is a cured sausage.", "kind": "word"})
     click(client, "/clip", "cured")
     assert picked(client.get("/clip/api/state").get_json()) == ["cured"]
     assert picked(client.get("/api/state").get_json()) == []
@@ -55,7 +55,7 @@ def test_each_text_marks_only_its_own_cards(client):
 def test_a_new_text_in_read_keeps_the_cards_from_web_pages(client):
     client.post("/api/text", json={"text": "Outliers can skew the mean."})
     click(client, "", "skew")
-    client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word"})
+    post_clip(client, {"text": "Salami is a cured sausage.", "kind": "word"})
     click(client, "/clip", "cured")
     state = client.post("/api/text", json={"text": "A completely different text."}).get_json()
     assert [c["front"] for c in state["cards"]] == ["cured (cure)"]
@@ -64,7 +64,7 @@ def test_a_new_text_in_read_keeps_the_cards_from_web_pages(client):
 def test_a_web_picture_can_go_to_a_card_from_the_pdf(client):
     read_pdf(client, ["Outliers can skew the mean considerably."])
     card = click(client, "", "skew")["cards"][-1]
-    client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word"})
+    post_clip(client, {"text": "Salami is a cured sausage.", "kind": "word"})
     click(client, "/clip", "cured")
     assert client.put(f"/clip/api/cards/{card['id']}/chosen").get_json()["chosen_card"] == card["id"]
     import base64
@@ -76,7 +76,7 @@ def test_a_web_picture_can_go_to_a_card_from_the_pdf(client):
 def test_sending_remembers_each_card_with_the_text_it_came_from(client, tmp_path):
     client.post("/api/text", json={"text": "Outliers can skew the mean."})
     click(client, "", "skew")
-    client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word"})
+    post_clip(client, {"text": "Salami is a cured sausage.", "kind": "word"})
     click(client, "/clip", "cured")
     assert client.get("/api/deck?name=both").status_code == 200
     memory_cards = client.get("/api/memory").get_json()["cards"]

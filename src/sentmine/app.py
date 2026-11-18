@@ -252,7 +252,8 @@ def create_app(
             text_id=reading.text_id,  # names the text read, so the page can keep the reader's place in it
             clips=now() is clips,  # the side panel: each paragraph is a clip
             chosen_card=reading.chosen_card,  # where pictures from a web page go
-            inbox=list(reading.deck.inbox),  # text from a web page for the card open in Edit, put at its cursor
+            inbox=list(reading.deck.inbox),
+            editing=reading.editing_card(),  # the card open in Edit; the side panel opens one made for its term  # text from a web page for the card open in Edit, put at its cursor
             added_picture=picture,  # the picture just added, so the editor puts it at the cursor even when the card has it
             deck_version=deck_version(),  # changes whenever the deck does, here or in the other view
             pdf=None if shown["pages"] is None or now() is clips else {
@@ -380,8 +381,9 @@ def create_app(
             return state(f"Put in the card you are editing, '{card.word or card.term}', where its cursor is.")
         made = clips.add_clip(sent("text"), around["before"][-2000:], around["after"][:2000], around["term"][:200],
                               title, url if web_address.match(url) else "")
-        if made is None:
-            return state("Clip added. Click a word for a card, or drag over the term it explains.", count_known=True)
+        if made is not None and made[0] == ADDED and not made[1].front:
+            return state("A card for these sentences, open in Edit: give it its term. Type it, or select it on the "
+                         "page and right-click it.", count_known=True)
         return answer(*made)
 
     @app.delete("/clip/api/clips/<int:number>")

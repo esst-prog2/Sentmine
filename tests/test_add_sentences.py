@@ -66,7 +66,7 @@ def test_text_from_a_web_page_waits_for_the_editor_as_whole_sentences(session):
     _, card = session.add_definition("observational studies", sentences=(0, 0))
     session.set_editing(card.id, now=0.0)
     sent = session.send_to_editor("techniques are used", "Quantitative ", " infrequently. Next.", now=1.0)
-    assert sent == SECOND and session.deck.inbox == [{"id": 1, "card": card.id, "text": SECOND}]
+    assert sent == SECOND and session.deck.inbox == [{"id": 1, "card": card.id, "text": SECOND, "exact": "techniques are used"}]
     session.take_from_inbox([1])
     assert session.deck.inbox == []
     with pytest.raises(Problem, match="No card is open"):
@@ -89,7 +89,7 @@ def test_the_routes(tmp_path):
     before = client.get("/api/version").get_json()["deck"]
     state = client.post("/clip/api/text", json={"text": "rarely", "before": "It is ", "after": " done."}).get_json()
     assert "card you are editing" in state["message"] and state["count"] == 1 and state["paragraphs"] == []   # no clip, no card
-    assert state["inbox"] == [{"id": 1, "card": card["id"], "text": FOURTH}]
+    assert state["inbox"] == [{"id": 1, "card": card["id"], "text": FOURTH, "exact": "rarely"}]
     assert client.get("/api/version").get_json()["deck"] != before   # the editing page notices
     client.post("/api/inbox/taken", json={"ids": [1]})
     assert client.get("/api/state").get_json()["inbox"] == []

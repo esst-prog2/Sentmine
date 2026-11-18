@@ -22,6 +22,11 @@
 - [x] 4.2 README, the promo page's extension section, `openspec validate one-card --strict`
 - [ ] 4.3 The reader tries it for a week of reading (needs the reader)
 
+## 9. No waiting clip
+
+- [x] 9.1 A long selection with no term makes a card for its whole sentences at once, opened in Edit in the side panel with the cursor in the Term; Cancel deletes it; a deck is refused while a card has no term; its term gives it its key; tests
+- [x] 9.2 With the cursor in the Term, a clicked word, a drag, or text right-clicked on a web page goes in exactly as selected; the panel check (13 checks) and the clip check rewritten for the flow
+
 ## 8. Undo, and the side panel kept open
 
 - [x] 8.3 A picture taken out by Undo or Delete does not come back with the next look at the app; while a card is open in Edit in the side panel, the right-click items say they add to it; the web-picture and panel checks
