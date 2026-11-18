@@ -22,32 +22,11 @@ def clip(client, text, **around):
     return response.get_json()
 
 
-def test_a_sentence_with_no_term_in_it_makes_a_card_open_in_edit_for_its_term(client):
-    state = client.post("/clip/api/text", json={"text": "can skew the mean. The median resists", "before": "Outliers ",
-                                                "after": " them."}).get_json()
-    card = state["cards"][0]
-    assert (card["front"], card["back"]) == ("", "Outliers can skew the mean. The median resists them.")
-    assert state["editing"] == card["id"] and "give it its term" in state["message"]
-    # more text right-clicked now goes to it, at its cursor, as for any card open in Edit
-    state = client.post("/clip/api/text", json={"text": "Another sentence."}).get_json()
-    assert state["count"] == 1 and state["inbox"][0]["text"] == "Another sentence."
-    # a deck cannot be made while it has no term
-    response = client.get("/clip/api/deck?name=web")
-    assert response.status_code == 400 and "no term yet" in response.get_json()["error"]
-    # its term, given in Edit, makes it a card like any other
-    state = client.put(f"/clip/api/cards/{card['id']}", json={"front": "outliers", "back": card["back"]}).get_json()
-    assert state["cards"][0]["front"] == "outliers" and state["cards"][0]["can_cloze"]
-    assert client.get("/clip/api/deck?name=web").status_code == 200
-
-
-def test_a_term_that_already_has_a_card_is_refused(client):
-    clip(client, "skew", before="Outliers can ", after=" the mean.")
-    state = client.post("/clip/api/text", json={"text": "The median resists outliers. It is robust."}).get_json()
-    waiting = next(card for card in state["cards"] if card["front"] == "")
-    response = client.put(f"/clip/api/cards/{waiting['id']}", json={"front": "skew", "back": waiting["back"]})
-    assert response.status_code == 200   # a word card's key is its base form, not the term: no clash
-    response = client.put(f"/clip/api/cards/{waiting['id']}", json={"front": "Skew", "back": waiting["back"]})
-    assert response.status_code == 200
+def card_from(client, text, **around):
+    """The right-click and the card it makes."""
+    response = client.post("/clip/api/text", json={"text": text, **around})
+    assert response.status_code == 200, response.get_json()
+    return response.get_json()
 
 
 def click(client, state, word, prefix="/clip"):
@@ -83,35 +62,34 @@ def test_a_clip_is_one_paragraph_and_a_drag_over_its_term_makes_the_card(client)
     assert state["count"] == 1 and (state["cards"][0]["front"], state["cards"][0]["back"]) == ("confounder", DEFINITION)
 
 
-# --- one right-click: the selection made whole sentences, and a card at once when it says what for ---
+# --- one right-click: its card at once, the selection as the term, its whole sentences as the passage ---
 
 
 def test_one_selected_word_makes_its_card_from_the_sentence_around_it(client):
-    state = clip(client, "skew", before="The median resists them. Outliers can ", after=" the mean considerably. More text.")
+    state = card_from(client, "skew", before="The median resists them. Outliers can ", after=" the mean considerably. More text.")
     assert state["result"] == "added" and len(state["paragraphs"]) == 1
     card = state["cards"][0]
     assert (card["front"], card["back"]) == ("skew", SENTENCE)
     assert [piece["text"] for p in state["paragraphs"] for s in p for piece in s["pieces"] if piece.get("picked")] == ["skew"]
 
 
-def test_a_selection_with_a_bold_term_makes_its_card_from_the_whole_sentences(client):
-    state = clip(client, "founder is a variable that influences both the treatment and the out",
-                 before="Read this. A con", after="come. Another sentence.", term="confounder")
+def test_a_few_words_make_their_card_with_their_sentence(client):
+    state = card_from(client, "can skew the", before="Outliers ", after=" mean considerably.")
+    assert state["count"] == 1 and (state["cards"][0]["front"], state["cards"][0]["back"]) == ("can skew the", SENTENCE)
+
+
+def test_a_selection_across_two_sentences_is_the_term_and_both_whole_sentences_the_passage(client):
+    state = card_from(client, "founder is a variable that influences both the treatment and the outcome. Another",
+                      before="Read this. A con", after=" sentence. Last one.")
     card = state["cards"][0]
-    assert state["result"] == "added" and (card["front"], card["back"]) == ("confounder", DEFINITION)
-    assert "<b>confounder</b>" in card["back_html"]
+    assert card["front"] == "confounder is a variable that influences both the treatment and the outcome. Another"   # whole words
+    assert card["back"] == DEFINITION + " Another sentence."
+    assert card["can_cloze"]   # the term is in the passage
 
 
-
-
-def test_a_few_words_in_one_sentence_make_their_card(client):
-    state = clip(client, "can skew the", before="Outliers ", after=" mean considerably.")
-    assert state["count"] == 1 and state["cards"][0]["front"] == "can skew the"
-
-
-def test_a_bold_term_that_is_not_in_the_clip_makes_no_card(client):
-    state = clip(client, SENTENCE, term="variance")
-    assert state["count"] == 0
+def test_a_whole_sentence_selected_is_its_own_term(client):
+    state = card_from(client, SENTENCE)
+    assert (state["cards"][0]["front"], state["cards"][0]["back"]) == ("Outliers can skew the mean considerably", SENTENCE)
 
 
 def test_a_word_already_in_the_memory_is_offered_as_before(tmp_path):
@@ -119,7 +97,7 @@ def test_a_word_already_in_the_memory_is_offered_as_before(tmp_path):
     memory = CardMemory(tmp_path / "cards.db")
     memory.add([Entry("word", "skew", "skew", SENTENCE, "skew", "2026-11-01")])
     client = create_app(Session(memory)).test_client()
-    state = clip(client, "skew", before="Outliers can ", after=" the mean.")
+    state = card_from(client, "skew", before="Outliers can ", after=" the mean.")
     assert state["result"] == "earlier" and state["count"] == 0 and "2026-11-01" in state["message"]
 
 

@@ -1,5 +1,5 @@
-// The right-click items. On selected text: make a clip, with the text just around the selection and a term in bold
-// inside it, so sentmine can take whole sentences and make the card at once. On an image: put it on the card last
+// The right-click items. On selected text: make its card, with the text just around the selection, so sentmine can
+// take the whole sentences it touches as the passage. On an image: put it on the card last
 // made or edited. The right-click lets the extension see that one tab (activeTab), and nothing else.
 import { MENU, NO_CARD_YET, PICTURE_MENU, boxOnShot, clipFor, findSentmine, storedSize, withContext } from "./logic.js";
 
@@ -106,8 +106,7 @@ function base64(bytes) {
 
 // --- run inside the page ------------------------------------------------------------------------
 
-// The selection, the text of its paragraph before and after it (so whole sentences can be found), and the first
-// phrase in bold inside it (a term, as Wikipedia and course books mark the term they define).
+// The selection, and the text of its paragraph before and after it, so whole sentences can be found.
 function aroundSelection() {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
@@ -129,13 +128,7 @@ function aroundSelection() {
     copy.querySelectorAll("style, script, noscript, template, annotation").forEach((hidden) => hidden.remove());   // annotation: a formula's source
     return copy.textContent;
   };
-  const root = elementOf(range.commonAncestorContainer);
-  let term = "";
-  for (const bold of root.querySelectorAll("b, strong")) {
-    const text = bold.textContent.trim();
-    if (range.intersectsNode(bold) && text && text.split(/\s+/).length <= 8) { term = text; break; }
-  }
-  return { selected: selection.toString(), before: textOf(head), after: textOf(tail), term };
+  return { selected: selection.toString(), before: textOf(head), after: textOf(tail) };
 }
 
 // Where the image is in the window, once it is scrolled into view.

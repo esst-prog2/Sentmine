@@ -21,8 +21,8 @@ export async function findSentmine(fetchFn, ports = PORTS, wait = 600) {
   return answers.find((base) => base !== null) || null;
 }
 
-// The right-click item on selected text. sentmine takes the selection as whole sentences: one word becomes a card
-// from its sentence, a selection with a term in bold a card for that term; anything else waits in the side panel.
+// The right-click item on selected text: its card, the selection as the term and the whole sentences it touches as
+// the passage (one word: its word card).
 export const MENU = { card: "Make a card from this" };
 
 // The same items while a card is open in Edit in the side panel: what is chosen goes in at its cursor.
@@ -75,12 +75,10 @@ export function clipFor(menuItemId, selected) {
 // reference marks taken out, the spaces at the edges kept, since sentmine finds the sentences from them.
 export function withContext(clip, around) {
   if (!around || typeof around.selected !== "string" || around.selected.trim() === "") return clip;
-  const term = typeof around.term === "string" ? around.term.trim() : "";
   return {
     text: withoutMarks(around.selected),
     before: withoutMarks(String(around.before || "")).slice(-1500),
     after: withoutMarks(String(around.after || "")).slice(0, 1500),
-    term: term.length <= 100 ? term : "",
   };
 }
 

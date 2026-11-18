@@ -15,15 +15,13 @@ test("an empty, too long or unknown clip is refused with a reason", () => {
 
 test("the text around the selection goes along, its spaces at the edges kept and its reference marks out", () => {
   const clip = clipFor("card", "skew");
-  const around = { selected: "skew", before: "The median[2] resists. Outliers can ", after: " the mean.[3] Next.", term: "" };
+  const around = { selected: "skew", before: "The median[2] resists. Outliers can ", after: " the mean.[3] Next." };
   assert.deepEqual(withContext(clip, around),
-    { text: "skew", before: "The median resists. Outliers can ", after: " the mean. Next.", term: "" });
+    { text: "skew", before: "The median resists. Outliers can ", after: " the mean. Next." });
 });
 
-test("a bold term goes along; without what the page said, the selection goes alone", () => {
+test("without what the page said, the selection goes alone", () => {
   const clip = clipFor("card", "A confounder is a variable.");
-  assert.equal(withContext(clip, { selected: "A confounder is a variable.", before: "", after: "", term: " confounder " }).term, "confounder");
-  assert.equal(withContext(clip, { selected: "x", term: "a".repeat(101) }).term, "");
   assert.deepEqual(withContext(clip, null), clip);
   assert.deepEqual(withContext(clip, { selected: "  " }), clip);
 });

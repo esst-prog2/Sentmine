@@ -29,16 +29,13 @@ class _Answer:
 
 
 def post_clip(client, body):
-    """A clip from a web page, as a right-click sends it. When it makes a card that is still to get its term (a
-    sentence with no term in it), the reader presses Cancel on it, as these tests are about the clip itself."""
+    """A clip from a web page, as a right-click sends it, for the tests that make their cards from its words: the
+    card the right-click makes (the selection as its term) is deleted, as the reader might."""
+    before = {card["id"] for card in client.get("/clip/api/state").get_json()["cards"]}
     response = client.post("/clip/api/text", json=body)
-    state = response.get_json()
     if response.status_code != 200:
         return response
-    waiting = [card for card in state["cards"] if card["front"] == ""]
-    for card in waiting:
-        client.delete(f"/clip/api/cards/{card['id']}")
-    if waiting:
-        client.put("/clip/api/editing", json={"card": None})
-        state = client.get("/clip/api/state").get_json()
-    return _Answer(state)
+    made = [card["id"] for card in response.get_json()["cards"] if card["id"] not in before]
+    for card in made:
+        client.delete(f"/clip/api/cards/{card}")
+    return _Answer(client.get("/clip/api/state").get_json())

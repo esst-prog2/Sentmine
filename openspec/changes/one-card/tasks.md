@@ -22,6 +22,11 @@
 - [x] 4.2 README, the promo page's extension section, `openspec validate one-card --strict`
 - [ ] 4.3 The reader tries it for a week of reading (needs the reader)
 
+## 10. The selection is the term
+
+- [x] 10.1 Every selection or drag is the term (a word cut in half made whole) and the whole sentences it touches the passage; one word still makes a word card; the bold term, the 8-word limit and the card waiting for its term removed; tests
+- [x] 10.2 The browser checks: Wikipedia, the real panel, the clip check and the gesture check (a long drag is a term) pass
+
 ## 9. No waiting clip
 
 - [x] 9.1 A long selection with no term makes a card for its whole sentences at once, opened in Edit in the side panel with the cursor in the Term; Cancel deletes it; a deck is refused while a card has no term; its term gives it its key; tests

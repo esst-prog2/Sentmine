@@ -16,7 +16,7 @@ The reader SHALL be able to click any word of the text. A click on a word that h
 - **THEN** its card is removed and the number of cards goes down by one
 
 ### Requirement: Definition cards
-A drag over a term of up to eight words, or the same words marked with the keyboard, SHALL make a card at once whose front is the term and whose back is the sentence the term is in (the sentences, when the term runs across two); no second drag SHALL be needed. A longer drag SHALL make no card and SHALL say to drag over the term only and change the passage in Edit. A passage of several sentences or paragraphs SHALL be made in Edit, by clicking the sentences to put in. A break between paragraphs inside the passage SHALL be kept; other runs of spaces SHALL become one space. An empty term SHALL be refused with a message.
+A drag over any words of the text, or the same words marked with the keyboard, SHALL make a card at once whose front is the words dragged over and whose back is the whole sentences they touch, also when they run across two sentences; no second drag SHALL be needed. More of the passage SHALL be added in Edit, by clicking the sentences to put in. A break between paragraphs inside the passage SHALL be kept; other runs of spaces SHALL become one space. An empty term SHALL be refused with a message.
 
 #### Scenario: A two-sentence definition
 - **WHEN** the reader drags over `standard deviation` in `The standard deviation measures how spread out a set of values is. It is the square root of the variance.`, then, in Edit, clicks the second sentence with the cursor after the first

@@ -111,11 +111,11 @@ def test_a_few_words_selected_on_a_web_page_make_their_card_with_the_sentence():
     ("may be terminated. More", "The company ", " text follows."),          # runs over two sentences
     ("The company may be terminated.", "", ""),                             # the whole sentence
 ])
-def test_a_longer_selection_makes_a_card_open_in_edit_for_its_term(selected, before, after):
+def test_a_longer_selection_is_the_term_and_its_whole_sentences_the_passage(selected, before, after):
     clips = Session(name="clip")
     result, card = clips.add_clip(selected, before, after)
-    assert result == "added" and card.front == "" and card.key.startswith("passage:")
-    assert clips.editing_card() == card.id
+    assert result == "added" and card.front == selected.strip(" .")
+    assert card.back == " ".join(clips.paragraphs[-1]) and card.back.endswith(".")
 
 
 def test_the_picture_route_names_the_picture_it_added():
@@ -128,3 +128,14 @@ def test_the_picture_route_names_the_picture_it_added():
     state = client.post(f"/api/cards/{card['id']}/pictures", json={"png": png}).get_json()
     assert state["added_picture"].startswith("sentmine-") and state["added_picture"] in state["cards"][0]["pictures"]
     assert client.get("/api/state").get_json()["added_picture"] == ""
+
+
+@pytest.mark.parametrize("selected, before, after, term", [
+    ("founder is", "A con", " a variable.", "confounder is"),
+    ("can sk", "Outliers ", "ew the mean.", "can skew"),
+    ("skew", "Outliers can ", " the mean.", "skew"),
+    (" can skew ", "Outliers", "the mean.", " can skew "),   # spaces at the edges: nothing to widen
+])
+def test_a_selection_inside_a_word_is_widened_to_the_whole_word(selected, before, after, term):
+    from sentmine.reading import whole_words
+    assert whole_words(selected, before, after) == term

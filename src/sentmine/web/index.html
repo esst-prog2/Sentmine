@@ -136,8 +136,7 @@ try {
     background: var(--page); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; }
   .back-editor { min-height: 4.5em; }
   .doc-editor:focus { outline: 2px solid var(--accent); outline-offset: 0; }
-  .front-editor:empty::before { content: "Type the term, or select it on the page and right-click it"; color: var(--soft); }
-  .no-term { color: var(--soft); font-style: italic; }
+  .front-editor:empty::before { content: "Type the term"; color: var(--soft); }
   .doc-editor img { cursor: pointer; }
   .card .paste-hint { font-size: 0.8125rem; color: var(--soft); margin-top: 8px; }
   /* the side panel: the card that pictures from the web page go to */
@@ -826,11 +825,6 @@ function drawCard(card) {
     cancel.addEventListener("click", async () => {
       const now = state.cards.find((one) => one.id === card.id);
       const { original } = draft;   // a picture added meanwhile is on the card already: put the card back as it was
-      if (now && !original.front) {   // made for its term, and given none: no card (gone first, so it is not opened again)
-        await call("DELETE", API + "/cards/" + card.id);
-        closeEditing();
-        return;
-      }
       if (now && (now.front !== original.front || now.back !== original.back)) await call("PUT", API + "/cards/" + card.id, original);
       closeEditing();
     });
@@ -853,7 +847,6 @@ function drawCard(card) {
 
   const front = element("div", "front");
   front.innerHTML = card.front_html;   // escaped by the server; only <b>, <br> and its own pictures are real tags
-  if (!card.front) front.append(element("span", "no-term", "(no term yet: press Edit to give it one)"));
   const back = element("div", "back");
   back.innerHTML = card.back_html;
   if (card.earlier) box.append(element("div", "made-before", "Made before, on " + card.earlier + "."));
@@ -1155,7 +1148,6 @@ function draw() {
   document.body.classList.toggle("editing-pdf", editing !== null && !!state.pdf && !CLIP);
   showCaretMark();
   showUndo();
-  openWaitingCard();
 }
 
 // One handler tells a click from a drag. It listens on the document because a drag may end
@@ -1201,19 +1193,13 @@ function clipOf(node) {   // the clip a drag was in: a drag over a term makes it
   return element ? element.closest("#text .clip p") : null;
 }
 
-// A drag over a term (or the marked words, from the keyboard) makes its card at once: the term, and the sentence it
-// is in (the sentences, when it runs across two). More goes into the passage with Edit: a click on a sentence there.
-const LONGEST_TERM = 8;   // words
+// A drag (or the marked words, from the keyboard) makes its card at once: what was dragged is the term, the whole
+// sentences it touches the passage. Either can be changed in Edit.
 
 function chose(selected, first, last) {
   if (!selected) return;
   if (editing !== null) {
     putIn(first, last, termOf(selected));
-    return;
-  }
-  if (selected.trim().split(/\s+/).length > LONGEST_TERM) {
-    say("Drag over just the term (up to " + LONGEST_TERM + " words): its sentence comes with it. " +
-      "For a longer passage, press Edit on the card and click the sentences to put in.", true);
     return;
   }
   pick(API + "/definition", { term: termOf(selected), sentence: first, last });
@@ -1382,7 +1368,7 @@ function addArrived(fresh) {
   showCaretMark();
 }
 
-function startEditing(id, inTerm = false) {
+function startEditing(id) {
   editing = id;
   draft = null;
   lastCaret = null;
@@ -1390,28 +1376,8 @@ function startEditing(id, inTerm = false) {
   redoSteps = [];
   editPictures = {};
   tellEditing(id);   // text and pictures from a web page now go to this card, at its cursor
-  say(inTerm ? "A card for these sentences: give it its term. Type it, or select it on the page and right-click it."
-    : "Editing: whatever you add goes in where the cursor is. Save when the card is right.");
+  say("Editing: whatever you add goes in where the cursor is. Save when the card is right.");
   draw();
-  if (inTerm) {   // the cursor in the Term, so the term right-clicked on the page goes there
-    const term = document.querySelector(".front-editor");
-    if (term) {
-      term.focus();
-      const range = document.createRange();
-      range.selectNodeContents(term);
-      range.collapse(false);
-      window.getSelection().removeAllRanges();
-      window.getSelection().addRange(range);
-      lastCaret = { editor: term, range: range.cloneRange() };
-    }
-  }
-}
-
-// A card the app made for sentences with no term in them opens in Edit by itself, in the side panel.
-function openWaitingCard() {
-  if (!CLIP || editing !== null || !state.editing) return;
-  const card = state.cards.find((one) => one.id === state.editing);
-  if (card && !card.front) startEditing(card.id, true);
 }
 
 // Undo in Edit: Ctrl+Z takes back the last thing put in, deleted or typed, one step at a time, and Ctrl+Y (or

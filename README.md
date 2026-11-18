@@ -240,9 +240,10 @@ it). Shift and the arrow keys mark several words, as a drag does: Enter makes
 them a term's card, with their sentence. A word you already have a card for
 shows that card when the keyboard reaches it.
 
-A card's passage is the sentence its word or term is in. A drag over more
-than eight words is not taken as a term: drag over the term, then change the
-passage in **Edit**.
+One rule makes every card: **what you select (or drag over) is the term, and
+the whole sentences it touches are the passage**, even when the selection
+starts in one sentence and ends in the next (a word cut in half is made
+whole). Change either in **Edit**.
 
 **Edit** is the one place to change a card. Press it, and both sides become
 small documents of text and pictures: the Term on the front, the Passage on
@@ -293,23 +294,11 @@ use Open a file. The article is found with Mozilla's Readability
 (`extension/vendor`, Apache 2.0).
 
 **Cards from a web page, in a side panel.** Select something on a web page,
-right-click it and choose *Make a card from this*. The selection can be
-rough: sentmine takes the whole sentences it touches. A panel opens beside
-the page:
-
-- one word selected (a double-click): its card is made at once, with the
-  word on the front and its sentence on the back;
-- a few words (up to eight) inside one sentence, such as a name: their card
-  is made at once, with that sentence, as a drag over a term in Read does;
-- a selection with a term in **bold** in it, as Wikipedia and course books
-  mark the term they define: the card for that term is made at once, with
-  the sentences as its passage;
-- anything else (a whole paragraph, or the end of one sentence and the start
-  of the next): a card for those whole sentences is made at once and opens in
-  Edit with the cursor in its empty Term. Type the term, or select it on the
-  page and right-click it (with the cursor in the Term, it goes in exactly as
-  selected). Cancel takes the card away; a deck cannot be made while a card
-  has no term.
+right-click it and choose *Make a card from this*. Its card is made at once,
+by the same rule as in Read: the selection is the term, and the whole
+sentences it touches are the passage. One word makes a word card (so `ran`
+and `run` count as one word). A panel opens beside the page with the card
+and the sentences it came from.
 
 Every card has the same shape: the term on the front, the passage on the
 back with the term in bold; **Make it cloze** hides the term instead.
@@ -317,8 +306,8 @@ Clips are kept apart from the text in Read; *Remove* takes a clip away, and
 its cards stay until you send or download them. The button's *Show my clips
 beside the page* opens the panel without a new clip. The right-click lets
 the extension read that one tab, only then: it takes the paragraph around
-the selection (to find whole sentences) and any bold phrase in it, and sends
-them nowhere but sentmine on this computer.
+the selection (to find whole sentences), and sends it nowhere but sentmine on
+this computer.
 
 The first design, a command-line tool that picks the words from a
 known-words list, still works: `sentmine passage.txt --known known.txt
