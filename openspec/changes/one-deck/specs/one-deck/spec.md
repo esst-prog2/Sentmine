@@ -18,5 +18,5 @@ A clip SHALL never change the text in Read. Each text SHALL mark only the words 
 A picture from a web page SHALL be able to go to any card in the deck, and a part of the PDF in Read SHALL be able to go to any card, including one from a web page.
 
 #### Scenario: A web picture for a card from the PDF
-- **WHEN** the reader presses Pictures go here on a card from the PDF and adds a picture from a web page
+- **WHEN** the reader presses Edit on a card from the PDF and adds a picture from a web page
 - **THEN** that card's back shows the picture

@@ -58,7 +58,7 @@ class Flashcard:
     @property
     def can_cloze(self) -> bool:
         """A definition card whose term appears in its passage, so there is something to hide."""
-        return self.kind == DEFINITION and _term_pattern(self.front).search(self.back) is not None
+        return self.kind == DEFINITION and _term_pattern(self.front).search(without_pictures(self.back)) is not None
 
     @property
     def front_html(self) -> str:
@@ -73,10 +73,6 @@ class Flashcard:
         if self.cloze:
             return _marked_html(self.front, self.back, lambda found: "<b>" + found + "</b>")
         return _plain_html(self.back)
-
-    @property
-    def pictures_html(self) -> str:
-        return "".join(f'<div><img src="{name}"></div>' for name, _ in self.pictures)
 
     @property
     def origin_text(self) -> str:
@@ -95,13 +91,13 @@ class Flashcard:
 
     @property
     def note(self) -> Note:
-        """The card as Download and Send to Anki write it; pictures and the source go under the answer."""
+        """The card as Download and Send to Anki write it: the back as the reader arranged it, text and
+        pictures, and the source under it."""
         media = tuple(self.pictures)
-        under = self.pictures_html + self.source_html
         if self.cloze:
-            return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), under),
+            return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), self.source_html),
                         cloze=True, media=media)
-        return Note((self.front_html, self.back_html + under), media=media)
+        return Note((self.front_html, self.back_html + self.source_html), media=media)
 
 
 def entry_card(entry: Entry) -> Flashcard:
@@ -115,7 +111,7 @@ def word_back(word: str, base: str) -> str:
 
 
 def _plain_html(text: str) -> str:
-    return html.escape(text, quote=False).replace("\n", "<br>")
+    return _with_pictures(text, lambda part: html.escape(part, quote=False).replace("\n", "<br>"))
 
 
 def _terms_pattern(terms: dict[str, Entry]) -> re.Pattern | None:
@@ -132,14 +128,18 @@ def _term_pattern(term: str) -> re.Pattern:
 
 
 def _marked_html(term: str, passage: str, mark: Callable[[str], str]) -> str:
-    """The passage as HTML, with every place of the term, itself escaped, replaced by `mark(place)`."""
-    parts, position = [], 0
-    for found in _term_pattern(term).finditer(passage):
-        parts.append(_plain_html(passage[position : found.start()]))
-        parts.append(mark(_plain_html(found.group())))
-        position = found.end()
-    parts.append(_plain_html(passage[position:]))
-    return "".join(parts)
+    """The passage as HTML, with every place of the term, itself escaped, replaced by `mark(place)`;
+    its pictures stay where they are."""
+    def marked(text: str) -> str:
+        parts, position = [], 0
+        for found in _term_pattern(term).finditer(text):
+            parts.append(_plain_html(text[position : found.start()]))
+            parts.append(mark(_plain_html(found.group())))
+            position = found.end()
+        parts.append(_plain_html(text[position:]))
+        return "".join(parts)
+
+    return _with_pictures(passage, marked)
 
 
 def tidy(text: str) -> str:
@@ -159,6 +159,28 @@ def clickable_words(sentence: str) -> list[Word]:
 
 
 CLIP_KINDS = ("word", "definition")
+# A picture's place in the text of a card's back: [[picture:sentmine-<16 hex>.png]], on a line of its own.
+PICTURE = re.compile(r"\n?\[\[picture:(sentmine-[0-9a-f]{16}\.png)\]\]\n?")
+
+
+def picture_place(name: str) -> str:
+    return f"[[picture:{name}]]"
+
+
+def without_pictures(text: str, instead: str = "") -> str:
+    """The text with each picture's place taken out, or replaced by `instead` on a line of its own."""
+    return PICTURE.sub(f"\n{instead}\n" if instead else "\n", text).strip()
+
+
+def _with_pictures(text: str, render: Callable[[str], str]) -> str:
+    """The text as HTML: `render` for the text between the pictures, an image where each picture is."""
+    parts, position = [], 0
+    for found in PICTURE.finditer(text):
+        parts.append(render(text[position : found.start()]))
+        parts.append(f'<div><img src="{found.group(1)}"></div>')
+        position = found.end()
+    parts.append(render(text[position:]))
+    return "".join(parts)
 UNNAMED_PAGE = "a web page"  # a clip whose page gave no title
 
 
@@ -355,10 +377,14 @@ class Session:
 
     def edit(self, card_id: int, front: str, back: str) -> Flashcard:
         card = self._card(card_id)
-        front, back = front.strip(), back.strip()
+        front, back = without_pictures(front), back.strip()   # the front is text only
+        held = {name for name, _ in card.pictures}
+        back = PICTURE.sub(lambda found: found.group() if found.group(1) in held else "\n", back).strip()   # only its own pictures
         if not front or not back:
             raise Problem("A card needs a front and a back; delete the card to remove it.")
         card.front, card.back = front, back
+        placed = set(PICTURE.findall(back))
+        card.pictures[:] = [(name, png) for name, png in card.pictures if name in placed]   # a picture taken out of the text is gone
         card.cloze = card.cloze and card.can_cloze  # the edit may have taken the term out of the passage
         return card
 
@@ -381,27 +407,24 @@ class Session:
         name = "sentmine-" + hashlib.sha256(png).hexdigest()[:16] + ".png"
         if name not in {known for known, _ in card.pictures}:
             card.pictures.append((name, png))
+        if name not in PICTURE.findall(card.back):
+            card.back = card.back + "\n" + picture_place(name)   # at the end; the editor can move it
         return card
 
-    def picture(self, card_id: int, number: int) -> bytes:
+    def picture(self, card_id: int, name: str) -> bytes:
         """The PNG of a card's picture."""
-        pictures = self._card(card_id).pictures
-        if not 0 <= number < len(pictures):
-            raise Problem("That picture is not on the card any more.")
-        return pictures[number][1]
-
-    def remove_picture(self, card_id: int, number: int) -> Flashcard:
-        card = self._card(card_id)
-        self.picture(card_id, number)   # says so if it is gone
-        del card.pictures[number]
-        return card
+        for known, png in self._card(card_id).pictures:
+            if known == name:
+                return png
+        raise Problem("That picture is not on the card any more.")
 
     def suggest(self, card_id: int, ask: Callable[[str, str], str]) -> Flashcard:
         """Put a meaning from `ask(word, sentence)` on the back, under the word, replacing any earlier one."""
         card = self._card(card_id)
         if card.kind != WORD:
             raise Problem("Only word cards get a suggested meaning: the back of this card is the passage you marked.")
-        card.back = f"{card.heading}\n{ask(card.word, card.front)}"
+        places = "".join("\n" + picture_place(name) for name in PICTURE.findall(card.back))   # its pictures stay
+        card.back = f"{card.heading}\n{ask(card.word, card.front)}{places}"
         return card
 
     def export(self, path: Path, day: str | None = None) -> str:
@@ -432,7 +455,7 @@ class Session:
             return ""
         day = day or date.today().isoformat()
         entries = [
-            Entry(card.kind, card.history_key, card.front, card.back, card.word, day,
+            Entry(card.kind, card.history_key, card.front, without_pictures(card.back, "[picture]"), card.word, day,
                   "" if card.origin == UNNAMED_PAGE and not card.origin_url else card.origin,   # no name, no source
                   card.origin_url, card.origin_place) for card in self.cards
         ]

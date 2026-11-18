@@ -20,6 +20,7 @@
 - [x] 4.3 Headless Edge on a Wikipedia page; the deck holds the pictures
 
 - [x] 4.4 Paste a picture (Ctrl+V) onto the card being edited or the chosen card; the editor keeps what is typed; headless Edge
+- [x] 4.5 The back as a small document: pictures inline where the reader puts them ([[picture:name]] in the text), Delete removes one, Edit chooses the card, Cut from the PDF page inside the editor; the picture buttons removed; a web picture shows in the open editor; tests and headless Edge
 
 ## 5. Wrap-up
 

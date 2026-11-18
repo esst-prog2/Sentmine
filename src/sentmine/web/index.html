@@ -123,15 +123,16 @@ try {
   #contents li button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 5px 8px; border-radius: 6px; font: inherit; color: var(--ink); cursor: pointer; }
   #contents li button:hover { background: var(--hover); }
   /* a formula or graph from the page, on the back of a card */
-  .card .pictures { display: grid; gap: 8px; margin-top: 8px; }
-  .card .picture { position: relative; border: 1px solid var(--line); border-radius: 6px; background: #ffffff; padding: 6px; }
-  .card .picture img { display: block; max-width: 100%; height: auto; }
-  .card .picture button { position: absolute; top: 4px; right: 4px; }
+  .card .front img, .card .back img, .back-editor img { display: block; max-width: 100%; height: auto; margin: 6px 0;
+    background: #ffffff; border: 1px solid var(--line); border-radius: 6px; padding: 4px; }
+  /* the back of a card being edited: a small document of text and pictures */
+  .back-editor { min-height: 4.5em; padding: 8px 10px; white-space: pre-wrap; overflow-wrap: anywhere;
+    background: var(--page); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; }
+  .back-editor:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  .back-editor img { cursor: pointer; }
   .card .paste-hint { font-size: 0.8125rem; color: var(--soft); margin-top: 8px; }
   /* the side panel: the card that pictures from the web page go to */
-  .card.chosen { box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; margin-left: -12px; }
   .card .origin { font-size: 0.8125rem; color: var(--soft); margin-bottom: 4px; }
-  .chosen-mark { font-size: 0.8125rem; font-weight: 600; color: var(--accent); }
   body.boxing .pdf-page, body.boxing .pdf-page .w { cursor: crosshair; }
   .pdf-page .box-drawn { position: absolute; border: 2px solid var(--accent); background: rgba(26, 95, 208, 0.1); pointer-events: none; }
   /* the keyboard: one stop on the text, then the arrow keys from word to word */
@@ -772,36 +773,72 @@ function drawCard(card) {
 
   if (editing === card.id) {
     if (!draft || draft.id !== card.id) draft = { id: card.id, front: card.front, back: card.back };
+    // a picture that arrived while editing (pasted, cut from the page, sent from a web page) takes the place
+    // of the cursor's mark, or goes to the end
+    for (const name of Object.keys(card.pictures || {})) {
+      if (draft.back.includes("[[picture:" + name + "]]")) continue;
+      const place = "\n[[picture:" + name + "]]\n";
+      draft.back = draft.back.includes(CURSOR) ? draft.back.replace(AT_CURSOR, place) : draft.back + place;
+    }
+    draft.back = draft.back.split(CURSOR).join("").replace(/\n{3,}/g, "\n\n").replace(/^\n+|\n+$/g, "");
     const front = element("textarea");
     front.value = draft.front;
     front.addEventListener("input", () => { draft.front = front.value; });
-    const back = element("textarea");
-    back.value = draft.back;
-    back.addEventListener("input", () => { draft.back = back.value; });
+    // The back is a small document: text, and pictures where the reader put them.
+    const back = element("div", "back-editor");
+    back.contentEditable = "plaintext-only";
+    if (back.contentEditable !== "plaintext-only") back.contentEditable = "true";   // an older browser
+    back.setAttribute("role", "textbox");
+    back.setAttribute("aria-multiline", "true");
+    const names = card.kind === "word" ? ["Front", "Back"] : ["Term", "Passage"];
+    back.setAttribute("aria-label", names[1] + ": text and pictures");
+    fillBack(back, draft.back, card.pictures || {});
+    back.addEventListener("input", () => { draft.back = backText(back); });
+    back.addEventListener("keydown", (event) => {   // the browser deletes letters; a picture is deleted here
+      if (deletePicture(back, event.key)) {
+        event.preventDefault();
+        draft.back = backText(back);
+      }
+    });
+    back.addEventListener("click", (event) => {   // a click on a picture selects it, to delete it
+      if (event.target.nodeName !== "IMG") return;
+      const range = document.createRange();
+      range.selectNode(event.target);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    });
     const save = element("button", "main small", "Save");
     save.addEventListener("click", async () => {
-      const done = await call("PUT", API + "/cards/" + card.id, { front: front.value, back: back.value });
+      const done = await call("PUT", API + "/cards/" + card.id, { front: draft.front, back: backText(back) });
       if (done) { editing = null; draft = null; draw(); }
     });
     const cancel = element("button", "small", "Cancel");
     cancel.addEventListener("click", () => { editing = null; draft = null; draw(); });
     const buttons = element("div", "buttons");
     buttons.append(kind, save, cancel);
-    const names = card.kind === "word" ? ["Front", "Back"] : ["Term", "Passage"];
-    box.append(element("span", "side-name", names[0]), front, element("span", "side-name", names[1]), back);
-    const pictures = drawPictures(card);
-    if (pictures) box.append(pictures);
-    box.append(element("div", "paste-hint", "To add a picture, copy it or take a screenshot, then paste here (Ctrl+V)."), buttons);
+    if (state.pdf && !CLIP) {
+      const cut = element("button", "small", "Cut from the PDF page");
+      cut.title = "Drag a box around a formula or graph on the page";
+      cut.addEventListener("click", () => startBox(card.id));
+      buttons.append(cut);
+    }
+    box.append(element("span", "side-name", names[0]), front, element("span", "side-name", names[1]), back,
+      element("div", "paste-hint", "Paste a picture where the cursor is (Ctrl+V). To remove one, click it and press Delete."), buttons);
     return box;
   }
 
   const front = element("div", "front");
-  front.innerHTML = card.front_html;   // escaped by the server; only <b> and <br> are real tags
+  front.innerHTML = card.front_html;   // escaped by the server; only <b>, <br> and its own pictures are real tags
   const back = element("div", "back");
   back.innerHTML = card.back_html;
   if (card.earlier) box.append(element("div", "made-before", "Made before, on " + card.earlier + "."));
   const edit = element("button", "small", "Edit");
-  edit.addEventListener("click", () => { editing = card.id; draft = null; draw(); });
+  edit.addEventListener("click", () => {
+    editing = card.id;
+    draft = null;
+    call("PUT", API + "/cards/" + card.id + "/chosen");   // pictures from a web page go to the card being edited
+  });
   const remove = element("button", "small", "Delete");
   remove.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id));
   const buttons = element("div", "buttons");
@@ -825,49 +862,80 @@ function drawCard(card) {
     });
     buttons.append(suggest);
   }
-  {   // pictures from a web page go to the chosen card; a new card is chosen by itself
-    if (card.id === state.chosen_card) {
-      box.classList.add("chosen");
-      buttons.append(element("span", "chosen-mark", "Pictures go here"));
-    } else {
-      const choose = element("button", "small", "Pictures go here");
-      choose.title = "Right-click a picture or the page to add to this card";
-      choose.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/chosen"));
-      buttons.append(choose);
-    }
-  }
-  if (state.pdf && !CLIP) {
-    const add = element("button", "small", "Add a picture");
-    add.title = "Drag a box around a formula or graph on the page";
-    add.addEventListener("click", () => startBox(card.id));
-    buttons.append(add);
-  }
-  box.append(front, back);
-  const pictures = drawPictures(card);
-  if (pictures) box.append(pictures);
-  box.append(buttons);
+  box.append(front, back, buttons);
   return box;
 }
 
-function drawPictures(card) {   // the pictures on the back of a card, each with a way to take it off
-  if (!card.pictures || card.pictures.length === 0) return null;
-  const pictures = element("div", "pictures");
-  card.pictures.forEach((address, number) => {
-    const holder = element("div", "picture");
-    const image = element("img");
-    image.src = address;
-    image.alt = "A picture on the back of this card";
-    const drop = element("button", "small", "×");
-    drop.setAttribute("aria-label", "Remove this picture");
-    drop.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id + "/pictures/" + number));
-    holder.append(image, drop);
-    pictures.append(holder);
-  });
-  return pictures;
+// The back of a card as a small document. Its text holds each picture's place as [[picture:name]] on a line
+// of its own; the editor shows the picture there, and reads the places back from what the reader arranged.
+const CURSOR = "\uFFFC";   // marks where the cursor was while a pasted picture is on its way
+const AT_CURSOR = /\n?\uFFFC\n?/;   // with the line breaks beside it, so no empty line is left
+const PLACE = /\n?\[\[picture:(sentmine-[0-9a-f]{16}\.png)\]\]\n?/g;
+
+function fillBack(editor, text, pictures) {
+  editor.replaceChildren();
+  let at = 0;
+  for (const found of text.matchAll(PLACE)) {
+    if (found.index > at) editor.append(text.slice(at, found.index));
+    if (pictures[found[1]]) {
+      const image = element("img");
+      image.src = pictures[found[1]];
+      image.dataset.name = found[1];
+      image.alt = "A picture on the back of this card";
+      editor.append(image);
+    }
+    at = found.index + found[0].length;
+  }
+  if (at < text.length) editor.append(text.slice(at));
 }
 
-// Paste a picture (Ctrl+V): a copied image or a screenshot goes on the card being edited, or else on the
-// chosen card. Pasted text is left alone.
+// Backspace or Delete beside a picture, or with a picture selected, takes the picture out; true if it did.
+function deletePicture(editor, key) {
+  if (key !== "Backspace" && key !== "Delete") return false;
+  const selection = window.getSelection();
+  if (!selection.rangeCount || !editor.contains(selection.anchorNode)) return false;
+  const range = selection.getRangeAt(0);
+  if (!range.collapsed) {
+    if (range.cloneContents().querySelector("img") === null) return false;   // only text: the browser's job
+    range.deleteContents();
+    return true;
+  }
+  const { startContainer: node, startOffset: offset } = range;
+  let beside = null;
+  if (node === editor) {
+    beside = editor.childNodes[key === "Backspace" ? offset - 1 : offset] || null;
+  } else if (node.nodeType === Node.TEXT_NODE && node.parentNode === editor) {
+    if (key === "Backspace" && offset === 0) beside = node.previousSibling;
+    if (key === "Delete" && offset === node.textContent.length) beside = node.nextSibling;
+  }
+  if (!beside || beside.nodeName !== "IMG") return false;
+  beside.remove();
+  return true;
+}
+
+function backText(editor) {
+  let text = "";
+  const read = (node) => {
+    for (const child of node.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        text += child.textContent;
+      } else if (child.nodeName === "BR") {
+        text += "\n";
+      } else if (child.nodeName === "IMG") {
+        if (child.dataset.name) text += "\n[[picture:" + child.dataset.name + "]]\n";
+      } else {   // a block the browser made for a new line
+        if (text && !text.endsWith("\n")) text += "\n";
+        read(child);
+        if (!text.endsWith("\n")) text += "\n";
+      }
+    }
+  };
+  read(editor);
+  return text.replace(/\n{3,}/g, "\n\n").replace(/^\n+|\n+$/g, "");
+}
+
+// Paste a picture (Ctrl+V): a copied image or a screenshot. While a card is edited it goes into its back where
+// the cursor is; otherwise on the card last made or edited, at the end. Pasted text is left alone.
 const WIDEST_PICTURE = 1600;   // pixels; Anki shows it no wider
 
 async function pastedPng(file) {
@@ -889,18 +957,29 @@ document.addEventListener("paste", async (event) => {
     say("Make a card first; then paste the picture.", true);
     return;
   }
+  const editor = editing !== null ? document.querySelector(".back-editor") : null;
+  const selection = window.getSelection();
+  if (editor && draft && selection.rangeCount && editor.contains(selection.anchorNode)) {
+    const range = selection.getRangeAt(0);   // remember where the cursor is: the picture goes there
+    range.deleteContents();
+    range.insertNode(document.createTextNode(CURSOR));
+    draft.back = backText(editor);
+  }
   let png;
   try {
     png = await pastedPng(item.getAsFile());
   } catch (error) {
-    say("That picture could not be read.", true);
-    return;
+    png = null;
   }
-  await call("POST", API + "/cards/" + card + "/pictures", { png });
+  const added = png && await call("POST", API + "/cards/" + card + "/pictures", { png });
+  if (!added) {
+    if (png === null) say("That picture could not be read.", true);
+    if (draft) { draft.back = draft.back.split(CURSOR).join(""); draw(); }
+  }
 });
 
-// Add a picture: the reader drags a box around a formula or graph on a page of the PDF; that part of the page,
-// drawn from the PDF itself, goes on the back of the card. Esc cancels.
+// Cut from the PDF page (in the card editor): the reader drags a box around a formula or graph on a page of the
+// PDF; that part of the page, drawn from the PDF itself, goes into the card's back. Esc cancels.
 let boxFor = null;     // the card the box is for, while one is being drawn
 let boxing = null;     // { page, x, y, mark } while the mouse is down
 
@@ -1127,18 +1206,40 @@ $("text").addEventListener("keydown", (event) => {
 // One deck, two views: Read and the side panel each ask now and then whether the other changed the deck,
 // and draw it again if so, unless the reader is in the middle of something here.
 async function refreshIfChanged() {
-  if (document.visibilityState !== "visible" || editing !== null || term !== null || boxFor !== null || pageDrag) return;
+  if (document.visibilityState !== "visible" || term !== null || boxFor !== null || pageDrag) return;
   try {
     const seen = await (await fetch(API + "/version")).json();
     if (seen.deck === state.deck_version) return;
     const fresh = await (await fetch(API + "/state")).json();
-    if (editing !== null || term !== null || boxFor !== null || pageDrag) return;   // something started meanwhile
+    if (editing !== null) {   // keep what is typed; only a picture sent meanwhile (from a web page) joins the end
+      addArrivedPictures(fresh);
+      return;
+    }
+    if (term !== null || boxFor !== null || pageDrag) return;   // something started meanwhile
     state = fresh;
     draw();   // quietly: the status line keeps what it said
   } catch (error) {
     // the app is not answering; the next action here says so
   }
 }
+function addArrivedPictures(fresh) {
+  const card = fresh.cards.find((one) => one.id === editing);
+  const editor = document.querySelector(".back-editor");
+  if (!card || !editor || !draft) return;
+  const shown = new Set([...editor.querySelectorAll("img")].map((image) => image.dataset.name));
+  let added = false;
+  for (const [name, src] of Object.entries(card.pictures || {})) {
+    if (shown.has(name) || draft.back.includes("[[picture:" + name + "]]")) continue;
+    const image = element("img");
+    image.src = src;
+    image.dataset.name = name;
+    image.alt = "A picture on the back of this card";
+    editor.append(image);
+    added = true;
+  }
+  if (added) draft.back = backText(editor);   // the rest is drawn after Save or Cancel
+}
+
 setInterval(refreshIfChanged, 2000);
 document.addEventListener("visibilitychange", refreshIfChanged);
 

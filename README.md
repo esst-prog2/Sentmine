@@ -232,14 +232,17 @@ it). Shift and the arrow keys mark several words, as a drag does: Enter makes
 them the term, and the next marking its definition. A word you already have
 a card for shows that card when the keyboard reaches it.
 
-On a PDF, **Add a picture** on a card puts a formula or a graph from the
-page on the card: drag a box around it on the page (Esc cancels). It is cut
-from the PDF itself, so it stays sharp, and it goes under the answer, in the
-deck file and in Anki. On a web page, right-click an image and choose *Add
-this picture to the chosen card*. A new card is chosen by itself; to add to
-another card, press *Pictures go here* on it first. Or paste: copy a picture
-or take a screenshot (Win+Shift+S) and press Ctrl+V in sentmine; it goes on
-the card you are editing, or else on the chosen card.
+A card can hold pictures, such as a formula or a graph. Press **Edit** on
+it: the back (the Passage, on a definition card) becomes a small document of
+text and pictures. Paste a picture where the cursor is: copy one or take a
+screenshot (Win+Shift+S), then press Ctrl+V. Type above or below it. To
+remove a picture, click it and press Delete. On a PDF, **Cut from the PDF
+page** in the editor lets you drag a box around a formula on the page (Esc
+cancels); it is cut from the PDF itself, so it stays sharp. On a web page,
+right-click an image and choose *Add this picture to the card you last made
+or edited*; while you are editing a card, it joins the end of that card. The
+front stays plain text. Pictures go into the deck file and into Anki where
+you put them.
 
 Instead of pasting, you can open a PDF that contains text, or a `.txt` file.
 Running heads and page numbers are removed and hyphenated words rejoined;

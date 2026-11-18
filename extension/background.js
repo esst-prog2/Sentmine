@@ -1,5 +1,5 @@
 // The right-click items. On selected text: make a clip (the browser hands over the selected text itself, so this
-// needs no access to the page). On an image: put it on the chosen card; the
+// needs no access to the page). On an image: put it on the card last made or edited; the
 // right-click lets the extension see that one tab (activeTab), and nothing else.
 import { MENU, NO_CARD_YET, PICTURE_MENU, boxOnShot, clipFor, findSentmine, storedSize } from "./logic.js";
 

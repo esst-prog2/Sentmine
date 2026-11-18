@@ -54,19 +54,27 @@ PNG_START = b"\x89PNG\r\n\x1a\n"
 MOST_PICTURE_BYTES = 5 * 1024 * 1024  # a picture from a web page; a formula or a photo is far smaller
 
 
+_SRC = re.compile(r'src="(sentmine-[0-9a-f]{16}\.png)"')
+
+
 def _card_json(card: Flashcard, prefix: str = "") -> dict:
+    address = f"{prefix}/api/cards/{card.id}/pictures/"   # a picture's name comes from its content, so it can be cached
+
+    def shown(found: re.Match) -> str:
+        return f'src="{address}{found.group(1)}"'
+
     return {
         "id": card.id,
         "kind": card.kind,
         "front": card.front,
         "back": card.back,
-        "front_html": card.front_html,
-        "back_html": card.back_html,
+        "front_html": _SRC.sub(shown, card.front_html),
+        "back_html": _SRC.sub(shown, card.back_html),
         "earlier": card.earlier,
         "cloze": card.cloze,
         "can_cloze": card.can_cloze,
         # the address carries the picture's name, which comes from its content, so the browser never shows an old one
-        "pictures": [f"{prefix}/api/cards/{card.id}/pictures/{number}.png?n={name}" for number, (name, _) in enumerate(card.pictures)],
+        "pictures": {name: f"{address}{name}" for name, _ in card.pictures},  # for the editor: where each picture is served
         "source": card.source,  # "read" or "clip"
         "origin": card.origin_text,  # where it came from: "primer.pdf, p. 13", a web page's title
         "origin_url": card.origin_url,
@@ -453,24 +461,19 @@ def create_app(
                 png = part(pages_of(number), number, tuple(float(v) for v in box))
             except ValueError as error:
                 raise Problem(str(error)) from error
-        reading.add_picture(card_id, png)
-        return state("Picture added under the answer.")
+        card = reading.add_picture(card_id, png)
+        return state(f"Picture added to the card for '{card.word or card.front}'. Edit the card to move or remove it.")
 
-    @both("DELETE", "/api/cards/<int:card_id>/pictures/<int:number>")
-    def remove_picture(card_id: int, number: int):
-        reading.remove_picture(card_id, number)
-        return state("Picture removed.")
-
-    @both("GET", "/api/cards/<int:card_id>/pictures/<int:number>.png")
-    def card_picture(card_id: int, number: int):
-        response = Response(reading.picture(card_id, number), mimetype="image/png")
+    @both("GET", "/api/cards/<int:card_id>/pictures/<name>")
+    def card_picture(card_id: int, name: str):
+        response = Response(reading.picture(card_id, name), mimetype="image/png")
         response.headers["Cache-Control"] = "private, max-age=3600"  # the address carries the picture's name
         return response
 
     @both("PUT", "/api/cards/<int:card_id>/chosen")
     def choose_card(card_id: int):
         reading.choose_card(card_id)
-        return state("Pictures from the page go to this card now.")
+        return state("Editing: a picture you paste, or add from a web page, goes on this card.")
 
     @both("POST", "/api/send")
     def send_to_anki():

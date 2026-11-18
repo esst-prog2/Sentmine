@@ -1,36 +1,47 @@
 ## ADDED Requirements
 
+### Requirement: The back of a card is a small document
+Pressing Edit on a card SHALL open its back (the Passage, on a definition card) as an editable document of text and pictures, each picture at the place the reader put it. The reader SHALL be able to type above and below a picture, and remove a picture by selecting it (a click) and pressing Delete, or by Backspace or Delete beside it. Save SHALL keep the arrangement, and a picture removed from the text SHALL be removed from the card. The front (Term) SHALL stay plain text. Opening Edit SHALL make that card the one pictures from a web page go to; there SHALL be no separate button for choosing it.
+
+#### Scenario: A line under a picture
+- **WHEN** the reader edits a card, pastes a picture after the first line, types a line under it, and saves
+- **THEN** the card's back shows the first line, the picture, then the new line, in that order
+
+#### Scenario: Removing a picture
+- **WHEN** the reader clicks a picture in the editor, presses Delete, and saves
+- **THEN** the picture is no longer on the card
+
 ### Requirement: A part of the page on a card
-While a PDF is open, the reader SHALL be able to add to any card a picture of a box drawn on one of the PDF's pages. The picture SHALL be drawn from the PDF itself at a size that stays sharp, and SHALL be shown on the back of the card, under the answer; on a cloze card, in the field shown after the answer. The reader SHALL be able to remove a picture from a card. A box of less than a few pixels, or outside the page, SHALL be refused with a message.
+While a PDF is open and a card is being edited, *Cut from the PDF page* SHALL let the reader drag a box on one of the PDF's pages; a picture of that box SHALL go into the card's back. The picture SHALL be drawn from the PDF itself at a size that stays sharp. On a cloze card, it SHALL be in the field shown after the answer. A box of less than a few pixels, or outside the page, SHALL be refused with a message.
 
 #### Scenario: A formula on a word card
-- **WHEN** the reader has a word card and drags a box around a formula on the page
-- **THEN** the card's back shows the word and, under it, the picture of that formula
+- **WHEN** the reader edits a word card, presses Cut from the PDF page, and drags a box around a formula on the page
+- **THEN** the editor shows the picture of that formula, and what was typed is kept
 
 #### Scenario: Cancel
-- **WHEN** the reader presses Add a picture and then Esc
+- **WHEN** the reader presses Cut from the PDF page and then Esc
 - **THEN** no picture is added and the page works as before
 
 ### Requirement: Pictures from web pages
-On a web page, the extension SHALL offer *Add this picture to the chosen card* on an image, which SHALL put that image on the back of the chosen card. The chosen card SHALL be the newest card unless the reader chose another with *Pictures go here*, and a new card SHALL become the chosen one. When there is no card yet, the extension SHALL say to make one first. The app SHALL accept only PNG pictures of at most 5 MB this way.
+On a web page, the extension SHALL offer *Add this picture to the card you last made or edited* on an image, which SHALL put that image at the end of that card's back. A new card, or a card the reader opens with Edit, SHALL become that card. While the card is open in the editor, the picture SHALL appear in the editor without losing what is typed. When there is no card yet, the extension SHALL say to make one first. The app SHALL accept only PNG pictures of at most 5 MB this way.
 
 #### Scenario: An image on Wikipedia
-- **WHEN** the reader has made a word card and right-clicks the article's photo and chooses Add this picture to the chosen card
+- **WHEN** the reader has made a word card and right-clicks the article's photo and chooses Add this picture to the card you last made or edited
 - **THEN** that card's back shows the photo
 
 #### Scenario: A card in the middle
-- **WHEN** the reader has made three cards, presses Pictures go here on the second, and adds a picture from the page
-- **THEN** the picture goes on the second card, not the newest
+- **WHEN** the reader has made two cards, presses Edit on the first, types a word, and adds a picture from the page
+- **THEN** the picture goes on the first card, not the newest, and the editor shows it next to the typed word
 
 ### Requirement: Pasting a picture
-Pasting an image (a copied picture or a screenshot) in Read or in the side panel SHALL put it on the card being edited, or else on the chosen card, stored as a PNG no wider than 1600 pixels. What is typed in the editor SHALL be kept. Pasted text SHALL be pasted as usual. With no card, the page SHALL say to make one first.
+Pasting an image (a copied picture or a screenshot) in Read or in the side panel SHALL put it in the back of the card being edited, where the cursor is (at the end when the cursor is in the front), or else at the end of the card last made or edited. It SHALL be stored as a PNG no wider than 1600 pixels. What is typed in the editor SHALL be kept. Pasted text SHALL be pasted as usual. With no card, the page SHALL say to make one first.
 
 #### Scenario: A screenshot while editing
-- **WHEN** the reader is editing a card, has typed a new back, and pastes a screenshot
-- **THEN** the picture is on that card and the typed text is still in the editor
+- **WHEN** the reader is editing a card, has typed two lines, puts the cursor after the first, and pastes a screenshot
+- **THEN** the picture is between the two lines and the typed text is still in the editor
 
 ### Requirement: Pictures go to Anki
-A downloaded deck SHALL contain the pictures of its cards as media files, and Send to Anki SHALL store them in Anki's media before adding the notes, so the notes show them. A picture's file name SHALL come from its content, so the same picture is stored once.
+A downloaded deck SHALL contain the pictures of its cards as media files, at their places in the card, and Send to Anki SHALL store them in Anki's media before adding the notes, so the notes show them. A picture's file name SHALL come from its content, so the same picture is stored once.
 
 #### Scenario: Download
 - **WHEN** the reader downloads a deck with a card that has a picture

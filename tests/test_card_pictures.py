@@ -78,7 +78,7 @@ def test_a_picture_goes_under_the_answer_and_is_named_by_its_content():
     assert note.media == ((name, PNG),)
 
 
-def test_a_cloze_card_shows_the_picture_after_the_answer():
+def test_a_cloze_card_keeps_the_picture_in_its_passage():
     session = Session()
     session.load("A confounder is a variable that influences both the treatment and the outcome.")
     session.add_definition("confounder", "A confounder is a variable that influences both the treatment and the outcome.")
@@ -87,17 +87,44 @@ def test_a_cloze_card_shows_the_picture_after_the_answer():
     session.add_picture(card.id, PNG)
     note = card.note
     assert note.cloze and "{{c1::confounder}}" in note.fields[0]
-    assert note.fields[1] == f'<div><img src="{card.pictures[0][0]}"></div>'
+    assert note.fields[0].endswith(f'<div><img src="{card.pictures[0][0]}"></div>') and note.fields[1] == ""
 
 
-def test_a_picture_can_be_removed():
+def test_the_back_is_a_small_document_of_text_and_pictures():
     session = Session()
     card = word_card(session)
     session.add_picture(card.id, PNG)
-    session.remove_picture(card.id, 0)
-    assert card.pictures == [] and card.note.fields[1] == "skew"
-    with pytest.raises(Problem):
-        session.remove_picture(card.id, 0)
+    name = card.pictures[0][0]
+    assert card.back == f"skew\n[[picture:{name}]]"   # a new picture goes at the end
+    # the reader moves it between two lines of text
+    session.edit(card.id, card.front, f"skew\n[[picture:{name}]]\nto distort")
+    assert card.note.fields[1] == f'skew<div><img src="{name}"></div>to distort'
+    # a picture's place that is not this card's own is dropped; text that looks like markup stays text
+    session.edit(card.id, card.front, f"skew <b>\n[[picture:sentmine-{'0' * 16}.png]]\n[[picture:{name}]]")
+    assert card.note.fields[1] == f'skew &lt;b&gt;<div><img src="{name}"></div>'
+    # taking the picture out of the text removes it from the card
+    session.edit(card.id, card.front, "skew")
+    assert card.pictures == [] and card.note.fields[1] == "skew" and card.note.media == ()
+
+
+def test_the_front_is_text_only_and_a_suggested_meaning_keeps_the_pictures():
+    session = Session()
+    card = word_card(session)
+    session.add_picture(card.id, PNG)
+    name = card.pictures[0][0]
+    session.edit(card.id, f"{card.front}\n[[picture:{name}]]", card.back)
+    assert "[[picture" not in card.front
+    session.suggest(card.id, lambda word, sentence: "to distort")
+    assert card.back == f"skew\nto distort\n[[picture:{name}]]"
+
+
+def test_the_memory_keeps_the_text_and_says_where_a_picture_was(tmp_path):
+    from sentmine.memory import CardMemory
+    session = Session(CardMemory(tmp_path / "cards.db"))
+    card = word_card(session)
+    session.add_picture(card.id, PNG)
+    session.export(tmp_path / "d.apkg")
+    assert session.memory.find("word", "skew").back == "skew\n[picture]"
 
 
 # --- to Anki ---------------------------------------------------------------------------------
@@ -160,12 +187,16 @@ def test_a_box_on_the_page_puts_a_picture_on_the_card(client):
     sentence, word = place_of(state["paragraphs"], "skew")
     card = client.post("/api/word", json={"sentence": sentence, "word": word}).get_json()["cards"][0]
     state = client.post(f"/api/cards/{card['id']}/pictures", json={"page": 0, "box": [0.1, 0.1, 0.5, 0.2]}).get_json()
-    address = state["cards"][0]["pictures"][0]
+    (name, address), = state["cards"][0]["pictures"].items()
     picture = client.get(address)
     assert picture.status_code == 200 and picture.mimetype == "image/png"
     assert png_size(picture.data)[0] > 100
-    state = client.delete(f"/api/cards/{card['id']}/pictures/0").get_json()
-    assert state["cards"][0]["pictures"] == []
+    assert f'<img src="{address}">' in state["cards"][0]["back_html"]   # shown where it is in the text
+    assert state["cards"][0]["back"].endswith(f"[[picture:{name}]]")
+    assert "Picture added to the card for 'skew'" in state["message"]
+    state = client.put(f"/api/cards/{card['id']}", json={"front": card["front"], "back": "skew"}).get_json()
+    assert state["cards"][0]["pictures"] == {}
+    assert client.get(address).status_code == 400
 
 
 @pytest.mark.parametrize("body", [{"page": 0, "box": [0.1, 0.1]}, {"page": 0, "box": "all"}, {"page": 0, "box": [0.1, 0.1, 0.001, 0.2]}, {"page": 9, "box": [0.1, 0.1, 0.5, 0.2]}])
@@ -192,7 +223,7 @@ def test_a_png_from_a_web_page_goes_on_a_clip_card(client):
     card = clip_card(client)
     real = part(locate(make_pdf(TEXT), [" ".join(TEXT[0])]), 0, (0.1, 0.1, 0.3, 0.1))
     state = client.post(f"/clip/api/cards/{card['id']}/pictures", json={"png": base64.b64encode(real).decode()}).get_json()
-    address = state["cards"][-1]["pictures"][0]
+    (address,) = state["cards"][-1]["pictures"].values()
     assert address.startswith("/clip/api/cards/")
     assert client.get(address).data == real
     assert client.get("/api/state").get_json()["paragraphs"] == []   # the text in Read is untouched
