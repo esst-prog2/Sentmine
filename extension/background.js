@@ -1,7 +1,7 @@
-// The right-click items. On selected text: make a clip (the browser hands over the selected text itself, so this
-// needs no access to the page). On an image: put it on the card last made or edited; the
-// right-click lets the extension see that one tab (activeTab), and nothing else.
-import { MENU, NO_CARD_YET, PICTURE_MENU, boxOnShot, clipFor, findSentmine, storedSize } from "./logic.js";
+// The right-click items. On selected text: make a clip, with the text just around the selection and a term in bold
+// inside it, so sentmine can take whole sentences and make the card at once. On an image: put it on the card last
+// made or edited. The right-click lets the extension see that one tab (activeTab), and nothing else.
+import { MENU, NO_CARD_YET, PICTURE_MENU, boxOnShot, clipFor, findSentmine, storedSize, withContext } from "./logic.js";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
@@ -20,10 +20,16 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 export async function sendClip(info, tab) {
-  const clip = clipFor(info.menuItemId, info.selectionText);
+  let clip = clipFor(info.menuItemId, info.selectionText);
   if (clip.refuse) return { clip: "refused", message: clip.refuse };
   const base = await findSentmine(fetch);
   if (!base) return { clip: "no-sentmine" };
+  try {   // the browser's own PDF viewer and its own pages cannot be read: the selection alone is sent
+    const [result] = await chrome.scripting.executeScript({ target: { tabId: tab.id, frameIds: [info.frameId || 0] }, func: aroundSelection });
+    clip = withContext(clip, result && result.result);
+  } catch (error) {
+    // keep the selection as the browser gave it
+  }
   try {
     const response = await fetch(base + "/clip/api/text", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...clip, source: { title: (tab && tab.title) || "", url: info.pageUrl || (tab && tab.url) || "" } }),
@@ -99,6 +105,38 @@ function base64(bytes) {
 }
 
 // --- run inside the page ------------------------------------------------------------------------
+
+// The selection, the text of its paragraph before and after it (so whole sentences can be found), and the first
+// phrase in bold inside it (a term, as Wikipedia and course books mark the term they define).
+function aroundSelection() {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+  const range = selection.getRangeAt(0);
+  const elementOf = (node) => (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
+  const blockOf = (node) => {
+    let at = elementOf(node);
+    while (at && at !== document.body && !/^(block|list-item|table-cell|flow-root)$/.test(getComputedStyle(at).display)) at = at.parentElement;
+    return at || document.body;
+  };
+  const head = document.createRange();
+  head.selectNodeContents(blockOf(range.startContainer));
+  head.setEnd(range.startContainer, range.startOffset);
+  const tail = document.createRange();
+  tail.selectNodeContents(blockOf(range.endContainer));
+  tail.setStart(range.endContainer, range.endOffset);
+  const textOf = (part) => {   // as the reader sees it: a page's <style> inside a paragraph is not text
+    const copy = part.cloneContents();
+    copy.querySelectorAll("style, script, noscript, template, annotation").forEach((hidden) => hidden.remove());   // annotation: a formula's source
+    return copy.textContent;
+  };
+  const root = elementOf(range.commonAncestorContainer);
+  let term = "";
+  for (const bold of root.querySelectorAll("b, strong")) {
+    const text = bold.textContent.trim();
+    if (range.intersectsNode(bold) && text && text.split(/\s+/).length <= 8) { term = text; break; }
+  }
+  return { selected: selection.toString(), before: textOf(head), after: textOf(tail), term };
+}
 
 // Where the image is in the window, once it is scrolled into view.
 function placeOfImage(source) {

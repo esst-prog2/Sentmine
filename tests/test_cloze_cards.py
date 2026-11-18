@@ -20,11 +20,20 @@ def session():
     return Session()
 
 
+def cloze_card(session, term, passage):
+    """A card made cloze: every card starts as term -> passage."""
+    _, card = session.add_definition(term, passage)
+    session.set_cloze(card.id, True)
+    return card
+
+
 # --- the card ------------------------------------------------------------------------------------
 
 
-def test_the_term_is_in_the_passage(session):
+def test_a_card_starts_as_term_to_passage_and_can_be_made_cloze(session):
     _, card = session.add_definition("standard deviation", PASSAGE)
+    assert not card.cloze and card.can_cloze
+    session.set_cloze(card.id, True)
     assert card.cloze
     assert card.front_html == "The [...] measures how spread out a set of values is."
     assert card.back_html == "The <b>standard deviation</b> measures how spread out a set of values is."
@@ -36,16 +45,17 @@ def test_a_word_that_only_contains_the_term(session):
 
 
 def test_the_term_is_found_ignoring_case_and_every_place_is_hidden(session):
-    _, card = session.add_definition("variance", "Variance is spread. The variance is never negative.")
+    card = cloze_card(session, "variance", "Variance is spread. The variance is never negative.")
     assert card.front_html == "[...] is spread. The [...] is never negative."
     assert card.note.fields[0] == "{{c1::Variance}} is spread. The {{c1::variance}} is never negative."
 
 
-def test_switching_gives_the_card_as_before(session):
-    _, card = session.add_definition("standard deviation", PASSAGE)
+def test_switching_off_gives_the_card_as_before(session):
+    card = cloze_card(session, "standard deviation", PASSAGE)
     session.set_cloze(card.id, False)
-    assert (card.front_html, card.back_html) == ("standard deviation", PASSAGE)
-    assert card.note.fields == ("standard deviation", PASSAGE) and not card.note.cloze
+    bold = PASSAGE.replace("standard deviation", "<b>standard deviation</b>")
+    assert (card.front_html, card.back_html) == ("standard deviation", bold)
+    assert card.note.fields == ("standard deviation", bold) and not card.note.cloze
 
 
 def test_switching_on_without_the_term_is_refused(session):
@@ -55,27 +65,28 @@ def test_switching_on_without_the_term_is_refused(session):
     assert not card.cloze
 
 
-def test_a_word_card_cannot_be_a_cloze_card(session):
+def test_a_word_card_can_be_a_cloze_card_too(session):
     session.load("Polls skew young.")
     _, card = session.pick_word(*place_of(session, "skew"))
-    with pytest.raises(Problem, match="Only definition cards"):
-        session.set_cloze(card.id, True)
+    session.set_cloze(card.id, True)
+    assert card.front_html == "Polls [...] young."
+    assert card.note.fields[0] == "Polls {{c1::skew}} young."
 
 
 def test_an_edit_that_removes_the_term_makes_it_term_to_passage(session):
-    _, card = session.add_definition("standard deviation", PASSAGE)
+    card = cloze_card(session, "standard deviation", PASSAGE)
     session.edit(card.id, "standard deviation", "A measure of spread.")
     assert not card.cloze
 
 
 def test_an_edit_that_keeps_the_term_keeps_cloze(session):
-    _, card = session.add_definition("standard deviation", PASSAGE)
+    card = cloze_card(session, "standard deviation", PASSAGE)
     session.edit(card.id, "standard deviation", "The standard deviation is a measure of spread.")
     assert card.cloze and card.front_html == "The [...] is a measure of spread."
 
 
 def test_html_in_the_passage_is_escaped_around_the_gap(session):
-    _, card = session.add_definition("mean", "The mean of <x> & y.")
+    card = cloze_card(session, "mean", "The mean of <x> & y.")
     assert card.note.fields[0] == "The {{c1::mean}} of &lt;x&gt; &amp; y."
 
 
@@ -92,7 +103,7 @@ def note_types_in(apkg, folder):
 
 
 def test_downloading_a_cloze_card(session, tmp_path):
-    session.add_definition("standard deviation", PASSAGE)
+    cloze_card(session, "standard deviation", PASSAGE)
     session.export(tmp_path / "new.apkg")
     notes, _ = read_notes(tmp_path / "new.apkg", tmp_path)
     assert notes[0][1] == "The {{c1::standard deviation}} measures how spread out a set of values is."
@@ -102,7 +113,7 @@ def test_downloading_a_cloze_card(session, tmp_path):
 def test_a_deck_with_both_kinds_has_both_note_types(session, tmp_path):
     session.load("Polls skew young.")
     session.pick_word(*place_of(session, "skew"))
-    session.add_definition("standard deviation", PASSAGE)
+    cloze_card(session, "standard deviation", PASSAGE)
     session.export(tmp_path / "new.apkg")
     assert note_types_in(tmp_path / "new.apkg", tmp_path) == [MODEL_ID, CLOZE_MODEL_ID]
 
@@ -110,7 +121,7 @@ def test_a_deck_with_both_kinds_has_both_note_types(session, tmp_path):
 def test_sending_both_kinds_makes_both_note_types(session):
     session.load("Polls skew young.")
     session.pick_word(*place_of(session, "skew"))
-    session.add_definition("standard deviation", PASSAGE)
+    cloze_card(session, "standard deviation", PASSAGE)
     fake = FakeAnki(note_types=[])
     assert session.send("stats", via(fake))[:2] == (2, 0)
     assert sorted(fake.note_types) == sorted(["sentmine: word in its sentence", CLOZE_MODEL.name])
@@ -118,7 +129,7 @@ def test_sending_both_kinds_makes_both_note_types(session):
 
 
 def test_switching_and_sending_again_adds_the_other_kind(session):
-    _, card = session.add_definition("standard deviation", PASSAGE)
+    card = cloze_card(session, "standard deviation", PASSAGE)
     fake = FakeAnki()
     session.send("stats", via(fake))
     session.set_cloze(card.id, False)
@@ -146,7 +157,8 @@ def test_the_route_switches_and_says_so():
     client.post("/api/text", json={"text": PASSAGE})
     made = client.post("/api/definition", json={"term": "standard deviation", "passage": PASSAGE}).get_json()
     card = made["cards"][0]
-    assert card["cloze"] and card["can_cloze"]
+    assert not card["cloze"] and card["can_cloze"]
+    client.put(f"/api/cards/{card['id']}/cloze", json={"cloze": True})
     off = client.put(f"/api/cards/{card['id']}/cloze", json={"cloze": False}).get_json()
     assert not off["cards"][0]["cloze"] and off["cards"][0]["front_html"] == "standard deviation"
     assert off["message"] == "Now a term → passage card."

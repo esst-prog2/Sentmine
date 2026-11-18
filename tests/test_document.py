@@ -103,7 +103,7 @@ def test_a_card_from_a_sentence_across_two_pages_shows_the_whole_sentence():
     reading = Session()
     reading.load(clean_pages(["\n".join([LONG + ".", LONG + ".", "Outliers can"]), "skew it considerably."]))
     _, card = reading.pick_word(*place_of(reading, "skew"))
-    assert card.front == "Outliers can skew it considerably."
+    assert card.back == "Outliers can skew it considerably."
 
 
 # --- reading files -----------------------------------------------------------------------------
@@ -174,7 +174,7 @@ def test_uploading_a_pdf_puts_its_text_on_the_page():
     assert state["message"] == "Read 1 page."
     sentence, word = place_of(state["paragraphs"], "skew")
     made = client.post("/api/word", json={"sentence": sentence, "word": word}).get_json()
-    assert made["cards"][0]["front"] == "Outliers can skew it considerably."
+    assert made["cards"][0]["back"] == "Outliers can skew it considerably."
 
 
 def test_a_refused_file_leaves_the_text_and_cards():

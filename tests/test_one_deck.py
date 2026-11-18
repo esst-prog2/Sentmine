@@ -37,7 +37,7 @@ def test_cards_from_read_and_the_web_are_one_deck_in_both_places(client):
     client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word"})
     click(client, "/clip", "cured")
     read, clip = client.get("/api/state").get_json(), client.get("/clip/api/state").get_json()
-    assert [c["back"] for c in read["cards"]] == [c["back"] for c in clip["cards"]] == ["skew", "cured (cure)"]
+    assert [c["front"] for c in read["cards"]] == [c["front"] for c in clip["cards"]] == ["skew", "cured (cure)"]
     assert [c["origin"] for c in read["cards"]] == ["primer.pdf, p. 1", "a web page"]
     assert read["count_text"] == clip["count_text"] == "2 cards"
 
@@ -58,7 +58,7 @@ def test_a_new_text_in_read_keeps_the_cards_from_web_pages(client):
     client.post("/clip/api/text", json={"text": "Salami is a cured sausage.", "kind": "word"})
     click(client, "/clip", "cured")
     state = client.post("/api/text", json={"text": "A completely different text."}).get_json()
-    assert [c["back"] for c in state["cards"]] == ["cured (cure)"]
+    assert [c["front"] for c in state["cards"]] == ["cured (cure)"]
 
 
 def test_a_web_picture_can_go_to_a_card_from_the_pdf(client):
@@ -80,7 +80,7 @@ def test_sending_remembers_each_card_with_the_text_it_came_from(client, tmp_path
     click(client, "/clip", "cured")
     assert client.get("/api/deck?name=both").status_code == 200
     memory_cards = client.get("/api/memory").get_json()["cards"]
-    assert sorted(c["back_html"] for c in memory_cards) == ["cured (cure)", "skew"]
+    assert sorted(c["front_html"] for c in memory_cards) == ["cured (cure)", "skew"]
 
 
 def test_pictures_go_here_works_from_read_too(client):

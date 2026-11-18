@@ -44,7 +44,8 @@ def test_the_readme_demo_from_paste_to_deck(client, tmp_path):
     skew = word_place(state, "skew")
     state = client.post("/api/word", json=skew).get_json()
     assert (state["result"], state["count_text"]) == ("added", "2 cards")
-    assert state["cards"][1]["front_html"] == "Outliers can <b>skew</b> it considerably."
+    assert state["cards"][1]["front_html"] == "skew"
+    assert state["cards"][1]["back_html"] == "Outliers can <b>skew</b> it considerably."
 
     state = client.post("/api/word", json=skew).get_json()  # clicked again by mistake
     assert (state["result"], state["count_text"]) == ("removed", "1 card")
@@ -66,7 +67,7 @@ def test_the_readme_demo_from_paste_to_deck(client, tmp_path):
     notes, _ = read_notes(deck, tmp_path)
     assert [(front, back) for _, front, back in notes] == [
         ("standard deviation", shorter),
-        ("Outliers can <b>skew</b> it considerably.", "skew"),
+        ("skew", "Outliers can <b>skew</b> it considerably."),
     ]
 
 

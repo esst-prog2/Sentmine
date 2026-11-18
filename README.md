@@ -20,17 +20,19 @@ On page 13 I do not know the word `simultaneously`, so I click it. It
 turns yellow on the page and a card appears:
 
 ```
-front:  Two fair coins are flipped simultaneously to determine the
+front:  simultaneously
+back:   Two fair coins are flipped simultaneously to determine the
         payoffs of two players in the town’s casino.
         (simultaneously in bold)
-back:   simultaneously
 ```
 
 I press **Suggest meaning** on the card. The small model `gpt-5-nano` gets
-the word and its sentence, and the back becomes:
+the word and its sentence, and puts the meaning under the sentence:
 
 ```
-back:   simultaneously
+back:   Two fair coins are flipped simultaneously to determine the
+        payoffs of two players in the town’s casino.
+
         At the same time; the two coin flips occur together, not one
         after the other.
 ```
@@ -38,8 +40,10 @@ back:   simultaneously
 On page 5 I want to remember a term. I drag over `Simpson’s reversal`;
 the words turn blue as I drag, and the status line says
 `Term: Simpson’s reversal Now drag over its definition.` I drag over the
-sentence that explains it. Because the term is inside that sentence,
-sentmine makes a cloze card, which hides the term:
+sentence that explains it; a drag that starts or ends inside a sentence
+takes the whole sentence. Every card has the same shape: the term on the
+front, the passage on the back with the term in bold. Because the term is
+inside the passage, I press **Make it cloze**, which hides the term:
 
 ```
 front:  Strangely, the experimental data revealed a [...]: Although the
@@ -49,8 +53,7 @@ front:  Strangely, the experimental data revealed a [...]: Although the
 back:   the same sentence, with Simpson’s reversal in bold
 ```
 
-The button **Make it term → passage** would turn it into a card with the
-term on the front instead; I keep the cloze.
+**Make it term → passage** would turn it back; I keep the cloze.
 
 I name the deck `causal` and press **Send to Anki**. Anki is open with
 the AnkiConnect add-on, so the cards go straight in, and the status line
@@ -266,16 +269,27 @@ a file it sends the file behind the Download link; for files on your computer,
 use Open a file. The article is found with Mozilla's Readability
 (`extension/vendor`, Apache 2.0).
 
-**Cards from a web page, in a side panel.** Select a sentence on a web page,
-right-click it and choose *Word card from this sentence*; or select a
-definition and choose *Definition card from this*. A panel opens beside the
-page with the selection: click a word for a word card, or, in a definition,
-drag over its term. For a definition, select the whole definition with its
-term on the page; in the panel, drag over just the term. Clips are kept apart
-from the text in Read; *Remove* takes a clip away, and its cards stay until
-you send or download them from the panel. The button's *Show my clips beside
-the page* opens the panel without a new clip. The right-click
-needs no access to the page: the browser hands over only the selected text.
+**Cards from a web page, in a side panel.** Select something on a web page,
+right-click it and choose *Make a card from this*. The selection can be
+rough: sentmine takes the whole sentences it touches. A panel opens beside
+the page:
+
+- one word selected (a double-click): its card is made at once, with the
+  word on the front and its sentence on the back;
+- a selection with a term in **bold** in it, as Wikipedia and course books
+  mark the term they define: the card for that term is made at once, with
+  the sentences as its passage;
+- anything else waits in the panel as a clip: click a word for its card, or
+  drag over the term it explains.
+
+Every card has the same shape: the term on the front, the passage on the
+back with the term in bold; **Make it cloze** hides the term instead.
+Clips are kept apart from the text in Read; *Remove* takes a clip away, and
+its cards stay until you send or download them. The button's *Show my clips
+beside the page* opens the panel without a new clip. The right-click lets
+the extension read that one tab, only then: it takes the paragraph around
+the selection (to find whole sentences) and any bold phrase in it, and sends
+them nowhere but sentmine on this computer.
 
 The first design, a command-line tool that picks the words from a
 known-words list, still works: `sentmine passage.txt --known known.txt

@@ -248,7 +248,7 @@ def create_app(
             memory_warning=reading.memory.problem if reading.memory is not None else "",
             can_suggest=ask is not None,
             text_id=reading.text_id,  # names the text read, so the page can keep the reader's place in it
-            clip_kinds=clips.clip_kinds if now() is clips else None,
+            clips=now() is clips,  # the side panel: each paragraph is a clip
             chosen_card=reading.chosen_card,  # where pictures from a web page go
             deck_version=deck_version(),  # changes whenever the deck does, here or in the other view
             pdf=None if shown["pages"] is None or now() is clips else {
@@ -369,8 +369,12 @@ def create_app(
         source = body.get("source") if isinstance(body.get("source"), dict) else {}
         title = " ".join(str(source.get("title") or "").split())[:200]
         url = str(source.get("url") or "")[:2000]
-        clips.add(sent("text"), body.get("kind", "word"), title, url if web_address.match(url) else "")
-        return state("Clip added.", count_known=True)
+        around = {name: body.get(name) if isinstance(body.get(name), str) else "" for name in ("before", "after", "term")}
+        made = clips.add_clip(sent("text"), around["before"][-2000:], around["after"][:2000], around["term"][:200],
+                              title, url if web_address.match(url) else "")
+        if made is None:
+            return state("Clip added. Click a word for a card, or drag over the term it explains.", count_known=True)
+        return answer(*made)
 
     @app.delete("/clip/api/clips/<int:number>")
     def remove_clip(number: int):

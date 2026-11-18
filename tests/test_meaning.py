@@ -15,6 +15,7 @@ from sentmine.reading import Problem, Session
 
 SKEW_SENTENCE = "Outliers can skew it considerably."
 MEANING = "To make something less accurate."
+BOLD = "Outliers can <b>skew</b> it considerably."
 
 
 def fake_ask(word, sentence):
@@ -109,11 +110,11 @@ def test_no_key_anywhere(monkeypatch, tmp_path):
 # --- the session ------------------------------------------------------------------------
 
 
-def test_the_meaning_goes_under_the_word(session):
+def test_the_meaning_goes_under_the_passage(session):
     _, card = session.pick_word(*place_of(session, "skew"))
     session.suggest(card.id, fake_ask)
-    assert card.back == "skew\n" + MEANING
-    assert card.back_html == "skew<br>" + MEANING
+    assert card.back == SKEW_SENTENCE + "\n\n" + MEANING
+    assert card.back_html == BOLD + "<br><br>" + MEANING
 
 
 def test_the_ask_gets_the_word_and_the_card_sentence(session):
@@ -123,22 +124,22 @@ def test_the_ask_gets_the_word_and_the_card_sentence(session):
     assert asked == [("skew", SKEW_SENTENCE)]
 
 
-def test_the_base_form_stays_on_the_first_line(session):
+def test_the_base_form_stays_on_the_front(session):
     _, card = session.pick_word(*place_of(session, "sighed"))
     session.suggest(card.id, fake_ask)
-    assert card.back == "sighed (sigh)\n" + MEANING
+    assert (card.front, card.back) == ("sighed (sigh)", "Its owner sighed.\n\n" + MEANING)
 
 
 def test_pressing_again_replaces_the_meaning(session):
     _, card = session.pick_word(*place_of(session, "skew"))
     session.suggest(card.id, fake_ask)
     session.suggest(card.id, lambda word, sentence: "A second try.")
-    assert card.back == "skew\nA second try."
+    assert card.back == SKEW_SENTENCE + "\n\nA second try."
 
 
 def test_a_definition_card_gets_no_meaning(session):
     _, card = session.add_definition("variance", "How spread out values are.")
-    with pytest.raises(Problem, match="word cards"):
+    with pytest.raises(Problem, match="one word"):
         session.suggest(card.id, fake_ask)
     assert card.back == "How spread out values are."
 
@@ -151,7 +152,7 @@ def test_a_failed_request_leaves_the_card_as_it_was(session):
 
     with pytest.raises(MeaningProblem):
         session.suggest(card.id, fails)
-    assert card.back == "skew"
+    assert card.back == SKEW_SENTENCE
 
 
 def test_an_edited_meaning_is_what_is_remembered(tmp_path):
@@ -160,9 +161,9 @@ def test_an_edited_meaning_is_what_is_remembered(tmp_path):
     reading.load(SKEW_SENTENCE)
     _, card = reading.pick_word(*place_of(reading, "skew"))
     reading.suggest(card.id, fake_ask)
-    reading.edit(card.id, card.front, "skew\nMy own words.")
+    reading.edit(card.id, card.front, SKEW_SENTENCE + "\n\nMy own words.")
     reading.export(tmp_path / "new.apkg", day="2026-11-02")
-    assert memory.entries[0].back == "skew\nMy own words."
+    assert memory.entries[0].back == SKEW_SENTENCE + "\n\nMy own words."
 
 
 # --- the app -----------------------------------------------------------------------------
@@ -180,7 +181,7 @@ def test_the_button_route_fills_the_back():
     client, card_id = client_with_card()
     state = client.post(f"/api/cards/{card_id}/meaning").get_json()
     assert state["can_suggest"] is True
-    assert state["cards"][0]["back_html"] == "skew<br>" + MEANING
+    assert state["cards"][0]["back_html"] == BOLD + "<br><br>" + MEANING
 
 
 def test_without_a_key_there_is_no_button_and_the_route_refuses():
@@ -196,7 +197,7 @@ def test_a_failure_comes_back_as_a_message_and_the_card_is_unchanged():
     client, card_id = client_with_card(fails)
     response = client.post(f"/api/cards/{card_id}/meaning")
     assert response.status_code == 400 and "refused" in response.get_json()["error"]
-    assert client.get("/api/state").get_json()["cards"][0]["back"] == "skew"
+    assert client.get("/api/state").get_json()["cards"][0]["back"] == SKEW_SENTENCE
 
 
 def test_the_key_never_reaches_the_page(monkeypatch, tmp_path):

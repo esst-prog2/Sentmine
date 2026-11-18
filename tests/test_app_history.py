@@ -52,7 +52,7 @@ def test_making_it_anyway_shows_the_earlier_date_in_the_preview(history):
     assert state["result"] == "added"
     assert state["earlier"] is None
     assert state["cards"][0]["earlier"] == "2026-10-09"
-    assert state["cards"][0]["back"] == "skewed (skew)"
+    assert state["cards"][0]["front"] == "skewed (skew)"
 
 
 def test_a_definition_made_anyway(history):
@@ -77,7 +77,7 @@ def test_the_download_remembers_the_cards(history):
     response = client.get("/api/deck?name=new")
     assert response.status_code == 200
     assert "X-Sentmine-Warning" not in response.headers
-    assert [entry.back for entry in CardMemory(history.path).entries] == ["sighed (sigh)"]
+    assert [entry.front for entry in CardMemory(history.path).entries] == ["sighed (sigh)"]
 
 
 def test_a_new_session_finds_the_card_downloaded_in_an_earlier_one(history):

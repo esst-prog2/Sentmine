@@ -1,16 +1,31 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { LONGEST_CLIP, clipFor, findSentmine, pdfName, tidy, whatToSend } from "../logic.js";
+import { LONGEST_CLIP, MENU, clipFor, findSentmine, pdfName, tidy, whatToSend, withContext } from "../logic.js";
 
-test("a right-click makes a clip of its kind, tidied", () => {
-  assert.deepEqual(clipFor("word", " Outliers can skew it.[3] "), { text: "Outliers can skew it.", kind: "word" });
-  assert.deepEqual(clipFor("definition", "A confounder is a variable."), { text: "A confounder is a variable.", kind: "definition" });
+test("one right-click item makes a clip, tidied", () => {
+  assert.deepEqual(Object.keys(MENU), ["card"]);
+  assert.deepEqual(clipFor("card", " Outliers can skew it.[3] "), { text: "Outliers can skew it." });
 });
 
 test("an empty, too long or unknown clip is refused with a reason", () => {
-  assert.match(clipFor("word", "   ").refuse, /Select a sentence/);
-  assert.match(clipFor("word", "x".repeat(LONGEST_CLIP + 1)).refuse, /a lot of text/);
-  assert.match(clipFor("poem", "A line.").refuse, /not one of/);
+  assert.match(clipFor("card", "   ").refuse, /Select a sentence/);
+  assert.match(clipFor("card", "x".repeat(LONGEST_CLIP + 1)).refuse, /a lot of text/);
+  assert.match(clipFor("word", "A line.").refuse, /not one of/);
+});
+
+test("the text around the selection goes along, its spaces at the edges kept and its reference marks out", () => {
+  const clip = clipFor("card", "skew");
+  const around = { selected: "skew", before: "The median[2] resists. Outliers can ", after: " the mean.[3] Next.", term: "" };
+  assert.deepEqual(withContext(clip, around),
+    { text: "skew", before: "The median resists. Outliers can ", after: " the mean. Next.", term: "" });
+});
+
+test("a bold term goes along; without what the page said, the selection goes alone", () => {
+  const clip = clipFor("card", "A confounder is a variable.");
+  assert.equal(withContext(clip, { selected: "A confounder is a variable.", before: "", after: "", term: " confounder " }).term, "confounder");
+  assert.equal(withContext(clip, { selected: "x", term: "a".repeat(101) }).term, "");
+  assert.deepEqual(withContext(clip, null), clip);
+  assert.deepEqual(withContext(clip, { selected: "  " }), clip);
 });
 
 const page = (text, selection = "", contentType = "text/html", download = "", downloadName = "") =>

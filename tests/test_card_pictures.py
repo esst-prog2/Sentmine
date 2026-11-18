@@ -74,7 +74,7 @@ def test_a_picture_goes_under_the_answer_and_is_named_by_its_content():
     assert len(card.pictures) == 1
     name = card.pictures[0][0]
     assert name.startswith("sentmine-") and name.endswith(".png")
-    assert note.fields[1] == "skew" + f'<div><img src="{name}"></div>'
+    assert note.fields[1] == "Outliers can <b>skew</b> the mean considerably." + f'<div><img src="{name}"></div>'
     assert note.media == ((name, PNG),)
 
 
@@ -95,16 +95,16 @@ def test_the_back_is_a_small_document_of_text_and_pictures():
     card = word_card(session)
     session.add_picture(card.id, PNG)
     name = card.pictures[0][0]
-    assert card.back == f"skew\n[[picture:{name}]]"   # a new picture goes at the end
+    assert card.back == f"Outliers can skew the mean considerably.\n[[picture:{name}]]"   # a new picture goes at the end
     # the reader moves it between two lines of text
     session.edit(card.id, card.front, f"skew\n[[picture:{name}]]\nto distort")
-    assert card.note.fields[1] == f'skew<div><img src="{name}"></div>to distort'
+    assert card.note.fields[1] == f'<b>skew</b><div><img src="{name}"></div>to distort'
     # a picture's place that is not this card's own is dropped; text that looks like markup stays text
     session.edit(card.id, card.front, f"skew <b>\n[[picture:sentmine-{'0' * 16}.png]]\n[[picture:{name}]]")
-    assert card.note.fields[1] == f'skew &lt;b&gt;<div><img src="{name}"></div>'
+    assert card.note.fields[1] == f'<b>skew</b> &lt;b&gt;<div><img src="{name}"></div>'
     # taking the picture out of the text removes it from the card
     session.edit(card.id, card.front, "skew")
-    assert card.pictures == [] and card.note.fields[1] == "skew" and card.note.media == ()
+    assert card.pictures == [] and card.note.fields[1] == "<b>skew</b>" and card.note.media == ()
 
 
 def test_a_suggested_meaning_keeps_the_pictures_on_the_back():
@@ -113,21 +113,21 @@ def test_a_suggested_meaning_keeps_the_pictures_on_the_back():
     session.add_picture(card.id, PNG)
     name = card.pictures[0][0]
     session.suggest(card.id, lambda word, sentence: "to distort")
-    assert card.back == f"skew\nto distort\n[[picture:{name}]]"
+    assert card.back == f"Outliers can skew the mean considerably.\n[[picture:{name}]]\n\nto distort"
 
 
 def test_a_picture_moved_to_the_front_stays_on_the_card_and_the_meaning_is_asked_without_it():
     session = Session()
     card = word_card(session)
-    sentence = card.front
+    sentence = card.back
     session.add_picture(card.id, PNG)
     name = card.pictures[0][0]
-    session.edit(card.id, f"{sentence}\n[[picture:{name}]]", "skew")
-    assert card.front == f"{sentence}\n[[picture:{name}]]" and len(card.pictures) == 1
-    assert "<b>skew</b>" in card.front_html and f'<img src="{name}">' in card.front_html
+    session.edit(card.id, f"skew\n[[picture:{name}]]", sentence)
+    assert card.front == f"skew\n[[picture:{name}]]" and len(card.pictures) == 1
+    assert f'<img src="{name}">' in card.front_html and "<b>skew</b>" in card.back_html
     asked = []
     session.suggest(card.id, lambda word, sentence: asked.append(sentence) or "to distort")
-    assert asked == [sentence] and card.back == "skew\nto distort"
+    assert asked == [sentence] and card.back == sentence + "\n\nto distort"
 
 
 def test_a_cloze_card_hides_the_term_and_shows_the_front_pictures_after_the_answer():
@@ -151,7 +151,7 @@ def test_the_memory_keeps_the_text_and_says_where_a_picture_was(tmp_path):
     card = word_card(session)
     session.add_picture(card.id, PNG)
     session.export(tmp_path / "d.apkg")
-    assert session.memory.find("word", "skew").back == "skew\n[picture]"
+    assert session.memory.find("word", "skew").back == "Outliers can skew the mean considerably.\n[picture]"
 
 
 def test_the_memory_says_where_a_picture_was_on_the_front(tmp_path):

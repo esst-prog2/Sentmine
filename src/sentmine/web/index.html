@@ -297,7 +297,7 @@ if (CLIP) {
   $("no-cards").textContent = "No cards yet. In a sentence, click a word; in a definition, drag over its term.";
 }
 const HINT = CLIP
-  ? "Select text on a page, right-click it, and choose a card."
+  ? "Select a word or a sentence on a page, right-click it, and choose Make a card from this."
   : "Click a word for a card; click again to remove it. Drag over a term, then its definition, " +
     "for a definition card. A blue line: you already have a card (point at it).";
 
@@ -405,13 +405,12 @@ function drawText() {
   text.classList.toggle("empty", state.paragraphs.length === 0);
   if (state.paragraphs.length === 0) {
     text.textContent = CLIP
-      ? "No clips yet. Select a sentence or a definition on a web page, right-click it, and choose Word card from this sentence or Definition card from this."
+      ? "No clips yet. On a web page, select a word, a sentence or a definition (roughly is enough), right-click it, and choose Make a card from this."
       : "No text yet.";
     return;
   }
   state.paragraphs.forEach((paragraph, number) => {
     const p = element("p");
-    if (state.clip_kinds) p.dataset.kind = state.clip_kinds[number];
     paragraph.forEach((sentence, index) => {
       if (index > 0) p.append(" ");
       for (const piece of sentence.pieces) {
@@ -426,13 +425,13 @@ function drawText() {
         p.append(word);
       }
     });
-    if (!state.clip_kinds) {
+    if (!state.clips) {
       text.append(p);
       return;
     }
     // a clip: what to do with it, and a way to take it away
     const head = element("div", "clip-head");
-    head.append(element("span", "", state.clip_kinds[number] === "definition" ? "Definition: drag over its term" : "Sentence: click a word"));
+    head.append(element("span", "", "Click a word, or drag over the term"));
     const remove = element("button", "small", "Remove");
     remove.setAttribute("aria-label", "Remove this clip");
     remove.addEventListener("click", () => call("DELETE", API + "/clips/" + number));
@@ -770,7 +769,7 @@ async function busy(button, label, work) {
 function drawCard(card) {
   const box = element("div", "card");
   const kind = element("span", "kind",
-    card.kind === "word" ? "Word" : card.cloze ? "Definition · cloze" : "Definition · term → passage");
+    card.cloze ? "Cloze" : "Term → passage");
 
   if (editing === card.id) {
     if (!draft || draft.id !== card.id) draft = { id: card.id, front: card.front, back: card.back };
@@ -785,7 +784,7 @@ function drawCard(card) {
     }
     for (const side of ["front", "back"]) draft[side] = tidyDoc(draft[side].split(CURSOR).join(""));
     // Each side is a small document: text, and pictures where the reader put them.
-    const names = card.kind === "word" ? ["Front", "Back"] : ["Term", "Passage"];
+    const names = ["Term", "Passage"];
     const front = docEditor("front", names[0], card);
     const back = docEditor("back", names[1], card);
     const save = element("button", "main small", "Save");
@@ -824,7 +823,7 @@ function drawCard(card) {
   const buttons = element("div", "buttons");
   buttons.append(kind, edit, remove);
   if (card.origin) box.append(element("div", "origin", "From " + card.origin));
-  if (card.kind === "definition" && (card.cloze || card.can_cloze)) {
+  if (card.cloze || card.can_cloze) {
     const other = element("button", "small", card.cloze ? "Make it term → passage" : "Make it cloze");
     other.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/cloze", { cloze: !card.cloze }));
     buttons.append(other);
@@ -1083,7 +1082,7 @@ document.addEventListener("mouseup", (event) => {
     return;
   }
   if (inText) {
-    const clipped = CLIP && term === null ? definitionClipOf(selection.anchorNode) : null;
+    const clipped = CLIP && term === null ? clipOf(selection.anchorNode) : null;
     selection.removeAllRanges();
     if (clipped) {
       pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
@@ -1101,9 +1100,9 @@ function termOf(selected) {
   return selected.replace(/\s+/g, " ").replace(/[.,;:!?]+$/, "") || selected;
 }
 
-function definitionClipOf(node) {   // the definition clip a drag was in, if it was in one
+function clipOf(node) {   // the clip a drag was in: a drag over a term makes its card, with the clip as the passage
   const element = node && (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
-  return element ? element.closest('#text p[data-kind="definition"]') : null;
+  return element ? element.closest("#text .clip p") : null;
 }
 
 function chose(selected) {   // a drag: the term, or the definition of the waiting term
@@ -1207,7 +1206,7 @@ $("text").addEventListener("keydown", (event) => {
       return;
     }
     const selected = range.map((word) => word.textContent).join(" ");
-    const clipped = CLIP && term === null ? definitionClipOf(range[0]) : null;
+    const clipped = CLIP && term === null ? clipOf(range[0]) : null;
     clearMarks();
     if (clipped) pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
     else chose(selected);

@@ -21,8 +21,9 @@ export async function findSentmine(fetchFn, ports = PORTS, wait = 600) {
   return answers.find((base) => base !== null) || null;
 }
 
-// The right-click items on selected text, by the kind of clip each one makes.
-export const MENU = { word: "Word card from this sentence", definition: "Definition card from this" };
+// The right-click item on selected text. sentmine takes the selection as whole sentences: one word becomes a card
+// from its sentence, a selection with a term in bold a card for that term; anything else waits in the side panel.
+export const MENU = { card: "Make a card from this" };
 
 // The right-click items that put a picture on the newest card in the side panel.
 export const PICTURE_MENU = {
@@ -30,7 +31,7 @@ export const PICTURE_MENU = {
 };
 
 export const NO_CARD_YET =
-  "Make a card in the side panel first: select a sentence, right-click it, and choose Word card from this sentence.";
+  "Make a card first: select a word or a sentence, right-click it, and choose Make a card from this.";
 
 export const WIDEST_PICTURE = 1600;   // pixels; a picture wider than this is made smaller, as Anki shows it no wider
 
@@ -61,13 +62,32 @@ export function clipFor(menuItemId, selected) {
   if (text.length > LONGEST_CLIP) {
     return { refuse: "That is a lot of text for one card. Select one sentence or one definition, or send the whole page with the sentmine button." };
   }
-  return { text, kind: menuItemId };
+  return { text };
+}
+
+// What the page says is around the selection (see aroundSelection in background.js), made ready to send: the
+// reference marks taken out, the spaces at the edges kept, since sentmine finds the sentences from them.
+export function withContext(clip, around) {
+  if (!around || typeof around.selected !== "string" || around.selected.trim() === "") return clip;
+  const term = typeof around.term === "string" ? around.term.trim() : "";
+  return {
+    text: withoutMarks(around.selected),
+    before: withoutMarks(String(around.before || "")).slice(-1500),
+    after: withoutMarks(String(around.after || "")).slice(0, 1500),
+    term: term.length <= 100 ? term : "",
+  };
+}
+
+const MARKS = /\[\s*(\d+|[a-z]|edit|citation needed|note \d+)\s*\]/gi;
+
+function withoutMarks(text) {
+  return text.replace(MARKS, "");
 }
 
 // Marks a web page puts in its text that are not part of it: reference numbers like [12], [edit].
 export function tidy(text) {
   return text
-    .replace(/\[\s*(\d+|[a-z]|edit|citation needed|note \d+)\s*\]/gi, "")
+    .replace(MARKS, "")
     .replace(/[ \t]+([.,;:])/g, "$1")
     .replace(/[ \t]{2,}/g, " ")
     .trim();
