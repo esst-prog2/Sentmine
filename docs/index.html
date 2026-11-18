@@ -106,6 +106,10 @@
   .card .back { font: 1.12rem/1.6 var(--book); }
   .card .back b { font-weight: 600; background: var(--picked); border-radius: 3px; padding: 0 2px; }
   .card .meaning { display: block; margin-top: 10px; }
+  .card .meaning[hidden], .card [hidden] { display: none; }
+  .card .back u { text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  .card-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+  .card-actions .button { font-size: 0.85rem; padding: 4px 12px; }
   .card .meta { margin-top: 12px; font: 0.8rem/1.5 var(--mono); color: var(--soft); }
   .tag { font: 600 0.6875rem/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cloze); background: var(--cloze-wash);
     border-radius: 6px; padding: 5px 7px; margin-left: 10px; vertical-align: 0.3em; }
@@ -222,6 +226,7 @@
         <div class="front">simultaneously</div>
         <div class="back"><span class="sentence">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</span><span class="meaning">At the same time; without waiting for one to finish before the other.</span></div>
         <div class="meta">p. 13 · the meaning came from Suggest meaning (step 2)</div>
+        <div class="card-actions"><button type="button" class="button suggest" hidden>Suggest meaning</button></div>
       </aside>
       <aside class="panel return" aria-label="The same word, twelve pages later">
         <p class="panel-title">Page 25, twelve pages later</p>
@@ -234,7 +239,7 @@
         <p class="meta">The word is underlined because you already have a card; pointing at it shows the card. From the same real run (step 5).</p>
       </aside>
       </div>
-      <p class="caption">The card is made with sentmine’s own rules: the word (with its base form, as sentmine’s word list gives it, which is not always right: <i>least</i> gives <i>less</i>) on the front, its sentence on the back.</p>
+      <p class="caption">The card is made with sentmine’s own rules: the word (with its base form, as sentmine’s word list gives it, which is not always right: <i>least</i> gives <i>less</i>) on the front, its sentence on the back. Suggest meaning shows the answer <code>gpt-5-nano</code> gave for that word on 18 November 2026, asked ahead and not corrected (some are wrong: check it, as in sentmine).</p>
     </div>
     <p class="try-line">Runs on your own computer, with Python 3.10 or newer. Reads PDFs that have selectable text, not scans. <a href="#try">How to install</a></p>
   </div>
@@ -459,6 +464,45 @@ sentmine</code></pre>
     "Player 1 wins a dollar if and only if at least one coin lands on head.",
   ];
   const heroCard = document.querySelector(".hero-card");
+  // What Suggest meaning (gpt-5-nano) answered for each word in its sentence, asked on 2026-11-18 through sentmine's
+  // own code, not corrected; key: the words of the sentence the model said show the meaning (underlined, as in sentmine).
+  const MEANINGS = {"Two": {"meaning": "Two means the number 2, referring to the two coins and two players.", "key": "Two fair coins"}, "fair": {"meaning": "Two coins that have equal chances of landing heads or tails.", "key": "Two fair coins"}, "coins": {"meaning": "Two round metal pieces used as money for the flips in the game.", "key": ""}, "are": {"meaning": "The are means that two fair coins exist and are flipped at the same time.", "key": "are flipped simultaneously to determine"}, "flipped": {"meaning": "Two coins are tossed at the same time to decide payoffs.", "key": ""}, "to": {"meaning": "In this sentence, \"to\" marks the purpose of the action: used for determining the payoffs for two players.", "key": ""}, "determine": {"meaning": "To decide or set what happens next.", "key": "determine the payoffs"}, "the": {"meaning": "The word \"the\" introduces something specific already known or identified.", "key": "Two fair coins"}, "payoffs": {"meaning": "The results that determine how much each player wins or loses.", "key": ""}, "of": {"meaning": "Two fair coins are flipped at the same time to determine the payoffs belonging to two players in the town’s casino.", "key": "payoffs of two players"}, "players": {"meaning": "Two individuals who take part in a game or activity.", "key": "two players in the town’s casino"}, "in": {"meaning": "In this sentence, in means \"during\" or \"at the same time as.\"", "key": ""}, "town’s": {"meaning": "Belonging to town; indicating the casino belongs to the town.", "key": "the town’s casino"}, "casino": {"meaning": "A place where people play gambling games for money.", "key": "two players in the town’s casino"}, "Player": {"meaning": "A person who participates in the game or activity described.", "key": "at least one coin lands on head"}, "wins": {"meaning": "In this sentence, \"wins\" means gets to gain or receive a dollar.", "key": "at least one coin lands on head"}, "a": {"meaning": "The word a means one single, unspecified item in this context.", "key": "at least one coin lands on head"}, "dollar": {"meaning": "A dollar is money equal to one unit of currency that player 1 can win.", "key": "at least one coin lands on head"}, "if": {"meaning": "It means that the event happens exactly when the other event happens; they are tied together.", "key": ""}, "and": {"meaning": "Here, \"and\" means a combination of two conditions that both must be considered together.", "key": "at least one coin lands on head"}, "only": {"meaning": "Only here means that the condition must happen for the result to occur.", "key": "at least one coin lands on head"}, "at": {"meaning": "If at least one coin lands on heads, that condition is true.", "key": "at least one coin lands on head"}, "least": {"meaning": "At minimum; not fewer than one.", "key": "at least one coin lands on head"}, "one": {"meaning": "One refers to a single coin flip outcome or instance; at least one means one or more coins show heads.", "key": "at least one coin lands on head"}, "coin": {"meaning": "A flat round piece used to make decisions by flipping; heads is one side that shows up.", "key": "at least one coin lands on head"}, "lands": {"meaning": "The word lands means to come to rest after being tossed or dropped.", "key": "at least one coin lands on head"}, "on": {"meaning": "Here, on means that a condition is true or satisfied if at least one coin lands head.", "key": "lands on head"}, "head": {"meaning": "The front part of a coin that shows a smooth, flat surface when it lands face up.", "key": "lands on head"}, "simultaneously": {"meaning": "At the same time; without waiting for one to finish before the other.", "key": ""}};
+  let current = null;
+  function meaningOf(word) {
+    return MEANINGS[word] || MEANINGS[Object.keys(MEANINGS).find((k) => k.toLowerCase() === word.toLowerCase())];
+  }
+  // the sentence with the word in bold and, once a meaning came, the model's key words underlined
+  function drawBack(withKey) {
+    const { pick, sentence, at } = current;
+    const end = at + pick.textContent.length;
+    const key = withKey ? (meaningOf(pick.textContent) || {}).key || "" : "";
+    const k = key ? sentence.indexOf(key) : -1;
+    const cuts = [...new Set([0, at, end, sentence.length].concat(k >= 0 ? [k, k + key.length] : []))].sort((a, b) => a - b);
+    const parts = [];
+    for (let i = 0; i + 1 < cuts.length; i++) {
+      let node = document.createTextNode(sentence.slice(cuts[i], cuts[i + 1]));
+      if (cuts[i] >= at && cuts[i + 1] <= end) node = Object.assign(document.createElement("b"), { textContent: node.textContent });
+      if (k >= 0 && cuts[i] >= k && cuts[i + 1] <= k + key.length) { const u = document.createElement("u"); u.append(node); node = u; }
+      parts.push(node);
+    }
+    heroCard.querySelector(".sentence").replaceChildren(...parts);
+  }
+  heroCard.querySelector(".suggest").addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    const found = current && meaningOf(current.pick.textContent);
+    if (!found) return;
+    button.disabled = true;
+    button.textContent = "Asking…";
+    setTimeout(() => {
+      heroCard.querySelector(".meaning").textContent = found.meaning;
+      heroCard.querySelector(".meaning").hidden = false;
+      drawBack(true);
+      heroCard.querySelector(".meta").textContent = "p. 13 · Suggest meaning (gpt-5-nano), asked ahead on 2026-11-18, not corrected";
+      button.hidden = true;
+      button.disabled = false;
+      button.textContent = "Suggest meaning";
+    }, 600);
+  });
   const picks = [...document.querySelectorAll(".picks .pick")];
   const phone = window.matchMedia("(max-width: 640px)");
   // one tab stop for the whole sentence: the picked word; the arrow keys move between words
@@ -482,13 +526,11 @@ sentmine</code></pre>
       const whole = new RegExp("(?<![A-Za-z’])" + pick.textContent + "(?![A-Za-z’])", "g");
       const at = [...sentence.matchAll(whole)][nth].index;
       heroCard.querySelector(".front").textContent = pick.dataset.back;   // the word, with its base form
-      heroCard.querySelector(".sentence").replaceChildren(sentence.slice(0, at),
-        Object.assign(document.createElement("b"), { textContent: pick.textContent }), sentence.slice(at + pick.textContent.length));
-      const real = pick.textContent === "simultaneously";
-      heroCard.querySelector(".meaning").hidden = !real;
-      heroCard.querySelector(".meta").textContent = real
-        ? "p. 13 · the meaning came from Suggest meaning (step 2)"
-        : "p. 13 · a preview on this page; in sentmine, Suggest meaning can add a meaning";
+      current = { pick, sentence, at };
+      drawBack(false);
+      heroCard.querySelector(".meaning").hidden = true;   // a new card has no meaning yet, as in sentmine
+      heroCard.querySelector(".suggest").hidden = false;
+      heroCard.querySelector(".meta").textContent = "p. 13";
       if (phone.matches) heroCard.scrollIntoView({ block: "nearest" });   // on a phone the card is below the sentence
     });
   });
