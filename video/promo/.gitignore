@@ -1,3 +1,4 @@
 .hyperframes/
 *.mp4
 node_modules/
+!assets/tour/*.mp4
