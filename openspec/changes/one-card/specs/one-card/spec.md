@@ -37,7 +37,7 @@ A word card remembered before this change, with its sentence on the front and th
 - **THEN** the meaning is put on the card and nothing is underlined
 
 ### Requirement: Edit puts things in at the cursor
-While a card is open in Edit, the reader SHALL be able to put into it, at the place of its cursor in the Term or the Passage (the end of the Passage when there is none): the whole sentence of a word clicked in the text of the same view; the sentences of a drag over the text; on a PDF in Read, a picture of a box dragged on a page (a click instead of a drag puts in the sentence clicked); a pasted picture; and, from a web page, the whole sentences of text right-clicked with *Make a card from this* and an image right-clicked with *Add this picture*. Nothing put in this way SHALL make a card. Put-in text SHALL keep a space from the words around it, and the cursor SHALL go on after it. While the cursor is away from the card, a mark SHALL show where the next thing goes. Save SHALL end the edit; Cancel SHALL put the card back as it was, with no picture added. A page closed while editing SHALL count as closed after three minutes.
+While a card is open in Edit, the reader SHALL be able to put into it, at the place of its cursor in the Term or the Passage (the end of the Passage when there is none): the whole sentence of a word clicked in the text of the same view; the sentences of a drag over the text; on a PDF in Read, a picture of a box dragged on a page (a click instead of a drag puts in the sentence clicked); a pasted picture; and, from a web page, the whole sentences of text right-clicked with *Make a card from this* and an image right-clicked with *Add this picture*. Nothing put in this way SHALL make a card. Put-in text SHALL keep a space from the words around it, and the cursor SHALL go on after it. While the cursor is away from the card, a mark SHALL show where the next thing goes. Undo (also Ctrl+Z) SHALL take back the last thing put in, deleted or typed (a run of typing counts as one step), one step at a time, and Redo (also Ctrl+Y or Ctrl+Shift+Z) SHALL put it back; each SHALL be greyed out when there is nothing to take back or put back. A right-click on a web page SHALL NOT load the side panel's page again, so a card open in Edit there stays open. Save SHALL end the edit; Cancel SHALL put the card back as it was, with no picture added. A page closed while editing SHALL count as closed after three minutes.
 
 #### Scenario: A sentence further on
 - **WHEN** the reader edits the card for `random`, puts the cursor at the start of its passage and clicks a word of the sentence before it
@@ -50,6 +50,10 @@ While a card is open in Edit, the reader SHALL be able to put into it, at the pl
 #### Scenario: Text from a web page
 - **WHEN** a card is open in Edit in the side panel and the reader right-clicks a sentence on the web page and chooses *Make a card from this*
 - **THEN** that sentence is put in at the card's cursor, and no clip or card is made
+
+#### Scenario: Undo, step by step
+- **WHEN** the reader puts in a sentence, types a word, and draws a box on the PDF page, then presses Undo three times
+- **THEN** the picture goes first, then the word, then the sentence; Redo puts them back in that order
 
 #### Scenario: Cancel
 - **WHEN** the reader puts in a picture and a sentence, then presses Cancel

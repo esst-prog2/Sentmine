@@ -14,8 +14,14 @@ function tell(text, warn = false) {
 
 function show(base) {
   say.hidden = true;
+  if (!frame.hidden && frame.dataset.base === base) {
+    // sentmine is shown already: it looks for the new clip itself, so a card open in Edit stays open
+    frame.contentWindow.postMessage("sentmine:refresh", base);
+    return;
+  }
   frame.hidden = false;
-  frame.src = base + "/clip?" + Date.now();   // a new address, so a new clip is always shown
+  frame.dataset.base = base;
+  frame.src = base + "/clip?" + Date.now();
 }
 
 async function start() {

@@ -22,6 +22,11 @@
 - [x] 4.2 README, the promo page's extension section, `openspec validate one-card --strict`
 - [ ] 4.3 The reader tries it for a week of reading (needs the reader)
 
+## 8. Undo, and the side panel kept open
+
+- [x] 8.1 Undo and Redo buttons in Edit, and Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z: the card's own history of steps (put in, deleted, a run of typing); the gesture check
+- [x] 8.2 The side panel no longer loads sentmine's page again after a right-click (it asks it to look for changes), so a card open in Edit there stays open; a check through the real panel, which fails with the old panel script
+
 ## 7. Edit is the one mode
 
 - [x] 7.1 Add sentences and the Cut button removed; in Edit, a click on a sentence, a drag over text, a box on a PDF page, a pasted picture, and text or a picture right-clicked on a web page go in at the cursor; no card is made meanwhile

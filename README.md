@@ -262,7 +262,9 @@ everything you add goes in there:
 
 When you click away from the card, a thin line shows where the next thing
 will go. Type around it as usual; to remove a picture, click it and press
-Delete; to take out a sentence, delete it like any text. **Save** ends it;
+Delete; to take out a sentence, delete it like any text. **Undo** (Ctrl+Z)
+takes back the last thing put in, deleted or typed, one step at a time, and
+**Redo** (Ctrl+Y) puts it back. **Save** ends it;
 **Cancel** puts the card back as it was, pictures included. Pictures go into
 the deck file and into Anki where you put them (on a cloze card, a picture
 on the front is shown after the answer).
