@@ -302,6 +302,8 @@ try {
   .doc-editor { font-family: var(--serif); font-size: 1.1rem; border-radius: 10px; }
   .card .front img, .card .back img, .doc-editor img { border-radius: 8px; }
   button.icon { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 999px; }
+  button.with-icon { display: inline-flex; align-items: center; gap: 8px; }
+  button.with-icon svg { flex: none; }
 </style>
 </head>
 <body>
@@ -315,8 +317,8 @@ try {
   <div class="deck">
     <label for="deck-name">Deck name</label>
     <input type="text" id="deck-name" value="new" placeholder="Deck name">
-    <button id="download">Download</button>
-    <button class="main" id="send">Send to Anki</button>
+    <button id="download" class="with-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M4.5 15.5v2.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2.5"/></svg>Download</button>
+    <button class="main with-icon" id="send"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5 21 3Z"/></svg>Send to Anki</button>
   </div>
   <button type="button" id="theme" class="icon" aria-label="Dark mode" title="Dark mode"></button>
 </header>
@@ -855,14 +857,14 @@ function endPageDrag(event) {
 }
 
 async function busy(button, label, work) {
-  const idle = button.textContent;
+  const idle = button.innerHTML;   // its icon and its name, put back after
   button.disabled = true;
   button.textContent = label;
   try {
     await work();
   } finally {
     button.disabled = false;
-    button.textContent = idle;
+    button.innerHTML = idle;
   }
 }
 
