@@ -1,6 +1,8 @@
 # sentmine
 
-Promo page: https://esst-prog2.github.io/Sentmine/
+Promo page: https://esst-prog2.github.io/Sentmine/ (with three 30-second videos
+recorded from real runs: the whole task, one word over a week with Anki, and
+the book and the web in one deck)
 
 A small reading app that runs on my own computer. I open a PDF or paste a
 text I am reading and turn parts of it into Anki flashcards as I go: a new
@@ -156,7 +158,7 @@ network    the app runs only on my own computer, and the text stays
 
 ## 4. How we would know it works
 
-The checks are automated: `pip install -e ".[dev]"`, then `pytest` (665
+The checks are automated: `pip install -e ".[dev]"`, then `pytest` (676
 tests on 18 November 2026). Some of them:
 
 - Given the text `Outliers can skew it considerably.`, clicking `skew`
