@@ -781,7 +781,13 @@ function drawCard(card) {
   if (editing === card.id) {
     if (!draft || draft.id !== card.id) draft = { id: card.id, front: card.front, back: card.back };
     // a picture that arrived while editing (pasted, cut from the page, sent from a web page) takes the place
-    // of the cursor's mark, on either side, or goes to the end of the back
+    // of the cursor's mark, on either side, or goes to the end of the back. The picture just added goes to the mark
+    // even when the card has it already (the same screenshot pasted again, into the Term this time).
+    const just = state.added_picture;
+    if (just && (card.pictures || {})[just]) {
+      const side = draft.front.includes(CURSOR) ? "front" : draft.back.includes(CURSOR) ? "back" : null;
+      if (side) draft[side] = draft[side].replace(AT_CURSOR, "\n[[picture:" + just + "]]\n");
+    }
     for (const name of Object.keys(card.pictures || {})) {
       const mark = "[[picture:" + name + "]]";
       if (draft.front.includes(mark) || draft.back.includes(mark)) continue;

@@ -22,7 +22,7 @@ from sentmine.history import Entry
 from sentmine.meaning import MeaningProblem, find_api_key, suggest_meaning
 from sentmine.memory import CardMemory, MemoryProblem, RememberedCard, default_memory_path
 from sentmine.pages import Pages, locate, part, picture
-from sentmine.reading import ADDED, DUPLICATE, EARLIER, REMOVED, Flashcard, Problem, Session, entry_card
+from sentmine.reading import ADDED, DUPLICATE, EARLIER, REMOVED, Flashcard, Problem, Session, entry_card, picture_name
 from sentmine.words import plural
 
 HOST = "127.0.0.1"  # this computer only
@@ -223,7 +223,8 @@ def create_app(
             raise Problem("That page is not in the PDF being read.")
         return pages
 
-    def state(message: str = "", result: str = "", earlier: Entry | None = None, count_known: bool = False):
+    def state(message: str = "", result: str = "", earlier: Entry | None = None, count_known: bool = False,
+              picture: str = ""):
         known, terms = reading.known_cards(), reading.known_terms()
         paragraphs = reading.layout(known, terms)
         in_text = sorted({piece["known"] for p in paragraphs for s in p for piece in s["pieces"] if "known" in piece})
@@ -251,6 +252,7 @@ def create_app(
             text_id=reading.text_id,  # names the text read, so the page can keep the reader's place in it
             clips=now() is clips,  # the side panel: each paragraph is a clip
             chosen_card=reading.chosen_card,  # where pictures from a web page go
+            added_picture=picture,  # the picture just added, so the editor puts it at the cursor even when the card has it
             deck_version=deck_version(),  # changes whenever the deck does, here or in the other view
             pdf=None if shown["pages"] is None or now() is clips else {
                 "version": shown["version"],
@@ -479,7 +481,8 @@ def create_app(
             except ValueError as error:
                 raise Problem(str(error)) from error
         card = reading.add_picture(card_id, png)
-        return state(f"Picture added to the card for '{card.word or card.term}'. Edit the card to move or remove it.")
+        return state(f"Picture added to the card for '{card.word or card.term}'. Edit the card to move or remove it.",
+                     picture=picture_name(png))
 
     @both("GET", "/api/cards/<int:card_id>/pictures/<name>")
     def card_picture(card_id: int, name: str):

@@ -229,6 +229,11 @@ def clickable_words(sentence: str) -> list[Word]:
 PICTURE = re.compile(r"\n?\[\[picture:(sentmine-[0-9a-f]{16}\.png)\]\]\n?")
 
 
+def picture_name(png: bytes) -> str:
+    """A picture's file name, from its content: the same picture is stored once."""
+    return "sentmine-" + hashlib.sha256(png).hexdigest()[:16] + ".png"
+
+
 def picture_place(name: str) -> str:
     return f"[[picture:{name}]]"
 
@@ -248,6 +253,7 @@ def _with_pictures(text: str, render: Callable[[str], str]) -> str:
     parts.append(render(text[position:]))
     return "".join(parts)
 UNNAMED_PAGE = "a web page"  # a clip whose page gave no title
+LONGEST_TERM = 8  # words: a longer selection is a passage, not a term
 
 
 class Deck:
@@ -307,7 +313,8 @@ class Session:
     def add_clip(self, selected: str, before: str = "", after: str = "", term: str = "", title: str = "",
                  url: str = "") -> tuple[str, Flashcard | Entry] | None:
         """A selection from a web page, made whole sentences, as a clip; with a card at once when the selection
-        is one word (a card for it, from its sentence) or holds a term in bold (a card for the term, the clip
+        is one word (a card for it, from its sentence), a few words inside one sentence (a card for them as a
+        term, from that sentence, as a drag in Read does) or holds a term in bold (a card for the term, the clip
         as its passage). None when the reader is still to say what the card is for."""
         passage, word = whole_sentences(selected, before, after)
         if not passage:
@@ -319,6 +326,10 @@ class Session:
                 found = [at for at, one in enumerate(clickable_words(sentence)) if one.text == word]
                 if found:
                     return self.pick_word(number + index, found[0])
+        phrase = " ".join(selected.split()).strip(".,;:!?\"'()[]“”‘’ ")
+        if (len(self.paragraphs[-1]) == 1 and 2 <= len(phrase.split()) <= LONGEST_TERM
+                and phrase.casefold() != passage.strip(".,;:!?\"'“”‘’ ").casefold() and _term_pattern(phrase).search(passage)):
+            return self.add_definition(phrase, sentences=(number, number))
         term = " ".join(term.split())
         if term and len(term) <= 100 and _term_pattern(term).search(" ".join(self.paragraphs[-1])):
             return self.add_definition(term, " ".join(self.paragraphs[-1]))
@@ -555,7 +566,7 @@ class Session:
         """Put a picture at the end of a card's back, unless it is on the card already; its file name comes
         from its content."""
         card = self._card(card_id)
-        name = "sentmine-" + hashlib.sha256(png).hexdigest()[:16] + ".png"
+        name = picture_name(png)
         if name not in {known for known, _ in card.pictures}:
             card.pictures.append((name, png))
         if name not in PICTURE.findall(card.front) + PICTURE.findall(card.back):

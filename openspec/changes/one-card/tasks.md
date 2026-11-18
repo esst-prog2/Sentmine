@@ -22,6 +22,11 @@
 - [x] 4.2 README, the promo page's extension section, `openspec validate one-card --strict`
 - [ ] 4.3 The reader tries it for a week of reading (needs the reader)
 
+## 6. Fixes after trying it
+
+- [x] 6.1 A few words (2 to 8) selected inside one sentence on a web page make their card at once, as a drag in Read does
+- [x] 6.2 A picture pasted again (already on the card) still goes to the cursor; a real Ctrl+V check in the Term
+
 ## 5. Pictures where the cursor was; a drag makes its card; Add sentences
 
 - [x] 5.1 A picture cut from the PDF or sent from a web page goes where the cursor last was, Term or Passage; Esc leaves no mark; the editor check

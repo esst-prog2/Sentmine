@@ -290,6 +290,8 @@ the page:
 
 - one word selected (a double-click): its card is made at once, with the
   word on the front and its sentence on the back;
+- a few words (up to eight) inside one sentence, such as a name: their card
+  is made at once, with that sentence, as a drag over a term in Read does;
 - a selection with a term in **bold** in it, as Wikipedia and course books
   mark the term they define: the card for that term is made at once, with
   the sentences as its passage;

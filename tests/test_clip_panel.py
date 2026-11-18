@@ -75,9 +75,14 @@ def test_a_selection_with_a_bold_term_makes_its_card_from_the_whole_sentences(cl
     assert "<b>confounder</b>" in card["back_html"]
 
 
-def test_without_a_term_the_clip_waits_for_the_reader(client):
-    state = clip(client, "can skew the", before="Outliers ", after=" mean considerably.")
+def test_without_a_term_a_long_selection_waits_for_the_reader(client):
+    state = clip(client, "can skew the mean. The median resists", before="Outliers ", after=" them.")
     assert state["count"] == 0 and state["paragraphs"][0][0]["pieces"][0]["text"] == "Outliers"
+
+
+def test_a_few_words_in_one_sentence_make_their_card(client):
+    state = clip(client, "can skew the", before="Outliers ", after=" mean considerably.")
+    assert state["count"] == 1 and state["cards"][0]["front"] == "can skew the"
 
 
 def test_a_bold_term_that_is_not_in_the_clip_makes_no_card(client):

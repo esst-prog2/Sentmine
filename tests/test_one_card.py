@@ -91,3 +91,38 @@ def test_a_word_card_remembered_in_the_new_layout():
 def test_a_one_word_sentence_is_not_taken_for_the_old_layout():
     new = entry_card(Entry("word", "outlier", "outliers (outlier)", "Outliers can skew it.", "Outliers", "2026-11-18"))
     assert not new.old_layout and new.back_html == "<b>Outliers</b> can skew it."
+
+
+# --- a few words selected on a web page ----------------------------------------------------------
+
+
+def test_a_few_words_selected_on_a_web_page_make_their_card_with_the_sentence():
+    clips = Session(name="clip")
+    made = clips.add_clip("National Tobacco Supply Company", before="The exclusive right of the ",
+                          after=", which supplies tobacconists, may be terminated. More text.")
+    assert made is not None and made[0] == "added"
+    card = made[1]
+    assert card.front == "National Tobacco Supply Company"
+    assert card.back == "The exclusive right of the National Tobacco Supply Company, which supplies tobacconists, may be terminated."
+
+
+@pytest.mark.parametrize("selected, before, after", [
+    ("one two three four five six seven eight nine", "", " ten."),          # too long for a term
+    ("may be terminated. More", "The company ", " text follows."),          # runs over two sentences
+    ("The company may be terminated.", "", ""),                             # the whole sentence
+])
+def test_a_longer_selection_waits_in_the_panel(selected, before, after):
+    clips = Session(name="clip")
+    assert clips.add_clip(selected, before, after) is None and clips.cards == []
+
+
+def test_the_picture_route_names_the_picture_it_added():
+    from sentmine.app import create_app
+    import base64
+    client = create_app().test_client()
+    client.post("/api/text", json={"text": TEXT})
+    card = client.post("/api/word", json={"sentence": 1, "word": 2}).get_json()["cards"][0]
+    png = base64.b64encode(b"\x89PNG\r\n\x1a\n" + b"x" * 20).decode()
+    state = client.post(f"/api/cards/{card['id']}/pictures", json={"png": png}).get_json()
+    assert state["added_picture"].startswith("sentmine-") and state["added_picture"] in state["cards"][0]["pictures"]
+    assert client.get("/api/state").get_json()["added_picture"] == ""
