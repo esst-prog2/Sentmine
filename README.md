@@ -318,3 +318,6 @@ known-words list, still works: `sentmine passage.txt --known known.txt
 --deck new.apkg`.
 
 To work on it and run the tests: `pip install -e ".[dev]"`, then `pytest`.
+
+The sentmine wordmark is drawn from the letters of Nunito (SIL Open Font License 1.1); no font is loaded by
+the app.
