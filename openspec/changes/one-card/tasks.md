@@ -24,6 +24,8 @@
 
 ## 10. The selection is the term
 
+- [x] 10.3 The side panel shows the cards only, the newest scrolled into view; the button reads Show my cards beside the page; Read's hint and Edit's hint in the panel brought up to date; the clip, Wikipedia, panel and keyboard checks updated
+
 - [x] 10.1 Every selection or drag is the term (a word cut in half made whole) and the whole sentences it touches the passage; one word still makes a word card; the bold term, the 8-word limit and the card waiting for its term removed; tests
 - [x] 10.2 The browser checks: Wikipedia, the real panel, the clip check and the gesture check (a long drag is a term) pass
 

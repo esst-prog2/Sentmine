@@ -205,6 +205,7 @@ try {
   /* Clip mode (/clip): the side panel beside a web page. One column, no paste box, a label on each clip. */
   body.clip nav, body.clip #paste-box, body.clip .spacer { display: none; }
   body.clip main { grid-template-columns: 1fr; }
+  body.clip main > section:first-child { display: none; }   /* the panel shows the cards; each right-click made its own */
   .clip + .clip { border-top: 1px solid var(--line); padding-top: 14px; }
   /* In the side panel the header is one slim row; the deck name, Download and Send to Anki sit in a bar at the
      bottom, where the reader ends up after making cards. The theme follows the app's own choice. */
@@ -301,12 +302,13 @@ const CLIP = location.pathname.startsWith("/clip");
 const API = CLIP ? "/clip/api" : "/api";
 if (CLIP) {
   document.body.classList.add("clip");
-  $("no-cards").textContent = "No cards yet. In a sentence, click a word; in a definition, drag over its term.";
+  $("no-cards").textContent = "No cards yet. On a web page, select a word or some text, right-click it, and choose " +
+    "Make a card from this: what you selected is the term, its whole sentences the passage.";
 }
 const HINT = CLIP
   ? "Select a word or a sentence on a page, right-click it, and choose Make a card from this."
-  : "Click a word for a card; click again to remove it. Drag over a term, then its definition, " +
-    "for a definition card. A blue line: you already have a card (point at it).";
+  : "Click a word for a card; click again to remove it. Drag over words: they are the term, their whole sentences " +
+    "the passage. A blue line: you already have a card (point at it).";
 
 let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let term = null;       // the term dragged over, while its definition is still to be marked
@@ -1320,8 +1322,10 @@ async function refreshIfChanged() {
       return;
     }
     if (term !== null || boxFor !== null || pageDrag) return;   // something started meanwhile
+    const more = fresh.count > state.count;
     state = fresh;
     draw();   // quietly: the status line keeps what it said
+    if (CLIP && more) showNewestCard();
   } catch (error) {
     // the app is not answering; the next action here says so
   }
@@ -1474,6 +1478,11 @@ document.addEventListener("keydown", (event) => {
   }
 }, true);
 
+function showNewestCard() {
+  const cards = $("cards").children;
+  if (cards.length) cards[cards.length - 1].scrollIntoView({ block: "nearest" });
+}
+
 // The edit mode: the page tells the app which card is open in Edit, again every 30 seconds while it is, so that
 // text and pictures from a web page go to it; and again when it closes.
 function tellEditing(card, keepalive = false) {
@@ -1499,9 +1508,11 @@ setInterval(() => { if (editing !== null) tellEditing(editing); }, 30000);
 window.addEventListener("pagehide", () => { if (editing !== null) tellEditing(null, true); });
 
 function editHint() {
-  const parts = ["Everything goes in where the cursor is: click a sentence in the text"];
+  const parts = CLIP ? ["Everything goes in where the cursor is: right-click text or a picture on the web page"]
+    : ["Everything goes in where the cursor is: click a sentence in the text"];
   if (state.pdf && !CLIP) parts.push("drag a box on the PDF page for a picture");
-  parts.push("paste a picture (Ctrl+V)", "or right-click text or a picture on a web page");
+  parts.push(CLIP ? "or paste a picture (Ctrl+V)" : "paste a picture (Ctrl+V)");
+  if (!CLIP) parts.push("or right-click text or a picture on a web page");
   return parts.join(", ") + ". To remove a picture, click it and press Delete; Undo takes back the last step. Save when the card is right.";
 }
 
@@ -1731,8 +1742,7 @@ function opened(loaded) {
     $("paste-box").open = false;
     $("paste-box").querySelector("summary").textContent = "Paste or open another text";
     if (CLIP) {
-      const clips = $("text").querySelectorAll("p");
-      clips[clips.length - 1].scrollIntoView({ block: "start" });
+      showNewestCard();
     } else {
       restorePlace();
     }

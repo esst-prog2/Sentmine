@@ -297,14 +297,12 @@ use Open a file. The article is found with Mozilla's Readability
 right-click it and choose *Make a card from this*. Its card is made at once,
 by the same rule as in Read: the selection is the term, and the whole
 sentences it touches are the passage. One word makes a word card (so `ran`
-and `run` count as one word). A panel opens beside the page with the card
-and the sentences it came from.
+and `run` count as one word). A panel opens beside the page with your cards.
 
 Every card has the same shape: the term on the front, the passage on the
 back with the term in bold; **Make it cloze** hides the term instead.
-Clips are kept apart from the text in Read; *Remove* takes a clip away, and
-its cards stay until you send or download them. The button's *Show my clips
-beside the page* opens the panel without a new clip. The right-click lets
+The button's *Show my cards beside the page* opens the panel without a new
+card. The right-click lets
 the extension read that one tab, only then: it takes the paragraph around
 the selection (to find whole sentences), and sends it nowhere but sentmine on
 this computer.
