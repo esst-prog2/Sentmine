@@ -49,7 +49,7 @@ html = f"""<!doctype html>
       /* The product tour: a title card with a real crop of page 13, then ONE continuous take recorded on 2026-11-18
          from a real run of sentmine at 3840×2160, with a camera that follows the places the recorder logged
          (assets/tour/tour.json). The take is trimmed 0.9 s at its start and played 1.12× faster; the wait for the AI
-         meaning was already shortened in the recording, and the film says so. */
+         meaning was already shortened in the recording; the caption under the video on the page says so. */
       #take {{ position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; object-fit: fill; z-index: 0; }}
       .caption {{ z-index: 2; }}
       #s-title {{ background: var(--paper); z-index: 3; }}
@@ -80,7 +80,6 @@ html = f"""<!doctype html>
 
       <div id="captions" class="clip" data-start="{START}" data-duration="{TAKE}" data-track-index="0">
 {caption_html}
-        <div class="note" id="n2">AI wait shortened</div>
       </div>
 
       <div id="s-end" class="clip" data-start="{round(END - 0.6, 2)}" data-duration="{round(TOTAL - END + 0.6, 2)}" data-track-index="3" style="background: var(--paper); z-index: 4;">
@@ -119,8 +118,6 @@ html = f"""<!doctype html>
         tl.to(selector, {{ opacity: 0, duration: 0.25 }}, to - 0.25);
       }}
 {says}
-      tl.fromTo("#n2", {{ opacity: 0 }}, {{ opacity: 1, duration: 0.3 }}, {t(5.6)});
-      tl.to("#n2", {{ opacity: 0, duration: 0.25 }}, {t(8.9)});
 
       tl.fromTo("#s-end", {{ opacity: 0 }}, {{ opacity: 1, duration: 0.5, ease: "sine.out" }}, {round(END - 0.6, 2)});
       tl.fromTo("#s-end .end-mark", {{ opacity: 0, y: 20 }}, {{ opacity: 1, y: 0, duration: 0.6, ease }}, {round(END - 0.45, 2)});

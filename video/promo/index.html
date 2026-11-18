@@ -40,7 +40,7 @@
       /* The product tour: a title card with a real crop of page 13, then ONE continuous take recorded on 2026-11-18
          from a real run of sentmine at 3840×2160, with a camera that follows the places the recorder logged
          (assets/tour/tour.json). The take is trimmed 0.9 s at its start and played 1.12× faster; the wait for the AI
-         meaning was already shortened in the recording, and the film says so. */
+         meaning was already shortened in the recording; the caption under the video on the page says so. */
       #take { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; object-fit: fill; z-index: 0; }
       .caption { z-index: 2; }
       #s-title { background: var(--paper); z-index: 3; }
@@ -76,7 +76,6 @@
         <div class="caption" id="c4">Or hide it: a cloze card.</div>
         <div class="caption" id="c5">One click puts them in Anki.</div>
         <div class="caption" id="c6">Twelve pages later, <b>your card comes back</b>.</div>
-        <div class="note" id="n2">AI wait shortened</div>
       </div>
 
       <div id="s-end" class="clip" data-start="29.13" data-duration="2.67" data-track-index="3" style="background: var(--paper); z-index: 4;">
@@ -129,8 +128,6 @@
       say("#c4", 16.486, 20.325);
       say("#c5", 20.504, 24.075);
       say("#c6", 25.146, 29.611);
-      tl.fromTo("#n2", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 6.396);
-      tl.to("#n2", { opacity: 0, duration: 0.25 }, 9.343);
 
       tl.fromTo("#s-end", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "sine.out" }, 29.13);
       tl.fromTo("#s-end .end-mark", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease }, 29.28);
