@@ -11,6 +11,7 @@ from pathlib import Path
 from sentmine.deck import Note, card_back, card_front, write_notes
 from sentmine.history import Entry
 from sentmine.lemma import base_form
+from sentmine.meaning import key_in
 from sentmine.memory import CardMemory, MemoryProblem
 from sentmine.sentences import paragraphs, split_sentences
 from sentmine.words import Word, find_words
@@ -43,6 +44,7 @@ class Flashcard:
     earlier: str = ""  # made anyway: the date of the earlier card in the memory
     sentence: str = ""  # word cards: the sentence the word was clicked in, for Suggest meaning
     meaning: str = ""  # word cards: the suggested meaning last put on the back, so a new one replaces it
+    key_part: str = ""  # word cards: the words of the sentence that show the suggested meaning, underlined on the back
     old_layout: bool = False  # a word card remembered before 2026-11-18: the sentence on the front, the word on the back
     cloze: bool = False  # the passage with the term hidden, instead of term -> passage
     pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a page, on the back: (file name, PNG)
@@ -87,7 +89,7 @@ class Flashcard:
         """The passage with the term in bold; a cloze card shows the front's pictures after it."""
         if self.old_layout:
             return _plain_html(self.back)
-        bold = _marked_html(self.term, self.back, lambda found: "<b>" + found + "</b>") if self.term else _plain_html(self.back)
+        bold = _marked_html(self.term, self.back, lambda found: "<b>" + found + "</b>", self.key_part) if self.term else _plain_html(self.back)
         return bold + self._front_pictures_html if self.cloze else bold
 
     @property
@@ -111,7 +113,7 @@ class Flashcard:
         pictures, and the source under it."""
         media = tuple(self.pictures)
         if self.cloze:
-            return Note((_marked_html(self.term, self.back, lambda found: "{{c1::" + found + "}}"),
+            return Note((_marked_html(self.term, self.back, lambda found: "{{c1::" + found + "}}", self.key_part),
                          self._front_pictures_html + self.source_html),
                         cloze=True, media=media)
         return Note((self.front_html, self.back_html + self.source_html), media=media)
@@ -148,10 +150,10 @@ def _term_pattern(term: str) -> re.Pattern:
     return re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)", re.IGNORECASE)
 
 
-def _marked_html(term: str, passage: str, mark: Callable[[str], str]) -> str:
-    """The passage as HTML, with every place of the term, itself escaped, replaced by `mark(place)`;
-    its pictures stay where they are."""
-    def marked(text: str) -> str:
+def _marked_html(term: str, passage: str, mark: Callable[[str], str], key: str = "") -> str:
+    """The passage as HTML, with every place of the term, itself escaped, replaced by `mark(place)`, and the first
+    place of `key` (the words that show a suggested meaning) underlined; its pictures stay where they are."""
+    def with_term(text: str) -> str:
         parts, position = [], 0
         for found in _term_pattern(term).finditer(text):
             parts.append(_plain_html(text[position : found.start()]))
@@ -159,6 +161,15 @@ def _marked_html(term: str, passage: str, mark: Callable[[str], str]) -> str:
             position = found.end()
         parts.append(_plain_html(text[position:]))
         return "".join(parts)
+
+    underlined = [False]
+
+    def marked(text: str) -> str:
+        if not key or underlined[0] or key not in text:
+            return with_term(text)
+        underlined[0] = True
+        before, after = text.split(key, 1)
+        return with_term(before) + "<u>" + with_term(key) + "</u>" + with_term(after)
 
     return _with_pictures(passage, marked)
 
@@ -511,11 +522,13 @@ class Session:
         card = self._card(card_id)
         if card.kind != WORD or card.old_layout:
             raise Problem("Only a card made from one word gets a suggested meaning: its passage is your definition.")
-        meaning = ask(card.word, card.sentence or without_pictures(card.back))
+        sentence = card.sentence or without_pictures(card.back)
+        meaning = ask(card.word, sentence)
         back = card.back
         if card.meaning and ("\n\n" + card.meaning) in back:
             back = back.replace("\n\n" + card.meaning, "", 1)
-        card.back, card.meaning = back.rstrip() + "\n\n" + meaning, meaning
+        card.back, card.meaning = back.rstrip() + "\n\n" + meaning, str(meaning)
+        card.key_part = key_in(sentence, getattr(meaning, "key", ""))   # only words that really are in the sentence
         return card
 
     def export(self, path: Path, day: str | None = None) -> str:

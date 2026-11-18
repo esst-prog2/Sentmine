@@ -37,6 +37,11 @@ back:   Two fair coins are flipped simultaneously to determine the
         after the other.
 ```
 
+The model also names the few words of the sentence that show that meaning,
+and the card underlines them (here, for example, `flipped simultaneously to
+determine`). sentmine underlines only words that really are in the sentence;
+when the model names none, the card simply has no underline.
+
 On page 5 I want to remember a term. I drag over `Simpson’s reversal`;
 the words turn blue as I drag, and the status line says
 `Term: Simpson’s reversal Now drag over its definition.` I drag over the

@@ -22,8 +22,16 @@ A word card remembered before this change, with its sentence on the front and th
 - **THEN** My cards shows `Its owner **sighed**.` on its front and `sighed (sigh)` on its back
 
 ### Requirement: Suggest meaning under the passage
-*Suggest meaning* on a card made from one word SHALL ask with the word and its sentence and put the meaning under the passage, replacing the meaning it put there before when that is still there.
+*Suggest meaning* on a card made from one word SHALL ask with the word and its sentence and put the meaning under the passage, replacing the meaning it put there before when that is still there. The same request SHALL ask for the few words of the sentence that show the meaning; the card SHALL underline them on its back only when they are a part of the sentence, of at most eight words and not the whole sentence, and SHALL keep the meaning without an underline otherwise. The underline SHALL NOT be part of the text the reader edits, and an edit that changes those words SHALL drop it.
 
 #### Scenario: Pressing it twice
 - **WHEN** the reader presses Suggest meaning on the card for `skew`, then again
 - **THEN** the back is the sentence and, under it, only the second meaning
+
+#### Scenario: The words that show the meaning
+- **WHEN** the model answers the meaning of `simultaneously` with the key `flipped simultaneously to determine`
+- **THEN** the back shows those words of the sentence underlined, with `simultaneously` still in bold
+
+#### Scenario: Words that are not in the sentence
+- **WHEN** the model names words that are not in the sentence, or the whole sentence
+- **THEN** the meaning is put on the card and nothing is underlined
