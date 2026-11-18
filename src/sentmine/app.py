@@ -172,6 +172,8 @@ def create_app(
     clips = Session(read.memory, deck=read.deck, name="clip")
     web_address = re.compile(r"^https?://", re.IGNORECASE)
 
+    settings = {"theme": None}   # what the reader chose that every view shares
+
     def deck_version() -> str:
         """A fingerprint of the deck: Read and the side panel ask for it to see when the other changed a card."""
         seen = hashlib.sha256()
@@ -254,6 +256,7 @@ def create_app(
             text_id=reading.text_id,  # names the text read, so the page can keep the reader's place in it
             clips=now() is clips,  # the side panel: each paragraph is a clip
             chosen_card=reading.chosen_card,  # where pictures from a web page go
+            theme=settings["theme"],  # light or dark as last chosen in any view; None: the computer's own
             inbox=list(reading.deck.inbox),  # text from a web page for the card open in Edit, put at its cursor
             added_picture=picture,  # the picture just added, so the editor puts it at the cursor even when the card has it
             deck_version=deck_version(),  # changes whenever the deck does, here or in the other view
@@ -351,7 +354,16 @@ def create_app(
 
     @both("GET", "/api/version")
     def version():
-        return jsonify(deck=deck_version())
+        return jsonify(deck=deck_version(), theme=settings["theme"])
+
+    @both("PUT", "/api/theme")
+    def choose_theme():
+        """Light or dark, chosen in one view, for all of them: the side panel keeps its own browser storage."""
+        chosen = (request.get_json(silent=True) or {}).get("theme")
+        if chosen not in ("light", "dark"):
+            raise Problem("The theme is light or dark.")
+        settings["theme"] = chosen
+        return jsonify(theme=chosen)
 
     @app.get("/fonts/<name>")
     def font(name: str):

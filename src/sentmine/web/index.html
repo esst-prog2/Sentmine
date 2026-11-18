@@ -213,7 +213,6 @@ try {
   .mycards { display: none; color: var(--soft); font-size: 0.875rem; text-decoration: none; white-space: nowrap; }
   .mycards:hover { color: var(--accent); }
   body.clip .mycards { display: inline; margin-left: auto; }
-  body.clip #theme { display: none; }
   body.clip header { flex-wrap: nowrap; }
   body.clip #status { position: sticky; top: var(--header, 0px); z-index: 1; }
   body.clip header .deck { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; width: auto; display: flex; flex-wrap: nowrap;
@@ -373,7 +372,16 @@ $("theme").addEventListener("click", () => {
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem("sentmine-theme", next); } catch (error) {}   // remembered only if the browser allows it
   drawThemeButton();
+  fetch(API + "/theme", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ theme: next }) }).catch(() => {});
 });
+// The theme last chosen in any view (Read, the side panel, My cards), as sentmine remembers it.
+function applyTheme(chosen) {
+  if ((chosen !== "light" && chosen !== "dark") || document.documentElement.dataset.theme === chosen) return;
+  document.documentElement.dataset.theme = chosen;
+  try { localStorage.setItem("sentmine-theme", chosen); } catch (error) {}
+  drawThemeButton();
+}
+
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawThemeButton);
 new ResizeObserver(() => {   // the status line and the cards stay in view under the header while the text scrolls
   document.documentElement.style.setProperty("--header", document.querySelector("header").offsetHeight + "px");
@@ -1415,6 +1423,7 @@ async function refreshIfChanged() {
   if (document.visibilityState !== "visible" || term !== null || boxFor !== null || pageDrag) return;
   try {
     const seen = await (await fetch(API + "/version")).json();
+    applyTheme(seen.theme);   // chosen in the other view meanwhile
     if (seen.deck === state.deck_version) return;
     const fresh = await (await fetch(API + "/state")).json();
     if (editing !== null) {   // keep what is typed; only what was sent meanwhile (from a web page) goes in
@@ -1840,6 +1849,8 @@ function firstData() {
     return null;
   }
 }
+applyTheme((firstData() || {}).theme);
+
 function opened(loaded) {
   if (loaded && loaded.memory_warning) {
     say(loaded.memory_warning + " Earlier cards will not be found, and new ones will not be remembered.", true);

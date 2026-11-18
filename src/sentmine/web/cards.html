@@ -228,7 +228,16 @@ $("theme").addEventListener("click", () => {
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem("sentmine-theme", next); } catch (error) {}   // remembered only if the browser allows it
   drawThemeButton();
+  fetch("/api/theme", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ theme: next }) }).catch(() => {});
 });
+// The theme last chosen in any view (Read, the side panel, My cards), as sentmine remembers it.
+function applyTheme(chosen) {
+  if ((chosen !== "light" && chosen !== "dark") || document.documentElement.dataset.theme === chosen) return;
+  document.documentElement.dataset.theme = chosen;
+  try { localStorage.setItem("sentmine-theme", chosen); } catch (error) {}
+  drawThemeButton();
+}
+
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawThemeButton);
 drawThemeButton();
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -346,6 +355,8 @@ function firstData() {
     return null;
   }
 }
+
+fetch("/api/version").then((answer) => answer.json()).then((seen) => applyTheme(seen.theme)).catch(() => {});
 
 async function load() {
   const data = await ask("GET", "/api/memory?q=" + encodeURIComponent($("search").value));

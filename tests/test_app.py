@@ -148,3 +148,12 @@ def test_the_book_font_is_served_by_sentmine_itself():
     assert response.status_code == 200 and response.mimetype == "font/woff" and response.data[:4] == b"wOFF"
     assert client.get("/fonts/../app.py").status_code == 404
     assert client.get("/fonts/other.woff").status_code == 404
+
+
+def test_the_theme_chosen_in_one_view_is_known_to_all():
+    client = create_app().test_client()
+    assert client.get("/api/version").get_json()["theme"] is None   # the computer's own, until the reader chooses
+    assert client.put("/clip/api/theme", json={"theme": "light"}).get_json() == {"theme": "light"}
+    assert client.get("/api/version").get_json()["theme"] == "light"
+    assert client.get("/api/state").get_json()["theme"] == "light"
+    assert client.put("/api/theme", json={"theme": "blue"}).status_code == 400
