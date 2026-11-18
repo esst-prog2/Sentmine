@@ -46,8 +46,8 @@ On page 5 I want to remember a term. I drag over `Simpson’s reversal`;
 the words turn blue as I drag, and the card is made at once, with the
 sentence the term is in as its passage. Every card has the same shape: the
 term on the front, the passage on the back with the term in bold. (Had the
-explanation gone on in the next sentence, **Add sentences** on the card
-would let me click that sentence to add it.) Because the term is inside the
+explanation gone on in the next sentence, I would press **Edit** on the card
+and click that sentence to put it in.) Because the term is inside the
 passage, I press **Make it cloze**, which hides the term:
 
 ```
@@ -240,26 +240,32 @@ it). Shift and the arrow keys mark several words, as a drag does: Enter makes
 them a term's card, with their sentence. A word you already have a card for
 shows that card when the keyboard reaches it.
 
-A card's passage is the sentence its word or term is in. To make it longer,
-press **Add sentences** on the card: its sentences light up in the text, a
-click on any other sentence adds it (in reading order), and a click on a lit
-one takes it out; **Done** or Esc ends it. A drag over more than eight words
-is not taken as a term: drag over the term, then add sentences. If you have
-changed the passage with **Edit**, a clicked sentence is added at its end and
-taking one out is left to Edit, so what you typed is kept.
+A card's passage is the sentence its word or term is in. A drag over more
+than eight words is not taken as a term: drag over the term, then change the
+passage in **Edit**.
 
-A card can hold pictures, such as a formula or a graph. Press **Edit** on
-it: each side becomes a small document of text and pictures. Paste a picture
-where the cursor is: copy one or take a
-screenshot (Win+Shift+S), then press Ctrl+V. Type above or below it. To
-remove a picture, click it and press Delete. On a PDF, **Cut from the PDF
-page** in the editor lets you drag a box around a formula on the page (Esc
-cancels); it is cut from the PDF itself, so it stays sharp. On a web page,
-right-click an image and choose *Add this picture to the card you last made
-or edited*. While you edit a card, a picture from the page or the PDF goes
-where your cursor last was, in the Term or the Passage (at the end of the
-Passage if you have not clicked into either). Pictures go into the deck file and into Anki where you put them (on a cloze
-card, a picture on the front is shown after the answer).
+**Edit** is the one place to change a card. Press it, and both sides become
+small documents of text and pictures: the Term on the front, the Passage on
+the back. Click where you want something, in either side, and then
+everything you add goes in there:
+
+- **click a sentence** in the text (in Read or the side panel), and the
+  whole sentence goes in; no new card is made while you edit;
+- on a PDF, **drag a box** on the page around a formula or a graph: that
+  part of the page goes in as a picture, cut from the PDF itself so it stays
+  sharp (Esc cancels the box);
+- **paste a picture** with Ctrl+V: a copied image or a screenshot
+  (Win+Shift+S);
+- on a web page, **right-click** text and choose *Make a card from this*, or
+  right-click an image and choose *Add this picture to the card you last
+  made or edited*: it goes in there too.
+
+When you click away from the card, a thin line shows where the next thing
+will go. Type around it as usual; to remove a picture, click it and press
+Delete; to take out a sentence, delete it like any text. **Save** ends it;
+**Cancel** puts the card back as it was, pictures included. Pictures go into
+the deck file and into Anki where you put them (on a cloze card, a picture
+on the front is shown after the answer).
 
 Instead of pasting, you can open a PDF that contains text, or a `.txt` file.
 Running heads and page numbers are removed and hyphenated words rejoined;

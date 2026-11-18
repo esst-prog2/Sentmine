@@ -76,7 +76,6 @@ def _card_json(card: Flashcard, prefix: str = "") -> dict:
         # the address carries the picture's name, which comes from its content, so the browser never shows an old one
         "pictures": {name: f"{address}{name}" for name, _ in card.pictures},  # for the editor: where each picture is served
         "source": card.source,  # "read" or "clip"
-        "sentences": card.sentences,  # the sentences of its text in its passage, for Add sentences
         "origin": card.origin_text,  # where it came from: "primer.pdf, p. 13", a web page's title
         "origin_url": card.origin_url,
     }
@@ -178,6 +177,7 @@ def create_app(
             seen.update(repr((card.id, card.front, card.back, card.cloze, card.earlier, card.origin_text,
                               [name for name, _ in card.pictures])).encode("utf-8"))
         seen.update(repr(read.chosen_card).encode("utf-8"))
+        seen.update(repr([item["id"] for item in read.deck.inbox]).encode("utf-8"))
         return seen.hexdigest()[:16]
 
     def place_in_pdf(result: str, card) -> None:
@@ -252,6 +252,7 @@ def create_app(
             text_id=reading.text_id,  # names the text read, so the page can keep the reader's place in it
             clips=now() is clips,  # the side panel: each paragraph is a clip
             chosen_card=reading.chosen_card,  # where pictures from a web page go
+            inbox=list(reading.deck.inbox),  # text from a web page for the card open in Edit, put at its cursor
             added_picture=picture,  # the picture just added, so the editor puts it at the cursor even when the card has it
             deck_version=deck_version(),  # changes whenever the deck does, here or in the other view
             pdf=None if shown["pages"] is None or now() is clips else {
@@ -373,6 +374,10 @@ def create_app(
         title = " ".join(str(source.get("title") or "").split())[:200]
         url = str(source.get("url") or "")[:2000]
         around = {name: body.get(name) if isinstance(body.get(name), str) else "" for name in ("before", "after", "term")}
+        if clips.editing_card() is not None:   # a card is open in Edit: the text goes in at its cursor
+            clips.send_to_editor(sent("text"), around["before"][-2000:], around["after"][:2000])
+            card = next(card for card in clips.cards if card.id == clips.editing_card())
+            return state(f"Put in the card you are editing, '{card.word or card.term}', where its cursor is.")
         made = clips.add_clip(sent("text"), around["before"][-2000:], around["after"][:2000], around["term"][:200],
                               title, url if web_address.match(url) else "")
         if made is None:
@@ -440,10 +445,20 @@ def create_app(
         reading.delete(card_id)
         return state("Card deleted.")
 
-    @both("PUT", "/api/cards/<int:card_id>/sentences")
-    def toggle_sentence(card_id: int):
-        card, added = reading.toggle_sentence(card_id, sent("sentence", int))
-        return state(("Sentence added to" if added else "Sentence taken out of") + f" the card for '{card.word or card.term}'.")
+    @both("PUT", "/api/editing")
+    def set_editing():
+        """The page opened a card in Edit (and says so again every 30 seconds), or closed it ("card": null)."""
+        card = (request.get_json(silent=True) or {}).get("card")
+        if card is not None and (not isinstance(card, int) or isinstance(card, bool)):
+            raise Problem("The request has no usable 'card'.")
+        reading.set_editing(card)
+        return jsonify(editing=reading.editing_card())
+
+    @both("POST", "/api/inbox/taken")
+    def inbox_taken():
+        ids = sent("ids", list)
+        reading.take_from_inbox([one for one in ids if isinstance(one, int)])
+        return jsonify(ok=True)
 
     @both("PUT", "/api/cards/<int:card_id>/cloze")
     def switch_cloze(card_id: int):

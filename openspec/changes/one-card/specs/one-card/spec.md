@@ -36,13 +36,21 @@ A word card remembered before this change, with its sentence on the front and th
 - **WHEN** the model names words that are not in the sentence, or the whole sentence
 - **THEN** the meaning is put on the card and nothing is underlined
 
-### Requirement: Add sentences
-A card made from the text in Read, or from a clip in the side panel, SHALL offer Add sentences in that same view. While it is on, the sentences of the card's passage SHALL be lit in the text, a click on a word SHALL add that word's whole sentence to the passage in reading order instead of making a card, and a click on a lit sentence SHALL take it out, unless it is the last one. Done or Esc SHALL end it. When the passage was changed with Edit, a clicked sentence SHALL be added at the end of the back, taking one out SHALL be refused with a message, and what was typed SHALL be kept. A suggested meaning and the pictures on the back SHALL stay.
+### Requirement: Edit puts things in at the cursor
+While a card is open in Edit, the reader SHALL be able to put into it, at the place of its cursor in the Term or the Passage (the end of the Passage when there is none): the whole sentence of a word clicked in the text of the same view; the sentences of a drag over the text; on a PDF in Read, a picture of a box dragged on a page (a click instead of a drag puts in the sentence clicked); a pasted picture; and, from a web page, the whole sentences of text right-clicked with *Make a card from this* and an image right-clicked with *Add this picture*. Nothing put in this way SHALL make a card. Put-in text SHALL keep a space from the words around it, and the cursor SHALL go on after it. While the cursor is away from the card, a mark SHALL show where the next thing goes. Save SHALL end the edit; Cancel SHALL put the card back as it was, with no picture added. A page closed while editing SHALL count as closed after three minutes.
 
 #### Scenario: A sentence further on
-- **WHEN** the reader presses Add sentences on the card for `random` and clicks a word of the sentence before it
-- **THEN** the passage is that sentence, then the card's own sentence, and both are lit
+- **WHEN** the reader edits the card for `random`, puts the cursor at the start of its passage and clicks a word of the sentence before it
+- **THEN** that sentence is at the start of the passage, followed by the card's own sentence, and no new card is made
 
-#### Scenario: Taking one out
-- **WHEN** the reader clicks a lit sentence that is not the only one
-- **THEN** it leaves the passage and is no longer lit
+#### Scenario: A box on the PDF page
+- **WHEN** the reader then drags a box around a formula on the page
+- **THEN** its picture is in the passage just after the sentence put in
+
+#### Scenario: Text from a web page
+- **WHEN** a card is open in Edit in the side panel and the reader right-clicks a sentence on the web page and chooses *Make a card from this*
+- **THEN** that sentence is put in at the card's cursor, and no clip or card is made
+
+#### Scenario: Cancel
+- **WHEN** the reader puts in a picture and a sentence, then presses Cancel
+- **THEN** the card is as it was before Edit

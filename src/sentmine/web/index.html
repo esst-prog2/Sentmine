@@ -16,26 +16,27 @@ try {
     color-scheme: light dark;
     --page: #f6f5f1; --panel: #ffffff; --ink: #1f2328; --soft: #5c6470; --line: #d9d6cd; --hover: #ecebe5;
     --accent: #1a5fd0; --accent-hover: #154fae; --on-accent: #ffffff; --selection: #c8dafc;
-    --picked: #ffe27a; --term: #bfe3c6; --warn: #b3261e; --passage: rgba(26, 95, 208, 0.2);
+    --picked: #ffe27a; --term: #bfe3c6; --warn: #b3261e;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme=light]) {
       --page: #16181c; --panel: #1f2227; --ink: #e8e6e1; --soft: #a2a8b3; --line: #343841; --hover: #2a2e35;
       --accent: #6ea8ff; --accent-hover: #8fbcff; --on-accent: #0d1117; --selection: #2d4a7a;
-      --picked: #7a6410; --term: #235c33; --warn: #ff8a80; --passage: rgba(110, 168, 255, 0.3);
+      --picked: #7a6410; --term: #235c33; --warn: #ff8a80;
     }
   }
   :root[data-theme=dark] {
         --page: #16181c; --panel: #1f2227; --ink: #e8e6e1; --soft: #a2a8b3; --line: #343841; --hover: #2a2e35;
         --accent: #6ea8ff; --accent-hover: #8fbcff; --on-accent: #0d1117; --selection: #2d4a7a;
-        --picked: #7a6410; --term: #235c33; --warn: #ff8a80; --passage: rgba(110, 168, 255, 0.3);
+        --picked: #7a6410; --term: #235c33; --warn: #ff8a80;
   }
   :root[data-theme=light] { color-scheme: light; }
   :root[data-theme=dark] { color-scheme: dark; }
   * { box-sizing: border-box; }
-  /* Add sentences: a click picks a sentence; the card it is for stands out */
-  body.adding #text .w { cursor: copy; }
-  .card.adding-to { box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; margin-left: -12px; }
+  /* a card open in Edit: a box drawn on a PDF page is a picture for it; a mark shows where the next thing goes */
+  body.editing-pdf .pdf-page, body.editing-pdf .pdf-page .w { cursor: crosshair; }
+  .card.editing-card { position: relative; }
+  .caret-mark { position: absolute; width: 2px; background: var(--accent); border-radius: 1px; pointer-events: none; }
   body {
     margin: 0; background: var(--page); color: var(--ink); accent-color: var(--accent);
     font: 16px/1.5 system-ui, "Segoe UI", sans-serif;
@@ -222,7 +223,6 @@ try {
     font: 0.8125rem system-ui, sans-serif; color: var(--soft); margin-bottom: 4px; }
   body > header { view-transition-name: app-header; }
 </style>
-<style id="passage-style"></style>
 </head>
 <body>
 
@@ -310,7 +310,6 @@ const HINT = CLIP
 let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let term = null;       // the term dragged over, while its definition is still to be marked
 let editing = null;    // the id of the card being edited
-let adding = null;     // the id of the card whose passage takes or gives up a clicked sentence (Add sentences)
 let draft = null;      // what is typed in Edit, kept while the card is drawn again: { id, front, back }
 let lastPick = null;   // the last word click or definition sent, so "Make it anyway" can send it again
 let shownPdf = null;   // the version of the PDF whose pages are drawn, so its pictures are not drawn again
@@ -779,20 +778,24 @@ function drawCard(card) {
     card.cloze ? "Cloze" : "Term → passage");
 
   if (editing === card.id) {
-    if (!draft || draft.id !== card.id) draft = { id: card.id, front: card.front, back: card.back };
+    if (!draft || draft.id !== card.id) {   // the card as it was, so Cancel can put it back
+      draft = { id: card.id, front: card.front, back: card.back, original: { front: card.front, back: card.back } };
+    }
     // a picture that arrived while editing (pasted, cut from the page, sent from a web page) takes the place
     // of the cursor's mark, on either side, or goes to the end of the back. The picture just added goes to the mark
     // even when the card has it already (the same screenshot pasted again, into the Term this time).
+    let placed = null;   // the picture put at the cursor: the cursor goes on after it
     const just = state.added_picture;
     if (just && (card.pictures || {})[just]) {
       const side = draft.front.includes(CURSOR) ? "front" : draft.back.includes(CURSOR) ? "back" : null;
-      if (side) draft[side] = draft[side].replace(AT_CURSOR, "\n[[picture:" + just + "]]\n");
+      if (side) { draft[side] = draft[side].replace(AT_CURSOR, "\n[[picture:" + just + "]]\n"); placed = { side, name: just }; }
     }
     for (const name of Object.keys(card.pictures || {})) {
       const mark = "[[picture:" + name + "]]";
       if (draft.front.includes(mark) || draft.back.includes(mark)) continue;
       const side = draft.front.includes(CURSOR) ? "front" : "back";
       const place = "\n" + mark + "\n";
+      if (draft[side].includes(CURSOR)) placed = { side, name };
       draft[side] = draft[side].includes(CURSOR) ? draft[side].replace(AT_CURSOR, place) : draft[side] + place;
     }
     for (const side of ["front", "back"]) draft[side] = tidyDoc(draft[side].split(CURSOR).join(""));
@@ -800,24 +803,36 @@ function drawCard(card) {
     const names = ["Term", "Passage"];
     const front = docEditor("front", names[0], card);
     const back = docEditor("back", names[1], card);
+    if (placed) {   // keep the cursor's place: just after the picture that took it
+      const image = [...(placed.side === "front" ? front : back).querySelectorAll("img")].find((one) => one.dataset.name === placed.name);
+      if (image) {
+        const after = document.createRange();
+        after.setStartAfter(image);
+        after.collapse(true);
+        lastCaret = { editor: placed.side === "front" ? front : back, range: after };
+      }
+    }
     const save = element("button", "main small", "Save");
     save.addEventListener("click", async () => {
       const clean = (editor) => docText(editor).split(CURSOR).join("");   // a mark left by a picture that never came
       const done = await call("PUT", API + "/cards/" + card.id, { front: clean(front), back: clean(back) });
-      if (done) { editing = null; draft = null; draw(); }
+      if (done) closeEditing();
     });
     const cancel = element("button", "small", "Cancel");
-    cancel.addEventListener("click", () => { editing = null; draft = null; draw(); });
+    cancel.addEventListener("click", async () => {
+      const now = state.cards.find((one) => one.id === card.id);
+      const { original } = draft;   // a picture added meanwhile is on the card already: put the card back as it was
+      if (now && (now.front !== original.front || now.back !== original.back)) await call("PUT", API + "/cards/" + card.id, original);
+      closeEditing();
+    });
     const buttons = element("div", "buttons");
     buttons.append(kind, save, cancel);
-    if (state.pdf && !CLIP) {
-      const cut = element("button", "small", "Cut from the PDF page");
-      cut.title = "Drag a box around a formula or graph on the page";
-      cut.addEventListener("click", () => startBox(card.id));
-      buttons.append(cut);
-    }
+    box.classList.add("editing-card");
+    const mark = element("span", "caret-mark");
+    mark.hidden = true;
+    mark.title = "The next sentence or picture goes here";
     box.append(element("span", "side-name", names[0]), front, element("span", "side-name", names[1]), back,
-      element("div", "paste-hint", "Paste a picture where the cursor is (Ctrl+V), on either side. To remove one, click it and press Delete."), buttons);
+      element("div", "paste-hint", editHint()), buttons, mark);
     return box;
   }
 
@@ -830,29 +845,16 @@ function drawCard(card) {
   edit.addEventListener("click", () => {
     editing = card.id;
     draft = null;
-    call("PUT", API + "/cards/" + card.id + "/chosen");   // pictures from a web page go to the card being edited
+    lastCaret = null;
+    tellEditing(card.id);   // text and pictures from a web page now go to this card, at its cursor
+    say("Editing: whatever you add goes in where the cursor is. Save when the card is right.");
+    draw();
   });
   const remove = element("button", "small", "Delete");
   remove.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id));
   const buttons = element("div", "buttons");
   buttons.append(kind, edit, remove);
   if (card.origin) box.append(element("div", "origin", "From " + card.origin));
-  if (adding === card.id) {
-    box.classList.add("adding-to");
-    const done = element("button", "main small", "Done");
-    done.addEventListener("click", stopAdding);
-    buttons.append(done);
-    box.append(element("div", "paste-hint", "Click a sentence in the text to add it; click a lit one to take it out."));
-  } else if ((card.sentences || []).length && card.source === (CLIP ? "clip" : "read") && editing === null) {
-    const more = element("button", "small", "Add sentences");
-    more.title = "Click sentences in the text to add them to the passage";
-    more.addEventListener("click", () => {
-      adding = card.id;
-      say("Click a sentence to add it to the passage of '" + card.front.split("\n")[0] + "'; click a lit one to take it out. Done or Esc when it is right.");
-      draw();
-    });
-    buttons.append(more);
-  }
   if (card.cloze || card.can_cloze) {
     const other = element("button", "small", card.cloze ? "Make it term → passage" : "Make it cloze");
     other.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/cloze", { cloze: !card.cloze }));
@@ -1056,17 +1058,11 @@ function dropCursor() {   // no picture came: the mark goes, from the editors an
   if (draft) { draft.front = draft.front.split(CURSOR).join(""); draft.back = draft.back.split(CURSOR).join(""); }
 }
 
-// Cut from the PDF page (in the card editor): the reader drags a box around a formula or graph on a page of the
-// PDF; that part of the page, drawn from the PDF itself, goes into the card's back. Esc cancels.
+// A picture from the PDF page: while a card is open in Edit, a drag on a page draws a box around a formula or graph;
+// that part of the page, drawn from the PDF itself, goes in where the card's cursor is. A click instead of a drag
+// puts in the sentence clicked. Esc cancels a box.
 let boxFor = null;     // the card the box is for, while one is being drawn
 let boxing = null;     // { page, x, y, mark } while the mouse is down
-
-function startBox(cardId) {
-  if (editing === cardId) markCursor();   // the picture will go where the cursor was
-  boxFor = cardId;
-  document.body.classList.add("boxing");
-  say("Drag a box around the formula or graph on the page. Esc cancels.");
-}
 
 function stopBox(message) {
   boxFor = null;
@@ -1083,9 +1079,10 @@ function pageFraction(page, event) {
 
 // Capture phase, so that while a box is drawn the clicks and drags on the words do nothing else.
 document.addEventListener("mousedown", (event) => {
-  if (boxFor === null || event.button !== 0) return;
+  if (event.button !== 0 || editing === null || !state.pdf || CLIP) return;
   const page = event.target.closest && event.target.closest(".pdf-page");
-  if (!page) return;
+  if (!page || event.target.closest("a")) return;   // a link on the page still works
+  boxFor = editing;
   event.preventDefault();
   event.stopImmediatePropagation();
   const [x, y] = pageFraction(page, event);
@@ -1112,6 +1109,12 @@ document.addEventListener("mouseup", async (event) => {
   const page = Number(boxing.page.dataset.page);
   const card = boxFor;
   stopBox();
+  if (box[2] < 0.004 && box[3] < 0.004) {   // a click, not a box: the sentence of the word clicked
+    const word = document.elementsFromPoint(event.clientX, event.clientY).find((one) => one.classList && one.classList.contains("w"));
+    if (word) insertSentences(Number(word.dataset.sentence), Number(word.dataset.sentence));
+    return;
+  }
+  markCursor();   // the picture goes where the cursor was
   if (!await call("POST", "/api/cards/" + card + "/pictures", { page, box })) dropCursor();
 }, true);
 
@@ -1133,7 +1136,8 @@ function draw() {
   $("count").textContent = state.count_text;
   $("cards").replaceChildren(...state.cards.map(drawCard));
   $("no-cards").hidden = state.cards.length > 0;
-  markPassage();
+  document.body.classList.toggle("editing-pdf", editing !== null && !!state.pdf && !CLIP);
+  showCaretMark();
 }
 
 // One handler tells a click from a drag. It listens on the document because a drag may end
@@ -1156,8 +1160,8 @@ document.addEventListener("mouseup", (event) => {
     const clipped = CLIP && term === null ? clipOf(selection.anchorNode) : null;
     const over = [...$("text").querySelectorAll(".w")].filter((word) => selection.containsNode(word, true));
     selection.removeAllRanges();
-    if (adding !== null) {
-      say("While adding sentences, click a sentence; a drag does nothing. Press Done when the passage is right.");
+    if (editing !== null) {
+      if (over.length) insertSentences(Number(over[0].dataset.sentence), Number(over[over.length - 1].dataset.sentence));
     } else if (clipped) {
       pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
     } else if (over.length) {
@@ -1180,18 +1184,18 @@ function clipOf(node) {   // the clip a drag was in: a drag over a term makes it
 }
 
 // A drag over a term (or the marked words, from the keyboard) makes its card at once: the term, and the sentence it
-// is in (the sentences, when it runs across two). More of the text goes into the passage with Add sentences.
+// is in (the sentences, when it runs across two). More goes into the passage with Edit: a click on a sentence there.
 const LONGEST_TERM = 8;   // words
 
 function chose(selected, first, last) {
   if (!selected) return;
-  if (adding !== null) {
-    say("While adding sentences, click a sentence; a drag does nothing. Press Done when the passage is right.");
+  if (editing !== null) {
+    insertSentences(first, last);
     return;
   }
   if (selected.trim().split(/\s+/).length > LONGEST_TERM) {
     say("Drag over just the term (up to " + LONGEST_TERM + " words): its sentence comes with it. " +
-      "For a longer passage, make the card, then press Add sentences on it.", true);
+      "For a longer passage, press Edit on the card and click the sentences to put in.", true);
     return;
   }
   pick(API + "/definition", { term: termOf(selected), sentence: first, last });
@@ -1199,29 +1203,11 @@ function chose(selected, first, last) {
 
 function pickWord(box) {
   term = null;
-  if (adding !== null) {   // Add sentences: the click is for the sentence, not a card for the word
-    call("PUT", API + "/cards/" + adding + "/sentences", { sentence: Number(box.dataset.sentence) });
+  if (editing !== null) {   // in Edit, a click is for the sentence, put in at the cursor, not a card for the word
+    insertSentences(Number(box.dataset.sentence), Number(box.dataset.sentence));
     return;
   }
   pick(API + "/word", { sentence: Number(box.dataset.sentence), word: Number(box.dataset.word) });
-}
-
-function stopAdding() {
-  adding = null;
-  document.body.classList.remove("adding");
-  draw();
-}
-
-// The sentences of the passage, lit up in the text while sentences are added: one rule for every word of them,
-// so the words of a PDF page drawn later are lit too.
-function markPassage() {
-  const card = adding === null ? null : state.cards.find((one) => one.id === adding);
-  if (adding !== null && !card) adding = null;   // deleted meanwhile
-  document.body.classList.toggle("adding", adding !== null);
-  $("passage-style").textContent = card
-    ? card.sentences.map((number) => '#text .w[data-sentence="' + number + '"]').join(", ") +
-      " { background: var(--passage); border-radius: 3px; }"
-    : "";
 }
 
 document.addEventListener("keydown", (event) => {
@@ -1229,7 +1215,6 @@ document.addEventListener("keydown", (event) => {
     term = null;
     say("");
   }
-  if (event.key === "Escape" && adding !== null) stopAdding();
 });
 
 // The keyboard way to make cards: Tab into the text, the arrow keys move from word to word, Enter makes a
@@ -1326,8 +1311,8 @@ async function refreshIfChanged() {
     const seen = await (await fetch(API + "/version")).json();
     if (seen.deck === state.deck_version) return;
     const fresh = await (await fetch(API + "/state")).json();
-    if (editing !== null) {   // keep what is typed; only a picture sent meanwhile (from a web page) joins the end
-      addArrivedPictures(fresh);
+    if (editing !== null) {   // keep what is typed; only what was sent meanwhile (from a web page) goes in
+      addArrived(fresh);
       return;
     }
     if (term !== null || boxFor !== null || pageDrag) return;   // something started meanwhile
@@ -1337,10 +1322,19 @@ async function refreshIfChanged() {
     // the app is not answering; the next action here says so
   }
 }
-function addArrivedPictures(fresh) {
+const taken = new Set();   // text from a web page already put in, until the app has let it go
+
+function addArrived(fresh) {
   const card = fresh.cards.find((one) => one.id === editing);
   const editor = document.querySelector(".back-editor");
   if (!card || !editor || !draft) return;
+  const mine = (fresh.inbox || []).filter((item) => item.card === editing && !taken.has(item.id));
+  for (const item of mine) {
+    taken.add(item.id);
+    insertAtCursor(item.text);
+  }
+  if (mine.length) fetch(API + "/inbox/taken", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids: mine.map((item) => item.id) }) }).catch(() => {});
   const shown = new Set([...document.querySelectorAll(".doc-editor img")].map((image) => image.dataset.name));
   for (const [name, src] of Object.entries(card.pictures || {})) {
     const mark = "[[picture:" + name + "]]";
@@ -1364,7 +1358,116 @@ function addArrivedPictures(fresh) {
       draft.back = docText(editor);
     }
   }   // the rest of the deck is drawn after Save or Cancel
+  showCaretMark();
 }
+
+// The edit mode: the page tells the app which card is open in Edit, again every 30 seconds while it is, so that
+// text and pictures from a web page go to it; and again when it closes.
+function tellEditing(card, keepalive = false) {
+  return fetch(API + "/editing", { method: "PUT", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ card }), keepalive }).catch(() => {});
+}
+
+function closeEditing() {
+  tellEditing(null);
+  editing = null;
+  draft = null;
+  lastCaret = null;
+  taken.clear();
+  draw();
+}
+
+setInterval(() => { if (editing !== null) tellEditing(editing); }, 30000);
+window.addEventListener("pagehide", () => { if (editing !== null) tellEditing(null, true); });
+
+function editHint() {
+  const parts = ["Everything goes in where the cursor is: click a sentence in the text"];
+  if (state.pdf && !CLIP) parts.push("drag a box on the PDF page for a picture");
+  parts.push("paste a picture (Ctrl+V)", "or right-click text or a picture on a web page");
+  return parts.join(", ") + ". To remove a picture, click it and press Delete. Save when the card is right.";
+}
+
+// The sentences `first` to `last` of the text, as one passage: a space between sentences, a blank line between
+// paragraphs.
+function sentencesText(first, last) {
+  const paragraphs = [];
+  for (const paragraph of state.paragraphs) {
+    const chosen = paragraph.filter((drawn) => drawn.sentence >= first && drawn.sentence <= last)
+      .map((drawn) => drawn.pieces.map((piece) => piece.text).join(""));
+    if (chosen.length) paragraphs.push(chosen.join(" "));
+  }
+  return paragraphs.join("\n\n");
+}
+
+function insertSentences(first, last) {
+  const text = sentencesText(Math.min(first, last), Math.max(first, last));
+  if (text) insertAtCursor(text);
+}
+
+// Text put in where the cursor last was, Term or Passage (the end of the Passage when there is none), with a
+// space before it when it would touch a word; the cursor goes on after it.
+function insertAtCursor(text) {
+  const caret = caretInCard();
+  const editor = caret ? caret.editor : document.querySelector(".back-editor");
+  if (!editor || !draft) return;
+  let range;
+  if (caret) {
+    range = caret.range.cloneRange();
+    range.collapse(false);
+  } else {
+    range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+  }
+  const before = document.createRange();
+  before.selectNodeContents(editor);
+  before.setEnd(range.startContainer, range.startOffset);
+  const rest = document.createRange();
+  rest.selectNodeContents(editor);
+  rest.setStart(range.endContainer, range.endOffset);
+  const touchesBefore = before.toString() && !/\s$/.test(before.toString());
+  const touchesAfter = rest.toString() && !/^\s/.test(rest.toString());
+  const node = document.createTextNode((touchesBefore ? " " : "") + text + (touchesAfter ? " " : ""));
+  range.insertNode(node);
+  const after = document.createRange();   // just after the text, before the space that keeps it off the next word
+  after.setStart(node, node.length - (touchesAfter ? 1 : 0));
+  after.collapse(true);
+  lastCaret = { editor, range: after };
+  if (editor.contains(document.activeElement) || document.activeElement === editor) {   // the real cursor moves on too
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(after.cloneRange());
+  }
+  draft[editor.dataset.side] = docText(editor);
+  say("Put in the card where the cursor is.");
+  showCaretMark();
+}
+
+// A thin line where the next sentence or picture will go, while the cursor itself is elsewhere (on the PDF, on a
+// web page). Hidden while typing in the card, where the real cursor shows the place.
+function showCaretMark() {
+  const mark = document.querySelector(".editing-card .caret-mark");
+  if (!mark) return;
+  const caret = caretInCard();
+  const typing = caret && caret.editor.contains(document.activeElement);
+  if (!caret || typing) { mark.hidden = true; return; }
+  const range = caret.range.cloneRange();
+  range.collapse(false);
+  let place = range.getClientRects()[0];
+  if (!place) {   // an empty spot has no box of its own: a zero-width mark there has one
+    const probe = document.createTextNode("\u200b");
+    range.insertNode(probe);
+    place = probe.parentNode ? (() => { const r = document.createRange(); r.selectNode(probe); return r.getBoundingClientRect(); })() : null;
+    probe.remove();
+    caret.editor.normalize();
+  }
+  if (!place) { mark.hidden = true; return; }
+  const box = mark.parentElement.getBoundingClientRect();
+  Object.assign(mark.style, { left: place.left - box.left + "px", top: place.top - box.top + "px", height: Math.max(place.height, 16) + "px" });
+  mark.hidden = false;
+}
+
+document.addEventListener("focusin", showCaretMark);
+document.addEventListener("focusout", () => setTimeout(showCaretMark, 0));
 
 setInterval(refreshIfChanged, 2000);
 document.addEventListener("visibilitychange", refreshIfChanged);

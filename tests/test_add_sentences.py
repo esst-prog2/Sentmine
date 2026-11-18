@@ -1,5 +1,5 @@
-"""A drag over a term makes its card at once with its sentence; Add sentences changes the passage by clicking
-sentences of the text the card came from."""
+"""A drag over a term makes its card at once with its sentence. While a card is open in Edit, text selected on a
+web page waits for it, and its editor puts it at the cursor."""
 
 import pytest
 from reading_helper import place_of
@@ -32,7 +32,6 @@ def test_a_drag_over_a_term_makes_its_card_with_its_sentence(session):
     _, card = session.add_definition("observational studies", sentences=(0, 0))
     assert (card.front, card.back) == ("observational studies", FIRST)
     assert card.back_html.startswith("In analyses of <b>observational studies</b>,")
-    assert card.sentences == [0]
 
 
 def test_a_term_across_two_sentences_takes_both(session):
@@ -45,76 +44,56 @@ def test_the_route_takes_the_sentence_of_the_drag():
     client.post("/api/text", json={"text": TEXT})
     state = client.post("/api/definition", json={"term": "sensitivity analysis", "sentence": 2}).get_json()
     card = state["cards"][0]
-    assert (card["front"], card["back"], card["sentences"]) == ("sensitivity analysis", THIRD, [2])
+    assert (card["front"], card["back"]) == ("sensitivity analysis", THIRD)
     assert client.post("/api/definition", json={"term": "x", "sentence": 99}).status_code == 400
     assert client.post("/api/definition", json={"term": "x", "sentence": 0, "last": "1"}).status_code == 400
 
 
-# --- Add sentences -------------------------------------------------------------------------------
+# --- a card open in Edit ---------------------------------------------------------------------------
 
 
-def test_a_clicked_sentence_joins_the_passage_in_reading_order(session):
-    _, card = session.add_definition("sensitivity analysis", sentences=(2, 2))
-    _, added = session.toggle_sentence(card.id, 0)
-    assert added and card.back == FIRST + "\n\n" + THIRD and card.sentences == [0, 2]
-    session.toggle_sentence(card.id, 3)
-    assert card.back == FIRST + "\n\n" + THIRD + " " + FOURTH
-
-
-def test_a_sentence_in_the_passage_is_taken_out_again(session):
-    _, card = session.add_definition("sensitivity analysis", sentences=(2, 3))
-    _, added = session.toggle_sentence(card.id, 3)
-    assert not added and card.back == THIRD and card.sentences == [2]
-    with pytest.raises(Problem, match="at least one sentence"):
-        session.toggle_sentence(card.id, 2)
-
-
-def test_a_word_card_keeps_its_meaning_and_pictures_when_a_sentence_is_added(session):
-    _, card = session.pick_word(*place_of(session, "infrequently"))
-    session.suggest(card.id, lambda word, sentence: "Not often.")
-    session.add_picture(card.id, b"\x89PNG\r\n\x1a\nx")
-    name = card.pictures[0][0]
-    session.toggle_sentence(card.id, 0)
-    assert card.back == f"{FIRST} {SECOND}\n\nNot often.\n[[picture:{name}]]"
-
-
-def test_after_an_edit_a_sentence_is_added_at_the_end_and_none_taken_out(session):
+def test_the_card_open_in_edit_is_known_until_closed_or_forgotten(session):
     _, card = session.add_definition("observational studies", sentences=(0, 0))
-    session.edit(card.id, card.front, "My own words about it.")
-    session.toggle_sentence(card.id, 1)
-    assert card.back == "My own words about it.\n\n" + SECOND
-    with pytest.raises(Problem, match="with Edit"):
-        session.toggle_sentence(card.id, 1)
+    session.set_editing(card.id, now=100.0)
+    assert session.editing_card(now=101.0) == card.id and session.chosen_card == card.id
+    assert session.editing_card(now=100.0 + 181) is None   # a page closed while editing is not waited for
+    session.set_editing(card.id, now=300.0)
+    session.set_editing(None)
+    assert session.editing_card(now=301.0) is None
 
 
-def test_only_the_text_the_card_came_from(tmp_path):
+def test_text_from_a_web_page_waits_for_the_editor_as_whole_sentences(session):
+    _, card = session.add_definition("observational studies", sentences=(0, 0))
+    session.set_editing(card.id, now=0.0)
+    sent = session.send_to_editor("techniques are used", "Quantitative ", " infrequently. Next.", now=1.0)
+    assert sent == SECOND and session.deck.inbox == [{"id": 1, "card": card.id, "text": SECOND}]
+    session.take_from_inbox([1])
+    assert session.deck.inbox == []
+    with pytest.raises(Problem, match="No card is open"):
+        session.send_to_editor("x", now=500.0)
+
+
+def test_closing_edit_drops_what_was_not_taken(session):
+    _, card = session.add_definition("observational studies", sentences=(0, 0))
+    session.set_editing(card.id)
+    session.send_to_editor("Quantitative techniques are used infrequently.")
+    session.set_editing(None)
+    assert session.deck.inbox == []
+
+
+def test_the_routes(tmp_path):
     client = create_app().test_client()
     client.post("/api/text", json={"text": TEXT})
     card = client.post("/api/definition", json={"term": "sensitivity analysis", "sentence": 2}).get_json()["cards"][0]
-    client.post("/clip/api/text", json={"text": "A clip from the web. Second sentence."})
-    response = client.put(f"/clip/api/cards/{card['id']}/sentences", json={"sentence": 0})
-    assert response.status_code == 400 and "in Read" in response.get_json()["error"]
-    state = client.put(f"/api/cards/{card['id']}/sentences", json={"sentence": 3}).get_json()
-    assert state["cards"][0]["back"] == THIRD + " " + FOURTH and "Sentence added" in state["message"]
-
-
-def test_a_clip_removed_before_the_card_moves_its_sentence_numbers():
-    clips = Session(name="clip")
-    clips.add("An earlier clip. With two sentences.")
-    clips.add("Outliers can skew the mean. The median resists them.")
-    _, card = clips.pick_word(*place_of(clips, "skew"))
-    assert card.sentences == [2]
-    clips.remove_clip(0)
-    assert card.sentences == [0]
-    clips.toggle_sentence(card.id, 1)
-    assert card.back == "Outliers can skew the mean. The median resists them."
-
-
-def test_a_card_whose_clip_is_gone_cannot_add_sentences():
-    clips = Session(name="clip")
-    clips.add("Outliers can skew the mean.")
-    _, card = clips.pick_word(*place_of(clips, "skew"))
-    clips.remove_clip(0)
-    clips.add("Another clip.")
-    with pytest.raises(Problem, match="not here any more"):
-        clips.toggle_sentence(card.id, 0)
+    assert client.put("/api/editing", json={"card": card["id"]}).get_json()["editing"] == card["id"]
+    before = client.get("/api/version").get_json()["deck"]
+    state = client.post("/clip/api/text", json={"text": "rarely", "before": "It is ", "after": " done."}).get_json()
+    assert "card you are editing" in state["message"] and state["count"] == 1 and state["paragraphs"] == []   # no clip, no card
+    assert state["inbox"] == [{"id": 1, "card": card["id"], "text": FOURTH}]
+    assert client.get("/api/version").get_json()["deck"] != before   # the editing page notices
+    client.post("/api/inbox/taken", json={"ids": [1]})
+    assert client.get("/api/state").get_json()["inbox"] == []
+    assert client.put("/api/editing", json={"card": None}).get_json()["editing"] is None
+    assert client.post("/clip/api/text", json={"text": "rarely", "before": "It is ", "after": " done."}).get_json()["count"] == 2
+    assert client.put("/api/editing", json={"card": "1"}).status_code == 400
+    assert client.put("/api/editing", json={"card": 99}).status_code == 400

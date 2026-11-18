@@ -16,14 +16,14 @@ Pressing Edit on a card SHALL open its front and its back as editable documents 
 - **THEN** the picture is no longer on the card
 
 ### Requirement: A part of the page on a card
-While a PDF is open and a card is being edited, *Cut from the PDF page* SHALL let the reader drag a box on one of the PDF's pages; a picture of that box SHALL go into the card's back. The picture SHALL be drawn from the PDF itself at a size that stays sharp. On a cloze card, it SHALL be in the field shown after the answer. A box of less than a few pixels, or outside the page, SHALL be refused with a message.
+While a PDF is open in Read and a card is being edited, a box the reader drags on one of the PDF's pages SHALL go into the card as a picture, at its cursor. The picture SHALL be drawn from the PDF itself at a size that stays sharp. On a cloze card, it SHALL be in the field shown after the answer. A box of less than a few pixels, or outside the page, SHALL be refused with a message.
 
 #### Scenario: A formula on a word card
-- **WHEN** the reader edits a word card, presses Cut from the PDF page, and drags a box around a formula on the page
+- **WHEN** the reader edits a word card and drags a box around a formula on the page
 - **THEN** the editor shows the picture of that formula, and what was typed is kept
 
 #### Scenario: Cancel
-- **WHEN** the reader presses Cut from the PDF page and then Esc
+- **WHEN** the reader starts a box on the page and presses Esc before letting go
 - **THEN** no picture is added and the page works as before
 
 ### Requirement: Pictures from web pages

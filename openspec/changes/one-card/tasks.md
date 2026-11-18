@@ -22,6 +22,13 @@
 - [x] 4.2 README, the promo page's extension section, `openspec validate one-card --strict`
 - [ ] 4.3 The reader tries it for a week of reading (needs the reader)
 
+## 7. Edit is the one mode
+
+- [x] 7.1 Add sentences and the Cut button removed; in Edit, a click on a sentence, a drag over text, a box on a PDF page, a pasted picture, and text or a picture right-clicked on a web page go in at the cursor; no card is made meanwhile
+- [x] 7.2 The app knows the card open in Edit (said again every 30 s, forgotten after 3 minutes); web text for it waits in an inbox the editor takes; tests
+- [x] 7.3 Cancel puts the card back as it was; a line shows where the next thing goes; put-in text keeps its spaces and the cursor goes on after it
+- [x] 7.4 Headless Edge: the gesture check (edit mode on the PDF), the Wikipedia check (web text into the card), and all the other checks
+
 ## 6. Fixes after trying it
 
 - [x] 6.1 A few words (2 to 8) selected inside one sentence on a web page make their card at once, as a drag in Read does

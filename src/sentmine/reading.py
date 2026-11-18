@@ -3,6 +3,7 @@
 import hashlib
 import html
 import re
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
@@ -45,8 +46,6 @@ class Flashcard:
     sentence: str = ""  # word cards: the sentence the word was clicked in, for Suggest meaning
     meaning: str = ""  # word cards: the suggested meaning last put on the back, so a new one replaces it
     key_part: str = ""  # word cards: the words of the sentence that show the suggested meaning, underlined on the back
-    sentences: list[int] = field(default_factory=list)  # the sentences of its session's text its passage is made of
-    made_passage: str = ""  # the passage as made from those sentences, so Add sentences can find it in the back
     old_layout: bool = False  # a word card remembered before 2026-11-18: the sentence on the front, the word on the back
     cloze: bool = False  # the passage with the term hidden, instead of term -> passage
     pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a page, on the back: (file name, PNG)
@@ -254,6 +253,7 @@ def _with_pictures(text: str, render: Callable[[str], str]) -> str:
     return "".join(parts)
 UNNAMED_PAGE = "a web page"  # a clip whose page gave no title
 LONGEST_TERM = 8  # words: a longer selection is a passage, not a term
+EDITING_SECONDS = 180  # a page with a card open in Edit says so every 30 seconds; after this, Edit counts as closed
 
 
 class Deck:
@@ -263,6 +263,10 @@ class Deck:
         self.cards: list[Flashcard] = []
         self.next_id = 1
         self.chosen: int | None = None  # the card pictures from a web page go to; the newest one unless chosen
+        self.editing: int | None = None  # the card open in Edit, in Read or the side panel
+        self.editing_until = 0.0  # when that is taken as forgotten (a page closed while editing), time.monotonic()
+        self.inbox: list[dict] = []  # text from a web page for the card open in Edit: {"id", "card", "text"}
+        self.next_inbox = 1
 
 
 class Session:
@@ -353,13 +357,6 @@ class Session:
                 card.place = None   # its sentence is gone
             elif sentence >= first + count:
                 card.place = (sentence - count, word)
-        for card in self.own_cards:
-            if not card.sentences:
-                continue
-            kept = [n if n < first else n - count for n in card.sentences if not first <= n < first + count]
-            if len(kept) < len(card.sentences):
-                card.made_passage = ""   # some of its sentences are gone: Add sentences can still add at the end
-            card.sentences = kept
 
     def meet(self, cards: list[tuple[str, str]], day: str | None = None) -> None:
         """Record the remembered cards (kind, key) met in this text. A memory that cannot be written records nothing."""
@@ -444,7 +441,6 @@ class Session:
             card = Flashcard(
                 0, WORD, word_back(text, base), sentences[sentence], key, word=text, place=(sentence, word),
                 earlier=earlier.date if earlier else "", sentence=sentences[sentence],
-                sentences=[sentence], made_passage=sentences[sentence],
             )
             return ADDED, self._add(card)
         if existing.place == (sentence, word) and existing.source == self.name:
@@ -477,8 +473,7 @@ class Session:
         earlier = self._earlier(DEFINITION, term.casefold())
         if earlier is not None and not anyway:
             return EARLIER, earlier
-        card = Flashcard(0, DEFINITION, term, passage, key, earlier=earlier.date if earlier else "",
-                         sentences=numbers, made_passage=passage if numbers else "")
+        card = Flashcard(0, DEFINITION, term, passage, key, earlier=earlier.date if earlier else "")
         return ADDED, self._add(card)
 
     def _passage_of(self, numbers) -> str:
@@ -490,34 +485,6 @@ class Session:
                 parts.append(" ".join(chosen))
             at += len(paragraph)
         return "\n\n".join(parts)
-
-    def toggle_sentence(self, card_id: int, number: int) -> tuple[Flashcard, bool]:
-        """Add sentence `number` of the text to a card's passage, or take it out when it is in; True when added.
-        A passage changed by hand keeps what was typed: a sentence is then added at its end, and none taken out."""
-        card = self._card(card_id)
-        if card.source != self.name:
-            raise Problem("Add sentences from the text the card came from: in Read for a card from Read, in the side panel for one from a web page.")
-        if not card.sentences:
-            raise Problem("The text this card came from is not here any more; change its passage with Edit.")
-        if not 0 <= number < len(self.sentences):
-            raise Problem("That sentence is not in the text.")
-        chosen = set(card.sentences)
-        adding = number not in chosen
-        if not adding and len(chosen) == 1:
-            raise Problem("A passage needs at least one sentence; delete the card to remove it.")
-        chosen = chosen | {number} if adding else chosen - {number}
-        passage = self._passage_of(chosen)
-        if card.made_passage and card.made_passage in card.back:
-            card.back = card.back.replace(card.made_passage, passage, 1)
-            card.made_passage = passage
-        elif adding:
-            card.back = card.back.rstrip() + "\n\n" + self.sentences[number]
-            card.made_passage = ""
-        else:
-            raise Problem("You changed this passage with Edit, so take the sentence out there.")
-        card.sentences = sorted(chosen)
-        card.cloze = card.cloze and card.can_cloze
-        return card, adding
 
     def _whole_sentences_of(self, passage: str) -> tuple[str, list[int]]:
         """The passage as the whole sentences of the text it touches, paragraph breaks kept, and their numbers;
@@ -673,6 +640,38 @@ class Session:
         if self.deck.chosen in ids:
             return self.deck.chosen
         return ids[-1] if ids else None
+
+    def set_editing(self, card_id: int | None, now: float | None = None) -> None:
+        """The card open in Edit (it also becomes the chosen card), kept for EDITING_SECONDS unless said again;
+        None when Edit is closed, which drops the text not yet taken."""
+        now = time.monotonic() if now is None else now
+        if card_id is None:
+            self.deck.editing, self.deck.inbox = None, []
+            return
+        self.deck.chosen = self.deck.editing = self._card(card_id).id
+        self.deck.editing_until = now + EDITING_SECONDS
+
+    def editing_card(self, now: float | None = None) -> int | None:
+        now = time.monotonic() if now is None else now
+        ids = {card.id for card in self.cards}
+        return self.deck.editing if self.deck.editing in ids and now < self.deck.editing_until else None
+
+    def send_to_editor(self, selected: str, before: str = "", after: str = "", now: float | None = None) -> str:
+        """Text selected on a web page while a card is open in Edit: its whole sentences wait for that card's
+        editor, which puts them at its cursor. Returns them."""
+        card = self.editing_card(now)
+        if card is None:
+            raise Problem("No card is open in Edit.")
+        passage, _ = whole_sentences(selected, before, after)
+        if not passage:
+            raise Problem("The selection has no text to read.")
+        self.deck.inbox.append({"id": self.deck.next_inbox, "card": card, "text": passage})
+        self.deck.next_inbox += 1
+        return passage
+
+    def take_from_inbox(self, ids: list[int]) -> None:
+        """The editor has put these in its card."""
+        self.deck.inbox = [item for item in self.deck.inbox if item["id"] not in set(ids)]
 
     def choose_card(self, card_id: int) -> Flashcard:
         card = self._card(card_id)
