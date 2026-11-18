@@ -575,6 +575,9 @@ function drawPages(text) {
     text.classList.remove("empty");
     text.classList.add("pdf");
     text.replaceChildren();
+    // as many pixels as the page is shown at (wide panel × screen density), in the server's three sizes
+    const shownAt = Math.ceil(text.clientWidth * (window.devicePixelRatio || 1));
+    const asked = shownAt <= 1600 ? 1600 : shownAt <= 2400 ? 2400 : 3200;
     state.pdf.sizes.forEach(([width, height], number) => {
       const page = element("div", "pdf-page");
       page.style.aspectRatio = width + " / " + height;
@@ -582,7 +585,7 @@ function drawPages(text) {
       const picture = element("img");
       picture.alt = "Page " + (number + 1);
       picture.loading = "lazy";
-      picture.src = "/api/pages/" + number + ".png?v=" + shownPdf;
+      picture.src = "/api/pages/" + number + ".png?v=" + shownPdf + (asked > 1600 ? "&w=" + asked : "");
       page.append(picture, element("span", "page-number", String(number + 1)));
       text.append(page);
       pageWatcher.observe(page);
