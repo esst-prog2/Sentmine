@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2064%2064%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20x%3D%221%22%20y%3D%221%22%20width%3D%2262%22%20height%3D%2262%22%20rx%3D%2215%22%20fill%3D%22%23f6f1e6%22/%3E%3Cpath%20d%3D%22M14%2051%20L40%2025%22%20stroke%3D%22%232a2520%22%20stroke-width%3D%227%22%20stroke-linecap%3D%22round%22/%3E%3Cpath%20d%3D%22M22.5%208.5%20C40.5%204.5%2060%2024%2055.5%2041.5%20C50%2030%2034%2014%2022.5%208.5%20Z%22%20fill%3D%22%23e3b21f%22/%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%2225%22%20r%3D%225.2%22%20fill%3D%22%232a2520%22/%3E%3C/svg%3E">
 <title>sentmine</title>
 <script>
 // Set the reader's chosen theme before the page is drawn, so it does not flash.
@@ -33,6 +34,10 @@ try {
   :root[data-theme=light] { color-scheme: light; }
   :root[data-theme=dark] { color-scheme: dark; }
   * { box-sizing: border-box; }
+  /* a card open in Edit: a box drawn on a PDF page is a picture for it; a mark shows where the next thing goes */
+  body.editing-pdf .pdf-page, body.editing-pdf .pdf-page .w { cursor: crosshair; }
+  .card.editing-card { position: relative; }
+  .caret-mark { position: absolute; width: 2px; background: var(--accent); border-radius: 1px; pointer-events: none; }
   body {
     margin: 0; background: var(--page); color: var(--ink); accent-color: var(--accent);
     font: 16px/1.5 system-ui, "Segoe UI", sans-serif;
@@ -85,6 +90,7 @@ try {
   #text p { margin: 0 0 1em; }
   #text.empty { color: var(--soft); font: inherit; }
   #paste-box[open] + #text.empty { display: none; }
+  body.clip #paste-box[open] + #text.empty { display: block; }   /* the panel has no paste box: say what to do */
   .w { cursor: pointer; border-radius: 3px; transition: background-color .15s; }
   .w:hover { background: var(--hover); }
   .w.picked, .w.picked:hover { background: var(--picked); }
@@ -104,6 +110,40 @@ try {
   .pdf-page .w.picked, .pdf-page .w.picked:hover { background: rgba(255, 196, 0, 0.45); }
   .pdf-page .w.dragged, .pdf-page .w.dragged:hover { background: rgba(26, 95, 208, 0.3); }
   #text .w.dragged { background: var(--selection); }
+  /* the PDF's own links: to another page in sentmine, or to a website in a new tab */
+  .pdf-page .pdf-link { position: absolute; z-index: 2; border-radius: 2px; cursor: pointer; }
+  .pdf-page .pdf-link:hover, .pdf-page .pdf-link:focus-visible { background: rgba(26, 95, 208, 0.14); outline: 1px solid rgba(26, 95, 208, 0.5); }
+  /* the page bar, at the bottom of the reading area while a PDF is open */
+  #pdf-nav { position: sticky; bottom: 12px; z-index: 3; display: flex; align-items: center; gap: 14px; width: fit-content;
+    margin: 12px auto 0; padding: 6px 8px 6px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); font-size: 0.9375rem; }
+  #pdf-nav[hidden] { display: none; }
+  #pdf-nav input { width: 4.2em; padding: 3px 6px; }
+  #contents { position: relative; }
+  #contents summary { cursor: pointer; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); list-style: none; }
+  #contents summary::-webkit-details-marker { display: none; }
+  #contents ol { position: absolute; bottom: calc(100% + 10px); right: 0; width: min(26rem, 80vw); max-height: 60vh; overflow: auto;
+    margin: 0; padding: 8px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18); }
+  #contents li button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 5px 8px; border-radius: 6px; font: inherit; color: var(--ink); cursor: pointer; }
+  #contents li button:hover { background: var(--hover); }
+  /* a formula or graph from the page, on the back of a card */
+  /* the words that show a suggested meaning */
+  .card .back u { text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .card .front img, .card .back img, .doc-editor img { display: block; max-width: 100%; height: auto; margin: 6px 0;
+    background: #ffffff; border: 1px solid var(--line); border-radius: 6px; padding: 4px; }
+  /* the back of a card being edited: a small document of text and pictures */
+  .doc-editor { min-height: 2.5em; padding: 8px 10px; white-space: pre-wrap; overflow-wrap: anywhere;
+    background: var(--page); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; }
+  .back-editor { min-height: 4.5em; }
+  .doc-editor:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+  .front-editor:empty::before { content: "Type the term"; color: var(--soft); }
+  .doc-editor img { cursor: pointer; }
+  .card .paste-hint { font-size: 0.8125rem; color: var(--soft); margin-top: 8px; }
+  /* the side panel: the card that pictures from the web page go to */
+  .card .origin { font-size: 0.8125rem; color: var(--soft); margin-bottom: 4px; }
+  body.boxing .pdf-page, body.boxing .pdf-page .w { cursor: crosshair; }
+  .pdf-page .box-drawn { position: absolute; border: 2px solid var(--accent); background: rgba(26, 95, 208, 0.1); pointer-events: none; }
   /* the keyboard: one stop on the text, then the arrow keys from word to word */
   #text:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   #text .w:focus { outline: none; }
@@ -166,17 +206,17 @@ try {
   /* Clip mode (/clip): the side panel beside a web page. One column, no paste box, a label on each clip. */
   body.clip nav, body.clip #paste-box, body.clip .spacer { display: none; }
   body.clip main { grid-template-columns: 1fr; }
+  body.clip main > section:first-child { display: none; }   /* the panel shows the cards; each right-click made its own */
   .clip + .clip { border-top: 1px solid var(--line); padding-top: 14px; }
   /* In the side panel the header is one slim row; the deck name, Download and Send to Anki sit in a bar at the
      bottom, where the reader ends up after making cards. The theme follows the app's own choice. */
   .mycards { display: none; color: var(--soft); font-size: 0.875rem; text-decoration: none; white-space: nowrap; }
   .mycards:hover { color: var(--accent); }
   body.clip .mycards { display: inline; margin-left: auto; }
-  body.clip #theme { display: none; }
   body.clip header { flex-wrap: nowrap; }
   body.clip #status { position: sticky; top: var(--header, 0px); z-index: 1; }
   body.clip header .deck { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; width: auto; display: flex; flex-wrap: nowrap;
-    gap: 8px; padding: 10px 16px; background: var(--panel); border-top: 1px solid var(--line); box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.06); }
+    gap: 8px; padding: 10px 16px; background: var(--page); border-top: 1px solid var(--line); box-shadow: 0 -4px 14px rgba(70, 52, 20, 0.06); }
   body.clip header .deck label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   body.clip #deck-name { flex: 1 1 auto; min-width: 0; }
   body.clip #download, body.clip #send { white-space: nowrap; }
@@ -184,12 +224,96 @@ try {
   .clip-head { display: flex; justify-content: space-between; align-items: center; gap: 8px;
     font: 0.8125rem system-ui, sans-serif; color: var(--soft); margin-bottom: 4px; }
   body > header { view-transition-name: app-header; }
+
+
+  /* sentmine's look (after the reader's reference, 2026-11-18): warm paper, the book's serif, a pickaxe */
+  @font-face { font-family: "Newsreader"; src: url("/fonts/Newsreader.woff") format("woff"); font-weight: 200 800; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Newsreader"; src: url("/fonts/Newsreader-Italic.woff") format("woff"); font-weight: 200 800; font-style: italic; font-display: swap; }
+  :root {
+    --page: #f3eee4; --panel: #fbf8f2; --ink: #23201b; --soft: #6b6458; --line: #e2dbcc; --hover: #ebe4d5;
+    --accent: #2d6f8e; --accent-hover: #235a74; --on-accent: #ffffff; --selection: #f5e6a3;
+    --picked: #f8df7a; --term: #f3e3b0; --warn: #b4361e;
+    --ink-button: #1f232a; --on-ink-button: #fbf8f2; --marker: #f6d84e; --marker-strong: #e3b21f; --pick: #c98a0b;
+    --cloze: #a63a12; --cloze-wash: #fbe2d4; --lift: 0 1px 2px rgba(70, 52, 20, 0.06), 0 10px 26px rgba(70, 52, 20, 0.07);
+    --pattern: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22520%22%20height%3D%22520%22%20viewBox%3D%220%200%20520%20520%22%20fill%3D%22none%22%20stroke%3D%22rgba%28120%2C%2092%2C%2040%2C%200.10%29%22%20stroke-width%3D%221.4%22%3E%3Crect%20x%3D%2240%22%20y%3D%2270%22%20width%3D%22160%22%20height%3D%22104%22%20rx%3D%2212%22%20transform%3D%22rotate%28-12%20120%20122%29%22/%3E%3Crect%20x%3D%22300%22%20y%3D%22250%22%20width%3D%22160%22%20height%3D%22104%22%20rx%3D%2212%22%20transform%3D%22rotate%289%20380%20302%29%22/%3E%3Crect%20x%3D%2270%22%20y%3D%22370%22%20width%3D%22126%22%20height%3D%2282%22%20rx%3D%2210%22%20transform%3D%22rotate%2818%20133%20411%29%22/%3E%3Crect%20x%3D%22330%22%20y%3D%2240%22%20width%3D%22118%22%20height%3D%2278%22%20rx%3D%2210%22%20transform%3D%22rotate%28-20%20389%2079%29%22/%3E%3C/svg%3E");
+    --serif: "Newsreader", Georgia, "Times New Roman", serif; --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme=light]) {
+      --page: #15120e; --panel: #1f1a15; --ink: #ede4d4; --soft: #a69b8a; --line: #362f26; --hover: #2b251e;
+      --accent: #7db5cf; --accent-hover: #9ccadf; --on-accent: #10161a; --selection: #5c4b17;
+      --picked: #6e5916; --term: #4a3c14; --warn: #ff9a80;
+      --ink-button: #efe3c4; --on-ink-button: #1f1a15; --marker: #7c6212; --marker-strong: #e8bd3a; --pick: #f0c24a;
+      --cloze: #f0905d; --cloze-wash: #4a2a1a; --lift: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 26px rgba(0, 0, 0, 0.32);
+      --pattern: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22520%22%20height%3D%22520%22%20viewBox%3D%220%200%20520%20520%22%20fill%3D%22none%22%20stroke%3D%22rgba%28240%2C%20222%2C%20190%2C%200.055%29%22%20stroke-width%3D%221.4%22%3E%3Crect%20x%3D%2240%22%20y%3D%2270%22%20width%3D%22160%22%20height%3D%22104%22%20rx%3D%2212%22%20transform%3D%22rotate%28-12%20120%20122%29%22/%3E%3Crect%20x%3D%22300%22%20y%3D%22250%22%20width%3D%22160%22%20height%3D%22104%22%20rx%3D%2212%22%20transform%3D%22rotate%289%20380%20302%29%22/%3E%3Crect%20x%3D%2270%22%20y%3D%22370%22%20width%3D%22126%22%20height%3D%2282%22%20rx%3D%2210%22%20transform%3D%22rotate%2818%20133%20411%29%22/%3E%3Crect%20x%3D%22330%22%20y%3D%2240%22%20width%3D%22118%22%20height%3D%2278%22%20rx%3D%2210%22%20transform%3D%22rotate%28-20%20389%2079%29%22/%3E%3C/svg%3E");
+    }
+  }
+  :root[data-theme=dark] {
+      --page: #15120e; --panel: #1f1a15; --ink: #ede4d4; --soft: #a69b8a; --line: #362f26; --hover: #2b251e;
+      --accent: #7db5cf; --accent-hover: #9ccadf; --on-accent: #10161a; --selection: #5c4b17;
+      --picked: #6e5916; --term: #4a3c14; --warn: #ff9a80;
+      --ink-button: #efe3c4; --on-ink-button: #1f1a15; --marker: #7c6212; --marker-strong: #e8bd3a; --pick: #f0c24a;
+      --cloze: #f0905d; --cloze-wash: #4a2a1a; --lift: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 26px rgba(0, 0, 0, 0.32);
+      --pattern: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22520%22%20height%3D%22520%22%20viewBox%3D%220%200%20520%20520%22%20fill%3D%22none%22%20stroke%3D%22rgba%28240%2C%20222%2C%20190%2C%200.055%29%22%20stroke-width%3D%221.4%22%3E%3Crect%20x%3D%2240%22%20y%3D%2270%22%20width%3D%22160%22%20height%3D%22104%22%20rx%3D%2212%22%20transform%3D%22rotate%28-12%20120%20122%29%22/%3E%3Crect%20x%3D%22300%22%20y%3D%22250%22%20width%3D%22160%22%20height%3D%22104%22%20rx%3D%2212%22%20transform%3D%22rotate%289%20380%20302%29%22/%3E%3Crect%20x%3D%2270%22%20y%3D%22370%22%20width%3D%22126%22%20height%3D%2282%22%20rx%3D%2210%22%20transform%3D%22rotate%2818%20133%20411%29%22/%3E%3Crect%20x%3D%22330%22%20y%3D%2240%22%20width%3D%22118%22%20height%3D%2278%22%20rx%3D%2210%22%20transform%3D%22rotate%28-20%20389%2079%29%22/%3E%3C/svg%3E");
+  }
+
+  body { background: var(--page) var(--pattern) fixed; }
+  header { background: var(--page); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; margin: 0 8px 0 0; line-height: 1; color: var(--ink); }
+  .brand .wordmark { height: 36px; width: auto; }
+  header nav { gap: 4px; }
+  header nav a { padding: 6px 14px; border-radius: 10px; border: 0; color: var(--soft); }
+  header nav a:hover { color: var(--ink); background: var(--hover); }
+  header nav a[aria-current=page] { color: var(--ink); background: var(--hover); font-weight: 500; }
+  #count { background: var(--picked); color: var(--ink); border-radius: 999px; padding: 1px 10px; font-size: 0.875rem; font-weight: 600; }
+  button, ::file-selector-button { border-radius: 10px; }
+  button.main { background: var(--ink-button); border-color: var(--ink-button); color: var(--on-ink-button); }
+  button.main:hover:not(:disabled) { background: var(--ink-button); border-color: var(--ink-button); filter: brightness(1.15); }
+  input[type=text], input[type=search], textarea { border-radius: 10px; background: var(--panel); }
+  #status { background: var(--page); border-bottom: 0; }   /* it stays at the top while a PDF scrolls under it */
+  kbd { font: 500 0.8125rem/1 system-ui, "Segoe UI", sans-serif; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 6px; padding: 3px 7px; margin-right: 2px; }
+  .hint-part { margin-right: 14px; white-space: nowrap; }
+  #status { flex-wrap: wrap; row-gap: 6px; }
+  #count { white-space: nowrap; }
+  body.clip .brand .wordmark { height: 28px; }
+  body.clip .hint-part { white-space: normal; }
+  .hint-known { color: var(--ink); text-decoration: underline 2px var(--accent); text-underline-offset: 4px; }
+  section { border-radius: 16px; background: var(--panel); }
+  #text { font-family: var(--serif); font-size: 1.22rem; line-height: 1.75; }
+  #pdf-nav { background: var(--ink-button); color: var(--on-ink-button); border-color: transparent; box-shadow: var(--lift); }
+  #pdf-nav input { background: rgba(127, 127, 127, 0.18); color: inherit; border-color: transparent; }
+  #pdf-nav summary, #pdf-nav label { color: inherit; }
+  main > section:last-child { background: transparent; border-color: transparent; padding: 4px; }
+  main > section:last-child > h2 { font: 400 1.6rem/1.2 var(--serif); margin: 2px 0 12px; }
+  #cards { display: grid; gap: 14px; }
+  .card, .card + .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px 12px; box-shadow: var(--lift); }
+  .card .front { font: 400 1.5rem/1.25 var(--serif); margin: 0 0 8px; overflow-wrap: anywhere; }
+  .card .back { font: 1.1rem/1.6 var(--serif); margin: 0; padding: 0; border: 0; }
+  .card .back b { font-weight: 600; background: var(--picked); border-radius: 3px; padding: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .card.is-cloze .back b { background: var(--cloze-wash); color: var(--cloze); font-weight: 500; }
+  .card .tag { font: 600 0.6875rem/1 system-ui, "Segoe UI", sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--cloze); background: var(--cloze-wash); border-radius: 6px; padding: 5px 7px; margin-left: 10px; vertical-align: 0.3em; }
+  .card .origin { font: 0.8125rem/1.5 var(--mono); color: var(--soft); margin: 10px 0 0; }
+  .card:not(.editing-card) .buttons { justify-content: flex-end; }
+  .card:not(.editing-card) .kind { display: none; }
+  .card:not(.editing-card) button { background: transparent; }
+  .doc-editor { font-family: var(--serif); font-size: 1.1rem; border-radius: 10px; }
+  .card .front img, .card .back img, .doc-editor img { border-radius: 8px; }
+  button.icon { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 999px; }
+  /* the earlier card and the card that comes back: cards too, in the cards' own type */
+  #known-card .front, .earlier-card .front { font: 400 1.25rem/1.3 var(--serif); }
+  #known-card .back, .earlier-card .back { font: 1.02rem/1.55 var(--serif); }
+  #known-card .back b, .earlier-card .back b { font-weight: 600; background: var(--picked); border-radius: 3px; padding: 0 2px; }
+  .earlier-card { border-style: solid; border-radius: 12px; box-shadow: var(--lift); }
+  button.with-icon { display: inline-flex; align-items: center; gap: 8px; }
+  button.with-icon svg { flex: none; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>sentmine</h1>
+  <h1 class="brand"><svg class="wordmark" viewBox="-60 -125 4276 980" role="img" aria-label="sentmine" xmlns="http://www.w3.org/2000/svg"><path d="M-30 435 L1772 405 L1742 815 L-50 835 Z" fill="var(--marker)"/><path fill="currentColor" d="M72.60028076171875 617.8995971679688Q73.500244140625 652.7996520996094 77.45024108886719 673.2497100830078Q81.40023803710938 693.6997680664062 88.4002685546875 703.0998229980469Q95.80029296875 712.3998718261719 105.60037231445312 715.14990234375Q115.40045166015625 717.8999328613281 128.6005859375 717.8999328613281Q160.40060424804688 717.8999328613281 182.3005828857422 708.4499664306641Q204.2005615234375 699.0 215.5005340576172 680.9500732421875Q226.80050659179688 662.900146484375 226.80050659179688 637.6002502441406Q226.80050659179688 622.0002746582031 220.75050354003906 604.9503326416016Q214.70050048828125 587.900390625 200.35044860839844 566.8004608154297Q186.00039672851562 545.7005310058594 160.500244140625 517.4006042480469Q135.50009155273438 489.1006774902344 121.14999389648438 465.40069580078125Q106.79989624023438 441.7007141113281 101.04985046386719 420.50067138671875Q95.2998046875 399.3006286621094 95.2998046875 378.5005187988281Q95.2998046875 332.4003601074219 119.14985656738281 294.75022888183594Q142.99990844726562 257.10009765625 185.50006103515625 234.55001831054688Q228.00021362304688 211.99993896484375 284.1004943847656 211.99993896484375Q323.9007263183594 211.99993896484375 347.20086669921875 220.69998168945312Q370.5010070800781 229.4000244140625 380.5510711669922 244.65008544921875Q390.60113525390625 259.900146484375 390.60113525390625 280.2001953125Q390.60113525390625 297.40032958984375 382.90110778808594 309.00038146972656Q375.2010803222656 320.6004333496094 357.3509979248047 326.450439453125Q339.50091552734375 332.3004455566406 308.10076904296875 332.3004455566406Q310.10076904296875 294.7003173828125 307.5007629394531 275.5002746582031Q304.9007568359375 256.30023193359375 298.6007385253906 248.20016479492188Q292.30072021484375 240.00009155273438 282.6006622314453 237.2000732421875Q272.9006042480469 234.40005493164062 257.300537109375 234.40005493164062Q215.70050048828125 234.40005493164062 191.80055236816406 254.20001220703125Q167.90060424804688 273.9999694824219 167.90060424804688 309.9997863769531Q167.90060424804688 324.7997741699219 173.150634765625 340.4497375488281Q178.40066528320312 356.0997009277344 192.00074768066406 376.4996337890625Q205.600830078125 396.8995666503906 230.60098266601562 426.699462890625Q255.60113525390625 456.099365234375 270.1012420654297 480.0493621826172Q284.6013488769531 503.9993591308594 290.80140686035156 524.8994140625Q297.00146484375 545.7994689941406 297.00146484375 566.4995422363281Q297.00146484375 616.6995544433594 271.3013916015625 657.2996826171875Q245.601318359375 697.8998107910156 200.15115356445312 721.9499359130859Q154.70098876953125 746.0000610351562 95.50070190429688 746.0000610351562Q54.90045166015625 746.0000610351562 30.550277709960938 737.5000305175781Q6.200103759765625 729.0 -4.699981689453125 713.3499450683594Q-15.600067138671875 697.6998901367188 -15.600067138671875 676.9998168945312Q-15.600067138671875 656.2997436523438 -6.8500518798828125 643.2496948242188Q1.89996337890625 630.1996459960938 21.35003662109375 624.0496215820312Q40.80010986328125 617.8995971679688 72.60028076171875 617.8995971679688ZM672.1007690429688 235.0001220703125Q641.6009521484375 235.0001220703125 614.2510681152344 257.4499816894531Q586.9011840820312 279.89984130859375 564.3012390136719 316.899658203125Q541.7012939453125 353.89947509765625 525.101318359375 398.8493347167969Q508.5013427734375 443.7991943359375 499.5013427734375 489.3491973876953Q490.5013427734375 534.8992004394531 490.5013427734375 573.2994384765625Q490.5013427734375 625.4993896484375 509.5013427734375 648.2994079589844Q528.5013427734375 671.0994262695312 566.4014282226562 671.0994262695312Q594.8014526367188 671.0994262695312 623.4514770507812 659.0494842529297Q652.1015014648438 646.9995422363281 681.4515228271484 616.7496185302734Q710.8015441894531 586.4996948242188 740.4015502929688 532.3997497558594L746.4015808105469 533.1997375488281Q713.0015258789062 617.8999328613281 677.0014038085938 664.1999969482422Q641.0012817382812 710.5000610351562 603.2011108398438 728.2500610351562Q565.4009399414062 746.0000610351562 525.4007263183594 746.0000610351562Q479.0003967285156 746.0000610351562 447.25022888183594 728.7999420166016Q415.50006103515625 711.5998229980469 399.3000030517578 679.3496704101562Q383.0999450683594 647.0995178222656 383.0999450683594 602.3994140625Q383.0999450683594 550.5995178222656 397.6499328613281 495.94960021972656Q412.1999206542969 441.2996826171875 439.3499298095703 390.59974670410156Q466.49993896484375 339.8998107910156 504.50001525878906 299.599853515625Q542.5000915527344 259.2998962402344 589.4002685546875 235.64991760253906Q636.3004455566406 211.99993896484375 690.5007629394531 211.99993896484375Q731.7011413574219 211.99993896484375 756.0013122558594 223.94998168945312Q780.3014831542969 235.9000244140625 791.2015228271484 256.1000671386719Q802.1015625 276.30010986328125 802.1015625 300.30010986328125Q802.1015625 323.40020751953125 795.2515258789062 346.90025329589844Q788.4014892578125 370.4002990722656 773.00146484375 392.4002990722656Q754.8012390136719 402.0003356933594 721.9510955810547 414.70033264160156Q689.1009521484375 427.40032958984375 647.8008728027344 441.00030517578125Q606.5007934570312 454.60028076171875 561.1007690429688 467.95025634765625Q515.7007446289062 481.30023193359375 472.0007629394531 492.2002258300781L475.0007629394531 475.7001647949219Q532.8007202148438 456.6001281738281 573.95068359375 438.85009765625Q615.1006469726562 421.1000671386719 642.3506164550781 403.4500427246094Q669.6005859375 385.8000183105469 685.2005615234375 367.5500030517578Q700.800537109375 349.29998779296875 707.3005218505859 329.6499786376953Q713.8005065917969 309.9999694824219 713.8005065917969 288.4999694824219Q713.8005065917969 271.5999755859375 708.800537109375 259.50001525878906Q703.8005676269531 247.40005493164062 694.5506286621094 241.20008850097656Q685.3006896972656 235.0001220703125 672.1007690429688 235.0001220703125ZM828.7998352050781 431.6000671386719 823.1998291015625 429.00006103515625Q857.5998229980469 346.5 888.9498596191406 299.24998474121094Q920.2998962402344 251.99996948242188 953.0000152587891 232.2999725341797Q985.7001342773438 212.5999755859375 1023.9003601074219 212.5999755859375Q1038.4004821777344 212.5999755859375 1049.4505615234375 213.7999725341797Q1060.5006408691406 214.99996948242188 1070.8007202148438 217.5499725341797Q1081.1007995605469 220.0999755859375 1092.8009338378906 224.19998168945312L1024.1007995605469 442.400390625H1017.4008483886719Q1061.2007751464844 368.70025634765625 1095.500747680664 323.2001647949219Q1129.8007202148438 277.7000732421875 1158.3007354736328 253.6500244140625Q1186.8007507324219 229.5999755859375 1212.5008239746094 220.79995727539062Q1238.2008972167969 211.99993896484375 1264.301025390625 211.99993896484375Q1312.9012145996094 211.99993896484375 1333.5513305664062 234.1500244140625Q1354.2014465332031 256.30010986328125 1354.2014465332031 287.7002258300781Q1354.2014465332031 305.3002624511719 1348.6514434814453 327.0503387451172Q1343.1014404296875 348.8004150390625 1323.5014038085938 396.3005065917969L1203.5016174316406 690.8999938964844L1182.4010009765625 672.499755859375Q1199.5011291503906 675.5997314453125 1224.4011840820312 668.5497741699219Q1249.3012390136719 661.4998168945312 1284.1012725830078 637.8998565673828Q1318.9013061523438 614.2998962402344 1364.4013671875 567.8998718261719L1369.2013854980469 571.7998962402344Q1324.9013366699219 634.2999572753906 1285.501235961914 672.6499938964844Q1246.1011352539062 711.0000305175781 1212.1509857177734 728.5000457763672Q1178.2008361816406 746.0000610351562 1149.6006469726562 746.0000610351562Q1113.5003967285156 746.0000610351562 1100.2503204345703 730.9499206542969Q1087.000244140625 715.8997802734375 1100.0002746582031 684.2997131347656L1216.2998352050781 402.600830078125Q1231.4999084472656 365.9006652832031 1236.8499145507812 350.7506408691406Q1242.1999206542969 335.6006164550781 1242.1999206542969 326.8006286621094Q1242.1999206542969 311.3006591796875 1231.699966430664 303.2506866455078Q1221.2000122070312 295.2007141113281 1199.400146484375 295.2007141113281Q1171.5003356933594 295.2007141113281 1142.800521850586 314.05059814453125Q1114.1007080078125 332.9004821777344 1088.4008483886719 361.8003387451172Q1062.7009887695312 390.7001953125 1044.0010528564453 420.9501037597656Q1025.3011169433594 451.20001220703125 1017.10107421875 473.9000549316406L929.10107421875 735.0H825.0997009277344L966.99951171875 313.7005920410156Q970.3995361328125 304.0005187988281 968.5995330810547 296.70050048828125Q966.7995300292969 289.4004821777344 957.7994995117188 289.4004821777344Q946.9994812011719 289.4004821777344 928.9995269775391 300.70042419433594Q910.9995727539062 312.0003662109375 886.149658203125 342.6502685546875Q861.2997436523438 373.3001708984375 828.7998352050781 431.6000671386719ZM1457.6998291015625 251.30014038085938 1465.7998352050781 223.0H1777.1015930175781L1770.3015747070312 251.30014038085938ZM1548.5018310546875 592.8984680175781Q1543.2017211914062 608.9987487792969 1540.3016662597656 619.4989166259766Q1537.401611328125 629.9990844726562 1536.401596069336 636.4991760253906Q1535.4015808105469 642.999267578125 1535.4015808105469 647.79931640625Q1535.4015808105469 657.6993408203125 1541.3015899658203 661.8993530273438Q1547.2015991210938 666.099365234375 1558.3016052246094 666.099365234375Q1570.6016235351562 666.099365234375 1588.601577758789 658.4493865966797Q1606.6015319824219 650.7994079589844 1633.3014526367188 627.9494781494141Q1660.0013732910156 605.0995483398438 1697.3013000488281 559.9996948242188L1702.5013427734375 564.0997314453125Q1663.30126953125 623.7998657226562 1631.1011810302734 659.9499359130859Q1598.9010925292969 696.1000061035156 1572.3509979248047 714.7500305175781Q1545.8009033203125 733.4000549316406 1523.9508056640625 739.7000579833984Q1502.1007080078125 746.0000610351562 1484.0006103515625 746.0000610351562Q1458.9004211425781 746.0000610351562 1441.000244140625 731.3999633789062Q1423.1000671386719 716.7998657226562 1423.1000671386719 681.4995727539062Q1423.1000671386719 669.9994812011719 1426.5501098632812 648.999267578125Q1430.0001525878906 627.9990539550781 1444.4002685546875 584.2987976074219L1605.9002685546875 92.89956665039062H1712.7017211914062Z"/><path fill="currentColor" d="M1958.8037719726562 308.1511535644531V706.099853515625L2026.40234375 721.1998901367188V735.0H1785.4501647949219V721.1998901367188L1854.09912109375 705.9497985839844V312.90216064453125Q1846.0491027832031 307.2519226074219 1831.1990661621094 296.8765106201172Q1816.3490295410156 286.5010986328125 1784.1496887207031 265.1511535644531V255.40087890625L1955.6533508300781 207.55001831054688H1958.8037719726562ZM2264.2042846679688 365.3994140625V706.099853515625L2331.8028564453125 721.1998901367188V735.0H2091.4510803222656V721.1998901367188L2159.4996337890625 706.099853515625V379.2508239746094Q2159.4996337890625 349.201171875 2149.2748260498047 329.5514831542969Q2139.050018310547 309.90179443359375 2117.900421142578 299.9770050048828Q2096.7508239746094 290.0522155761719 2063.50146484375 290.0522155761719Q2030.1022338867188 290.0522155761719 1998.777847290039 299.2019958496094Q1967.4534606933594 308.3517761230469 1945.3534240722656 319.3517761230469L1939.9536437988281 306.2519226074219Q1977.003662109375 276.6511535644531 2003.9786529541016 258.3007507324219Q2030.9536437988281 239.95034790039062 2052.003662109375 230.0251922607422Q2073.053680419922 220.10003662109375 2092.3037719726562 216.55001831054688Q2111.5538635253906 213.0 2133.2041015625 213.0Q2178.9039916992188 213.0 2207.8040466308594 229.27500915527344Q2236.7041015625 245.55001831054688 2250.4541931152344 279.2248992919922Q2264.2042846679688 312.8997802734375 2264.2042846679688 365.3994140625ZM2569.6047973632812 365.3994140625V705.9497985839844L2638.2037353515625 721.1998901367188V735.0H2396.851593017578V721.1998901367188L2464.900146484375 706.099853515625V379.2508239746094Q2464.900146484375 349.201171875 2454.675338745117 329.5514831542969Q2444.4505310058594 309.90179443359375 2423.3009338378906 299.9770050048828Q2402.151336669922 290.0522155761719 2368.9019775390625 290.0522155761719Q2335.5027465820312 290.0522155761719 2304.1783599853516 299.2019958496094Q2272.853973388672 308.3517761230469 2250.753936767578 319.3517761230469L2245.3541564941406 306.2519226074219Q2282.4041748046875 276.6511535644531 2309.379165649414 258.3007507324219Q2336.3541564941406 239.95034790039062 2357.4041748046875 230.0251922607422Q2378.4541931152344 220.10003662109375 2397.7042846679688 216.55001831054688Q2416.954376220703 213.0 2438.6046142578125 213.0Q2507.1544494628906 213.0 2538.379623413086 249.72499084472656Q2569.6047973632812 286.4499816894531 2569.6047973632812 365.3994140625ZM3249.8037719726562 308.6513366699219V706.099853515625L3317.9025268554688 721.1998901367188V735.0H3076.450164794922V721.1998901367188L3145.09912109375 705.9497985839844V312.90216064453125Q3137.049102783203 307.2519226074219 3122.1990661621094 296.8765106201172Q3107.3490295410156 286.5010986328125 3075.149688720703 265.1511535644531V255.40087890625L3246.653350830078 207.55001831054688H3249.8037719726562ZM3401.3006591796875 721.1998901367188 3469.849395751953 706.099853515625V387.10076904296875Q3469.849395751953 354.5511169433594 3458.6495971679688 332.97645568847656Q3447.4497985839844 311.40179443359375 3424.6002197265625 300.7270050048828Q3401.7506408691406 290.0522155761719 3365.601318359375 290.0522155761719Q3328.4021606445312 290.0522155761719 3294.4528198242188 300.17698669433594Q3260.5034790039062 310.3017578125 3236.8034057617188 321.8517761230469L3230.953643798828 311.5518493652344Q3269.9036254882812 280.5511169433594 3298.478561401367 261.02574157714844Q3327.053497314453 241.5003662109375 3349.5034790039062 231.07521057128906Q3371.9534606933594 220.65005493164062 3392.2535705566406 216.8250274658203Q3412.553680419922 213.0 3435.803955078125 213.0Q3508.6537170410156 213.0 3541.6038818359375 252.1249542236328Q3574.5540466308594 291.2499084472656 3574.5540466308594 374.499267578125V705.9497985839844L3643.1529846191406 721.1998901367188V735.0H3401.3006591796875ZM3936.8008422851562 212.49981689453125Q3991.00146484375 212.49981689453125 4030.851776123047 234.72499084472656Q4070.7020874023438 256.9501647949219 4094.0272064208984 299.92543029785156Q4117.352325439453 342.90069580078125 4121.90234375 405.5509338378906H3789.701904296875V374.90032958984375H4063.701171875L4018.4989013671875 395.6506042480469Q4013.7990112304688 340.50018310546875 4001.749267578125 305.9501647949219Q3989.6995239257812 271.400146484375 3969.9498901367188 254.9752655029297Q3950.2002563476562 238.55038452148438 3921.500732421875 238.55038452148438Q3883.2015380859375 238.55038452148438 3855.827133178711 260.89996337890625Q3828.4527282714844 283.2495422363281 3813.8780670166016 326.9741668701172Q3799.3034057617188 370.69879150390625 3799.3034057617188 434.6489562988281Q3799.3034057617188 517.1986083984375 3820.5282135009766 568.6733245849609Q3841.7530212402344 620.1480407714844 3882.4027099609375 643.7729034423828Q3923.0523986816406 667.3977661132812 3981.552032470703 667.3977661132812Q4009.0020141601562 667.3977661132812 4035.0518493652344 660.0978393554688Q4061.1016845703125 652.7979125976562 4084.2266387939453 637.9479675292969Q4107.351593017578 623.0980224609375 4124.751922607422 600.4479675292969L4133.402160644531 606.6982421875Q4101.751922607422 658.2489929199219 4069.876693725586 688.6494140625Q4038.00146484375 719.0498352050781 4003.0512084960938 732.2750091552734Q3968.1009521484375 745.5001831054688 3926.650604248047 745.5001831054688Q3860.2000732421875 745.5001831054688 3807.3248443603516 716.0501098632812Q3754.4496154785156 686.6000366210938 3724.0245513916016 629.2249908447266Q3693.5994873046875 571.8499450683594 3693.5994873046875 488.2000732421875Q3693.5994873046875 413.6500549316406 3722.1245880126953 350.97499084472656Q3750.649688720703 288.2999267578125 3805.1749725341797 250.39987182617188Q3859.7002563476562 212.49981689453125 3936.8008422851562 212.49981689453125Z"/><g transform="translate(2853 435) rotate(-9)"><path d="M0 -360 L0 290" stroke="currentColor" stroke-width="88" stroke-linecap="round"/><path d="M-265 -300 C-205 -520 205 -520 265 -300 C200 -410 -200 -410 -265 -300 Z" fill="var(--pick)"/><rect x="-60" y="-445" width="120" height="120" rx="28" fill="var(--pick)"/></g></svg></h1>
   <nav aria-label="Pages"><a href="/" aria-current="page">Read</a><a href="/cards">My cards</a></nav>
   <span id="count">0 cards</span>
   <a class="mycards" href="/cards" target="_blank" rel="noopener">My cards ↗</a>
@@ -197,10 +321,10 @@ try {
   <div class="deck">
     <label for="deck-name">Deck name</label>
     <input type="text" id="deck-name" value="new" placeholder="Deck name">
-    <button id="download">Download</button>
-    <button class="main" id="send">Send to Anki</button>
+    <button id="download" class="with-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M4.5 15.5v2.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-2.5"/></svg>Download</button>
+    <button class="main with-icon" id="send"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5 21 3Z"/></svg>Send to Anki</button>
   </div>
-  <button type="button" id="theme" class="small">Dark mode</button>
+  <button type="button" id="theme" class="icon" aria-label="Dark mode" title="Dark mode"></button>
 </header>
 
 <div id="status" role="status"></div>
@@ -216,13 +340,17 @@ try {
         <input type="file" id="file" accept=".pdf,.txt">
       </label>
     </details>
-    <div id="text" class="empty" tabindex="0" aria-label="The text. Arrow keys move from word to word; Enter makes a card from the word; Shift and the arrow keys mark a term or a definition, then Enter.">No text yet.</div>
+    <div id="text" class="empty" tabindex="0" aria-label="The text. Arrow keys move from word to word; Enter makes a card from the word; Shift and the arrow keys mark a term, then Enter makes its card.">No text yet.</div>
+    <div id="pdf-nav" hidden>
+      <label>Page <input type="number" id="page-number" min="1" value="1" aria-label="Go to page"> of <span id="page-count">1</span></label>
+      <details id="contents" hidden><summary>Contents</summary><ol id="contents-list"></ol></details>
+    </div>
   </section>
 
   <section>
     <h2>Cards</h2>
     <div id="cards"></div>
-    <div id="no-cards">No cards yet. Click a word for a word card. For a definition card, drag over a term, then over its definition.</div>
+    <div id="no-cards">No cards yet. Click a word for its card, or drag over a term: its sentence comes with it.</div>
   </section>
 </main>
 
@@ -238,7 +366,10 @@ function theme() {
 }
 
 function drawThemeButton() {
-  $("theme").textContent = theme() === "dark" ? "Light mode" : "Dark mode";
+  const dark = theme() === "dark";   // the sun to go light, the moon to go dark
+  $("theme").innerHTML = dark ? "<svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><path d=\"M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6\"/></svg>" : "<svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z\"/></svg>";
+  $("theme").setAttribute("aria-label", dark ? "Light mode" : "Dark mode");
+  $("theme").title = dark ? "Light mode" : "Dark mode";
 }
 
 $("theme").addEventListener("click", () => {
@@ -246,7 +377,16 @@ $("theme").addEventListener("click", () => {
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem("sentmine-theme", next); } catch (error) {}   // remembered only if the browser allows it
   drawThemeButton();
+  fetch(API + "/theme", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ theme: next }) }).catch(() => {});
 });
+// The theme last chosen in any view (Read, the side panel, My cards), as sentmine remembers it.
+function applyTheme(chosen) {
+  if ((chosen !== "light" && chosen !== "dark") || document.documentElement.dataset.theme === chosen) return;
+  document.documentElement.dataset.theme = chosen;
+  try { localStorage.setItem("sentmine-theme", chosen); } catch (error) {}
+  drawThemeButton();
+}
+
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawThemeButton);
 new ResizeObserver(() => {   // the status line and the cards stay in view under the header while the text scrolls
   document.documentElement.style.setProperty("--header", document.querySelector("header").offsetHeight + "px");
@@ -256,15 +396,20 @@ drawThemeButton();
 // Under /clip the same page shows the clips from web pages, in the extension's side panel.
 const CLIP = location.pathname.startsWith("/clip");
 const API = CLIP ? "/clip/api" : "/api";
-if (CLIP) document.body.classList.add("clip");
+if (CLIP) {
+  document.body.classList.add("clip");
+  $("no-cards").textContent = "No cards yet. On a web page, select a word or some text, right-click it, and choose " +
+    "Make a card from this: what you selected is the term, its whole sentences the passage.";
+}
 const HINT = CLIP
-  ? "Select text on a page, right-click it, and choose a card."
-  : "Click a word for a card; click again to remove it. Drag over a term, then its definition, " +
-    "for a definition card. A blue line: you already have a card (point at it).";
+  ? "Select a word or a sentence on a page, right-click it, and choose Make a card from this."
+  : "Click a word for a card; click again to remove it. Drag over words: they are the term, their whole sentences " +
+    "the passage. A blue line: you already have a card (point at it).";
 
 let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let term = null;       // the term dragged over, while its definition is still to be marked
 let editing = null;    // the id of the card being edited
+let draft = null;      // what is typed in Edit, kept while the card is drawn again: { id, front, back }
 let lastPick = null;   // the last word click or definition sent, so "Make it anyway" can send it again
 let shownPdf = null;   // the version of the PDF whose pages are drawn, so its pictures are not drawn again
 
@@ -273,6 +418,15 @@ function element(tag, className, text) {
   if (className) made.className = className;
   if (text !== undefined) made.textContent = text;
   return made;
+}
+
+// The hint, with the gestures as key-style labels.
+function hintParts() {
+  const part = (key, rest) => { const one = element("span", "hint-part"); one.append(element("kbd", "", key), " " + rest); return one; };
+  if (CLIP) return [part("Select", "a word or some text on the page"), part("Right-click", "Make a card from this")];
+  const known = element("span", "hint-part");
+  known.append(element("span", "hint-known", "underlined"), " = already a card (point at it)");
+  return [part("Click", "a word"), part("Drag", "over words for a term"), part("Click", "again to remove"), known];
 }
 
 function say(message, warn) {
@@ -287,7 +441,8 @@ function say(message, warn) {
     status.append(cancel);
     return;
   }
-  status.textContent = message || HINT;
+  if (message) status.textContent = message;
+  else status.append(...hintParts());
 }
 
 function showEarlier(data) {
@@ -364,12 +519,13 @@ function drawText() {
   text.replaceChildren();
   text.classList.toggle("empty", state.paragraphs.length === 0);
   if (state.paragraphs.length === 0) {
-    text.textContent = "No text yet.";
+    text.textContent = CLIP
+      ? "No clips yet. On a web page, select a word, a sentence or a definition (roughly is enough), right-click it, and choose Make a card from this."
+      : "No text yet.";
     return;
   }
   state.paragraphs.forEach((paragraph, number) => {
     const p = element("p");
-    if (state.clip_kinds) p.dataset.kind = state.clip_kinds[number];
     paragraph.forEach((sentence, index) => {
       if (index > 0) p.append(" ");
       for (const piece of sentence.pieces) {
@@ -384,13 +540,13 @@ function drawText() {
         p.append(word);
       }
     });
-    if (!state.clip_kinds) {
+    if (!state.clips) {
       text.append(p);
       return;
     }
     // a clip: what to do with it, and a way to take it away
     const head = element("div", "clip-head");
-    head.append(element("span", "", state.clip_kinds[number] === "definition" ? "Definition: drag over its term" : "Sentence: click a word"));
+    head.append(element("span", "", "Click a word, or drag over the term"));
     const remove = element("button", "small", "Remove");
     remove.setAttribute("aria-label", "Remove this clip");
     remove.addEventListener("click", () => call("DELETE", API + "/clips/" + number));
@@ -437,14 +593,17 @@ function drawPages(text) {
 
 async function fillPage(page) {
   const version = shownPdf;
-  let boxes;
+  let boxes, links;
   try {
     const response = await fetch("/api/pages/" + page.dataset.page + "/words?v=" + version);
-    boxes = (await response.json()).boxes;
+    const answer = await response.json();
+    boxes = answer.boxes;
+    links = answer.links || [];
   } catch (error) {
     return;   // the page stays a picture; its words cannot be picked
   }
   if (version !== shownPdf || !boxes) return;   // another text was read meanwhile
+  for (const link of links) drawLink(page, link);
   for (const [sentence, word, left, top, width, height] of boxes) {
     const box = element("span", "w", wordText(sentence, word));
     box.dataset.sentence = sentence;
@@ -455,6 +614,64 @@ async function fillPage(page) {
   }
   markPicked();
 }
+
+// The PDF's own links: inside the PDF, to the page they point at; to a website, in a new tab.
+function drawLink(page, link) {
+  const [left, top, width, height] = link.box;
+  const anchor = element("a", "pdf-link");
+  Object.assign(anchor.style, { left: left * 100 + "%", top: top * 100 + "%", width: width * 100 + "%", height: height * 100 + "%" });
+  anchor.tabIndex = -1;   // the page bar and the words are the keyboard's way through; 100 links would be 100 stops
+  if (link.url) {
+    anchor.href = link.url;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.title = link.url;
+  } else {
+    anchor.href = "#page-" + (link.page + 1);
+    anchor.title = "Go to page " + (link.page + 1);
+    anchor.addEventListener("click", (event) => { event.preventDefault(); goToPage(link.page, link.y || 0); });
+  }
+  page.append(anchor);
+}
+
+// The page bar: which page is in view, a page to jump to, and the PDF's contents when it has bookmarks.
+function goToPage(number, within = 0) {
+  const pages = document.querySelectorAll(".pdf-page");
+  const page = pages[Math.min(Math.max(number, 0), pages.length - 1)];
+  if (!page) return;
+  const r = page.getBoundingClientRect();
+  window.scrollTo(0, window.scrollY + r.top + within * r.height - textTop() - 8);
+}
+
+function drawPdfNav() {
+  const nav = $("pdf-nav");
+  nav.hidden = !state.pdf || CLIP;
+  if (nav.hidden) return;
+  $("page-count").textContent = state.pdf.sizes.length;
+  $("page-number").max = state.pdf.sizes.length;
+  const outline = state.pdf.outline || [];
+  $("contents").hidden = outline.length === 0;
+  $("contents-list").replaceChildren(...outline.map((item) => {
+    const row = element("li");
+    const go = element("button", "", item.title);
+    go.style.paddingLeft = 8 + item.level * 16 + "px";
+    go.addEventListener("click", () => { $("contents").open = false; goToPage(item.page); });
+    row.append(go);
+    return row;
+  }));
+}
+
+function pageInView() {
+  const top = textTop();
+  const page = [...document.querySelectorAll(".pdf-page")].find((one) => one.getBoundingClientRect().bottom > top + 40);
+  return page ? Number(page.dataset.page) : 0;
+}
+
+$("page-number").addEventListener("change", () => goToPage(Number($("page-number").value) - 1));
+window.addEventListener("scroll", () => {
+  if (!state.pdf || document.activeElement === $("page-number")) return;
+  $("page-number").value = pageInView() + 1;
+}, { passive: true });
 
 function wordText(sentence, word) {
   for (const paragraph of state.paragraphs) {
@@ -619,6 +836,7 @@ function scrollWhileDragging() {
 
 $("text").addEventListener("mousedown", (event) => {
   if (event.button !== 0 || event.detail >= 2 || !state.pdf) return;
+  if (event.target.closest && event.target.closest(".pdf-link")) return;   // the link takes the click
   const from = nearestBox(event.clientX, event.clientY);
   if (!from) return;
   event.preventDefault();   // no browser selection: sentmine marks the words itself
@@ -645,60 +863,113 @@ function endPageDrag(event) {
   for (const box of $("text").querySelectorAll(".pdf-page .w.dragged")) box.classList.remove("dragged");
   if (drag.moved) {
     const [first, last] = draggedWords(drag);
-    chose(textBetween(first, last));
+    chose(textBetween(first, last), first[0], last[0]);
   } else if (event.target === drag.from) {
     pickWord(drag.from);   // a press and release on a word without moving: a click
   }
 }
 
 async function busy(button, label, work) {
-  const idle = button.textContent;
+  const idle = button.innerHTML;   // its icon and its name, put back after
   button.disabled = true;
   button.textContent = label;
   try {
     await work();
   } finally {
     button.disabled = false;
-    button.textContent = idle;
+    button.innerHTML = idle;
   }
 }
 
 function drawCard(card) {
   const box = element("div", "card");
   const kind = element("span", "kind",
-    card.kind === "word" ? "Word" : card.cloze ? "Definition · cloze" : "Definition · term → passage");
+    card.cloze ? "Cloze" : "Term → passage");
 
   if (editing === card.id) {
-    const front = element("textarea");
-    front.value = card.front;
-    const back = element("textarea");
-    back.value = card.back;
+    if (!draft || draft.id !== card.id) {   // the card as it was, so Cancel can put it back
+      draft = { id: card.id, front: card.front, back: card.back, original: { front: card.front, back: card.back } };
+    }
+    // a picture that arrived while editing (pasted, cut from the page, sent from a web page) takes the place
+    // of the cursor's mark, on either side, or goes to the end of the back. The picture just added goes to the mark
+    // even when the card has it already (the same screenshot pasted again, into the Term this time).
+    let placed = null;   // the picture put at the cursor: the cursor goes on after it
+    const just = state.added_picture;
+    if (just && (card.pictures || {})[just]) {
+      const side = draft.front.includes(CURSOR) ? "front" : draft.back.includes(CURSOR) ? "back" : null;
+      if (side) { draft[side] = draft[side].replace(AT_CURSOR, "\n[[picture:" + just + "]]\n"); placed = { side, name: just }; }
+    }
+    for (const name of Object.keys(card.pictures || {})) {
+      const mark = "[[picture:" + name + "]]";
+      // one already handled in this edit (put in, then deleted or undone) does not come back
+      if (name in editPictures || draft.front.includes(mark) || draft.back.includes(mark)) continue;
+      const side = draft.front.includes(CURSOR) ? "front" : "back";
+      const place = "\n" + mark + "\n";
+      if (draft[side].includes(CURSOR)) placed = { side, name };
+      draft[side] = draft[side].includes(CURSOR) ? draft[side].replace(AT_CURSOR, place) : draft[side] + place;
+    }
+    for (const side of ["front", "back"]) draft[side] = tidyDoc(draft[side].split(CURSOR).join(""));
+    // Each side is a small document: text, and pictures where the reader put them.
+    const names = ["Term", "Passage"];
+    editPictures = { ...editPictures, ...(card.pictures || {}) };
+    const front = docEditor("front", names[0], card);
+    const back = docEditor("back", names[1], card);
+    if (placed) {   // keep the cursor's place: just after the picture that took it
+      const image = [...(placed.side === "front" ? front : back).querySelectorAll("img")].find((one) => one.dataset.name === placed.name);
+      if (image) {
+        const after = document.createRange();
+        after.setStartAfter(image);
+        after.collapse(true);
+        lastCaret = { editor: placed.side === "front" ? front : back, range: after };
+      }
+    }
     const save = element("button", "main small", "Save");
     save.addEventListener("click", async () => {
-      const done = await call("PUT", API + "/cards/" + card.id, { front: front.value, back: back.value });
-      if (done) { editing = null; draw(); }
+      const clean = (editor) => docText(editor).split(CURSOR).join("");   // a mark left by a picture that never came
+      const done = await call("PUT", API + "/cards/" + card.id, { front: clean(front), back: clean(back) });
+      if (done) closeEditing();
     });
     const cancel = element("button", "small", "Cancel");
-    cancel.addEventListener("click", () => { editing = null; draw(); });
+    cancel.addEventListener("click", async () => {
+      const now = state.cards.find((one) => one.id === card.id);
+      const { original } = draft;   // a picture added meanwhile is on the card already: put the card back as it was
+      if (now && (now.front !== original.front || now.back !== original.back)) await call("PUT", API + "/cards/" + card.id, original);
+      closeEditing();
+    });
+    const undo = element("button", "small undo-button", "Undo");
+    undo.title = "Take back the last thing put in, deleted or typed (Ctrl+Z)";
+    undo.addEventListener("click", () => stepBack(undoSteps, redoSteps));
+    const redo = element("button", "small redo-button", "Redo");
+    redo.title = "Put it back (Ctrl+Y)";
+    redo.addEventListener("click", () => stepBack(redoSteps, undoSteps));
     const buttons = element("div", "buttons");
-    buttons.append(kind, save, cancel);
-    const names = card.kind === "word" ? ["Front", "Back"] : ["Term", "Passage"];
-    box.append(element("span", "side-name", names[0]), front, element("span", "side-name", names[1]), back, buttons);
+    buttons.append(kind, save, cancel, undo, redo);
+    box.classList.add("editing-card");
+    const mark = element("span", "caret-mark");
+    mark.hidden = true;
+    mark.title = "The next sentence or picture goes here";
+    box.append(element("span", "side-name", names[0]), front, element("span", "side-name", names[1]), back,
+      element("div", "paste-hint", editHint()), buttons, mark);
     return box;
   }
 
   const front = element("div", "front");
-  front.innerHTML = card.front_html;   // escaped by the server; only <b> and <br> are real tags
+  if (card.cloze) {   // in the panel a cloze card shows its term, tagged; the gap is for Anki
+    front.textContent = card.front.replace(/\[\[picture:[^\]]+\]\]/g, "").trim();
+    front.append(element("span", "tag", "Cloze"));
+  } else {
+    front.innerHTML = card.front_html;   // escaped by the server; only <b>, <br> and its own pictures are real tags
+  }
   const back = element("div", "back");
   back.innerHTML = card.back_html;
   if (card.earlier) box.append(element("div", "made-before", "Made before, on " + card.earlier + "."));
   const edit = element("button", "small", "Edit");
-  edit.addEventListener("click", () => { editing = card.id; draw(); });
+  edit.addEventListener("click", () => startEditing(card.id));
   const remove = element("button", "small", "Delete");
   remove.addEventListener("click", () => call("DELETE", API + "/cards/" + card.id));
   const buttons = element("div", "buttons");
   buttons.append(kind, edit, remove);
-  if (card.kind === "definition" && (card.cloze || card.can_cloze)) {
+  if (card.cloze || card.can_cloze) {
     const other = element("button", "small", card.cloze ? "Make it term → passage" : "Make it cloze");
     other.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/cloze", { cloze: !card.cloze }));
     buttons.append(other);
@@ -716,11 +987,270 @@ function drawCard(card) {
     });
     buttons.append(suggest);
   }
-  box.append(front, back, buttons);
+  if (card.cloze) box.classList.add("is-cloze");
+  box.append(front, back);
+  if (card.origin) box.append(element("div", "origin", "From " + card.origin));   // under the passage: where it came from
+  box.append(buttons);
   return box;
 }
 
+// The back of a card as a small document. Its text holds each picture's place as [[picture:name]] on a line
+// of its own; the editor shows the picture there, and reads the places back from what the reader arranged.
+const CURSOR = "\uFFFC";   // marks where the cursor was while a pasted picture is on its way
+const AT_CURSOR = /\n?\uFFFC\n?/;   // with the line breaks beside it, so no empty line is left
+const PLACE = /\n?\[\[picture:(sentmine-[0-9a-f]{16}\.png)\]\]\n?/g;
+
+// One side of the card being edited, as an editable document; `side` is "front" or "back".
+function docEditor(side, name, card) {
+  const editor = element("div", "doc-editor " + side + "-editor");
+  editor.contentEditable = "plaintext-only";
+  if (editor.contentEditable !== "plaintext-only") editor.contentEditable = "true";   // an older browser
+  editor.dataset.side = side;
+  editor.setAttribute("role", "textbox");
+  editor.setAttribute("aria-multiline", "true");
+  editor.setAttribute("aria-label", name + ": text and pictures");
+  fillDoc(editor, draft[side], card.pictures || {});
+  editor.addEventListener("beforeinput", () => {   // typing: one undo step per run of typing
+    if (Date.now() - lastTyping > 1000) remember();
+    lastTyping = Date.now();
+  });
+  editor.addEventListener("input", () => { draft[side] = docText(editor); });
+  editor.addEventListener("keydown", (event) => {   // the browser deletes letters; a picture is deleted here
+    if (isPictureDelete(editor, event.key)) remember();
+    if (deletePicture(editor, event.key)) {
+      event.preventDefault();
+      draft[side] = docText(editor);
+    }
+  });
+  editor.addEventListener("click", (event) => {   // a click on a picture selects it, to delete it
+    if (event.target.nodeName !== "IMG") return;
+    const range = document.createRange();
+    range.selectNode(event.target);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  return editor;
+}
+
+function tidyDoc(text) {
+  return text.replace(/\n{3,}/g, "\n\n").replace(/^\n+|\n+$/g, "");
+}
+
+function fillDoc(editor, text, pictures) {
+  editor.replaceChildren();
+  let at = 0;
+  for (const found of text.matchAll(PLACE)) {
+    if (found.index > at) editor.append(text.slice(at, found.index));
+    if (pictures[found[1]]) {
+      const image = element("img");
+      image.src = pictures[found[1]];
+      image.dataset.name = found[1];
+      image.alt = "A picture on this card";
+      editor.append(image);
+    }
+    at = found.index + found[0].length;
+  }
+  if (at < text.length) editor.append(text.slice(at));
+}
+
+// Backspace or Delete beside a picture, or with a picture selected, takes the picture out; true if it did.
+function deletePicture(editor, key) {
+  if (key !== "Backspace" && key !== "Delete") return false;
+  const selection = window.getSelection();
+  if (!selection.rangeCount || !editor.contains(selection.anchorNode)) return false;
+  const range = selection.getRangeAt(0);
+  if (!range.collapsed) {
+    if (range.cloneContents().querySelector("img") === null) return false;   // only text: the browser's job
+    range.deleteContents();
+    return true;
+  }
+  const { startContainer: node, startOffset: offset } = range;
+  let beside = null;
+  if (node === editor) {
+    beside = editor.childNodes[key === "Backspace" ? offset - 1 : offset] || null;
+  } else if (node.nodeType === Node.TEXT_NODE && node.parentNode === editor) {
+    if (key === "Backspace" && offset === 0) beside = node.previousSibling;
+    if (key === "Delete" && offset === node.textContent.length) beside = node.nextSibling;
+  }
+  if (!beside || beside.nodeName !== "IMG") return false;
+  beside.remove();
+  return true;
+}
+
+function docText(editor) {
+  let text = "";
+  const read = (node) => {
+    for (const child of node.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        text += child.textContent;
+      } else if (child.nodeName === "BR") {
+        text += "\n";
+      } else if (child.nodeName === "IMG") {
+        if (child.dataset.name) text += "\n[[picture:" + child.dataset.name + "]]\n";
+      } else {   // a block the browser made for a new line
+        if (text && !text.endsWith("\n")) text += "\n";
+        read(child);
+        if (!text.endsWith("\n")) text += "\n";
+      }
+    }
+  };
+  read(editor);
+  return tidyDoc(text);
+}
+
+// Paste a picture (Ctrl+V): a copied image or a screenshot. While a card is edited it goes into its back where
+// the cursor is; otherwise on the card last made or edited, at the end. Pasted text is left alone.
+const WIDEST_PICTURE = 1600;   // pixels; Anki shows it no wider
+
+async function pastedPng(file) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, WIDEST_PICTURE / bitmap.width);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/png").split(",")[1];
+}
+
+document.addEventListener("paste", async (event) => {
+  const item = [...((event.clipboardData && event.clipboardData.items) || [])].find((one) => one.kind === "file" && one.type.startsWith("image/"));
+  if (!item) return;   // text: the browser pastes it as usual
+  event.preventDefault();
+  const card = editing !== null ? editing : state.chosen_card;
+  if (card === null || card === undefined) {
+    say("Make a card first; then paste the picture.", true);
+    return;
+  }
+  const selection = window.getSelection();
+  const editor = editing !== null && selection.rangeCount
+    ? [...document.querySelectorAll(".doc-editor")].find((one) => one.contains(selection.anchorNode)) : null;
+  if (editor && draft) {
+    const range = selection.getRangeAt(0);   // remember where the cursor is: the picture goes there
+    remember();
+    range.deleteContents();
+    range.insertNode(document.createTextNode(CURSOR));
+    draft[editor.dataset.side] = docText(editor);
+  } else {
+    markCursor();   // pasted with the focus elsewhere: where the cursor last was in the card
+  }
+  let png;
+  try {
+    png = await pastedPng(item.getAsFile());
+  } catch (error) {
+    png = null;
+  }
+  const added = png && await call("POST", API + "/cards/" + card + "/pictures", { png });
+  if (!added) {
+    if (png === null) say("That picture could not be read.", true);
+    if (draft) { draft.front = draft.front.split(CURSOR).join(""); draft.back = draft.back.split(CURSOR).join(""); draw(); }
+  }
+});
+
+// Where the cursor last was in the card being edited, Term or Passage: a picture cut from the PDF page or sent
+// from a web page goes there, though the click on a button or another window took the cursor away.
+let lastCaret = null;   // { editor, range }
+document.addEventListener("selectionchange", () => {
+  const selection = window.getSelection();
+  if (editing === null || !selection.rangeCount) return;
+  const editor = [...document.querySelectorAll(".doc-editor")].find((one) => one.contains(selection.anchorNode));
+  if (editor) lastCaret = { editor, range: selection.getRangeAt(0).cloneRange() };
+});
+
+function caretInCard() {   // the last place of the cursor, while it is still in the editor on the page
+  if (editing === null || !draft || !lastCaret || !document.contains(lastCaret.editor)) return null;
+  return lastCaret.editor.contains(lastCaret.range.endContainer) ? lastCaret : null;
+}
+
+function markCursor() {   // the cursor's mark at its last place; false when there is none
+  const caret = caretInCard();
+  if (!caret) return false;
+  remember();
+  const range = caret.range.cloneRange();
+  range.collapse(false);
+  range.insertNode(document.createTextNode(CURSOR));
+  draft[caret.editor.dataset.side] = docText(caret.editor);
+  return true;
+}
+
+function dropCursor() {   // no picture came: the mark goes, from the editors and the draft
+  for (const editor of document.querySelectorAll(".doc-editor")) {
+    for (const node of [...editor.childNodes]) {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.includes(CURSOR)) node.textContent = node.textContent.split(CURSOR).join("");
+    }
+  }
+  if (draft) { draft.front = draft.front.split(CURSOR).join(""); draft.back = draft.back.split(CURSOR).join(""); }
+}
+
+// A picture from the PDF page: while a card is open in Edit, a drag on a page draws a box around a formula or graph;
+// that part of the page, drawn from the PDF itself, goes in where the card's cursor is. A click instead of a drag
+// puts in the sentence clicked. Esc cancels a box.
+let boxFor = null;     // the card the box is for, while one is being drawn
+let boxing = null;     // { page, x, y, mark } while the mouse is down
+
+function stopBox(message) {
+  boxFor = null;
+  if (boxing) boxing.mark.remove();
+  boxing = null;
+  document.body.classList.remove("boxing");
+  if (message !== undefined) say(message);
+}
+
+function pageFraction(page, event) {
+  const r = page.getBoundingClientRect();
+  return [Math.min(Math.max((event.clientX - r.left) / r.width, 0), 1), Math.min(Math.max((event.clientY - r.top) / r.height, 0), 1)];
+}
+
+// Capture phase, so that while a box is drawn the clicks and drags on the words do nothing else.
+document.addEventListener("mousedown", (event) => {
+  if (event.button !== 0 || editing === null || !state.pdf || CLIP) return;
+  const page = event.target.closest && event.target.closest(".pdf-page");
+  if (!page || event.target.closest("a")) return;   // a link on the page still works
+  boxFor = editing;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const [x, y] = pageFraction(page, event);
+  const mark = element("div", "box-drawn");
+  page.append(mark);
+  boxing = { page, x, y, mark };
+}, true);
+
+document.addEventListener("mousemove", (event) => {
+  if (!boxing) return;
+  event.stopImmediatePropagation();
+  const [x, y] = pageFraction(boxing.page, event);
+  const [left, top] = [Math.min(x, boxing.x), Math.min(y, boxing.y)];
+  Object.assign(boxing.mark.style, { left: left * 100 + "%", top: top * 100 + "%",
+    width: Math.abs(x - boxing.x) * 100 + "%", height: Math.abs(y - boxing.y) * 100 + "%" });
+}, true);
+
+document.addEventListener("mouseup", async (event) => {
+  if (!boxing) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const [x, y] = pageFraction(boxing.page, event);
+  const box = [Math.min(x, boxing.x), Math.min(y, boxing.y), Math.abs(x - boxing.x), Math.abs(y - boxing.y)];
+  const page = Number(boxing.page.dataset.page);
+  const card = boxFor;
+  stopBox();
+  if (box[2] < 0.004 && box[3] < 0.004) {   // a click, not a box: the sentence of the word clicked
+    const word = document.elementsFromPoint(event.clientX, event.clientY).find((one) => one.classList && one.classList.contains("w"));
+    if (word) putIn(Number(word.dataset.sentence), Number(word.dataset.sentence), word.textContent);
+    return;
+  }
+  markCursor();   // the picture goes where the cursor was
+  if (!await call("POST", "/api/cards/" + card + "/pictures", { page, box })) dropCursor();
+}, true);
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && boxFor !== null) {
+    dropCursor();
+    stopBox("No picture added.");
+  }
+});
+
 function draw() {
+  drawPdfNav();
   const hadKeys = keyPlace !== null && $("text").contains(document.activeElement);
   drawText();
   if (hadKeys) {   // pasted text is drawn again after each card: keep the keyboard on its word
@@ -730,6 +1260,9 @@ function draw() {
   $("count").textContent = state.count_text;
   $("cards").replaceChildren(...state.cards.map(drawCard));
   $("no-cards").hidden = state.cards.length > 0;
+  document.body.classList.toggle("editing-pdf", editing !== null && !!state.pdf && !CLIP);
+  showCaretMark();
+  showUndo();
 }
 
 // One handler tells a click from a drag. It listens on the document because a drag may end
@@ -749,12 +1282,15 @@ document.addEventListener("mouseup", (event) => {
     return;
   }
   if (inText) {
-    const clipped = CLIP && term === null ? definitionClipOf(selection.anchorNode) : null;
+    const clipped = CLIP && term === null ? clipOf(selection.anchorNode) : null;
+    const over = [...$("text").querySelectorAll(".w")].filter((word) => selection.containsNode(word, true));
     selection.removeAllRanges();
-    if (clipped) {
+    if (editing !== null) {
+      if (over.length) putIn(Number(over[0].dataset.sentence), Number(over[over.length - 1].dataset.sentence), termOf(selected));
+    } else if (clipped) {
       pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
-    } else {
-      chose(selected);
+    } else if (over.length) {
+      chose(selected, Number(over[0].dataset.sentence), Number(over[over.length - 1].dataset.sentence));
     }
     return;
   }
@@ -767,25 +1303,29 @@ function termOf(selected) {
   return selected.replace(/\s+/g, " ").replace(/[.,;:!?]+$/, "") || selected;
 }
 
-function definitionClipOf(node) {   // the definition clip a drag was in, if it was in one
+function clipOf(node) {   // the clip a drag was in: a drag over a term makes its card, with the clip as the passage
   const element = node && (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
-  return element ? element.closest('#text p[data-kind="definition"]') : null;
+  return element ? element.closest("#text .clip p") : null;
 }
 
-function chose(selected) {   // a drag: the term, or the definition of the waiting term
+// A drag (or the marked words, from the keyboard) makes its card at once: what was dragged is the term, the whole
+// sentences it touches the passage. Either can be changed in Edit.
+
+function chose(selected, first, last) {
   if (!selected) return;
-  if (term === null) {
-    term = termOf(selected);
-    say("");
+  if (editing !== null) {
+    putIn(first, last, termOf(selected));
     return;
   }
-  const chosen = term;
-  term = null;
-  pick(API + "/definition", { term: chosen, passage: selected });
+  pick(API + "/definition", { term: termOf(selected), sentence: first, last });
 }
 
 function pickWord(box) {
-  term = null;   // a click on a word drops a waiting term
+  term = null;
+  if (editing !== null) {   // in Edit, a click is for the sentence, put in at the cursor, not a card for the word
+    putIn(Number(box.dataset.sentence), Number(box.dataset.sentence), box.textContent);
+    return;
+  }
   pick(API + "/word", { sentence: Number(box.dataset.sentence), word: Number(box.dataset.word) });
 }
 
@@ -873,18 +1413,331 @@ $("text").addEventListener("keydown", (event) => {
       return;
     }
     const selected = range.map((word) => word.textContent).join(" ");
-    const clipped = CLIP && term === null ? definitionClipOf(range[0]) : null;
+    const clipped = CLIP && term === null ? clipOf(range[0]) : null;
     clearMarks();
     if (clipped) pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
-    else chose(selected);
+    else chose(selected, Number(range[0].dataset.sentence), Number(range[range.length - 1].dataset.sentence));
     return;
   }
   if (event.key === "Escape" && marked().length > 0) clearMarks();
 });
 
-function mayReplaceCards() {
-  return state.cards.length === 0 ||
-    window.confirm("Reading a new text removes the " + state.count_text + " you have not downloaded. Continue?");
+// One deck, two views: Read and the side panel each ask now and then whether the other changed the deck,
+// and draw it again if so, unless the reader is in the middle of something here.
+async function refreshIfChanged() {
+  if (document.visibilityState !== "visible" || term !== null || boxFor !== null || pageDrag) return;
+  try {
+    const seen = await (await fetch(API + "/version")).json();
+    applyTheme(seen.theme);   // chosen in the other view meanwhile
+    if (seen.deck === state.deck_version) return;
+    const fresh = await (await fetch(API + "/state")).json();
+    if (editing !== null) {   // keep what is typed; only what was sent meanwhile (from a web page) goes in
+      addArrived(fresh);
+      return;
+    }
+    if (term !== null || boxFor !== null || pageDrag) return;   // something started meanwhile
+    const more = fresh.count > state.count;
+    state = fresh;
+    draw();   // quietly: the status line keeps what it said
+    if (CLIP && more) showNewestCard();
+  } catch (error) {
+    // the app is not answering; the next action here says so
+  }
+}
+const taken = new Set();   // text from a web page already put in, until the app has let it go
+
+function addArrived(fresh) {
+  const card = fresh.cards.find((one) => one.id === editing);
+  const editor = document.querySelector(".back-editor");
+  if (!card || !editor || !draft) return;
+  const mine = (fresh.inbox || []).filter((item) => item.card === editing && !taken.has(item.id));
+  for (const item of mine) {
+    taken.add(item.id);
+    const caret = caretInCard();
+    insertAtCursor(caret && caret.editor.dataset.side === "front" && item.exact ? item.exact : item.text);
+  }
+  if (mine.length) fetch(API + "/inbox/taken", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids: mine.map((item) => item.id) }) }).catch(() => {});
+  const shown = new Set([...document.querySelectorAll(".doc-editor img")].map((image) => image.dataset.name));
+  for (const [name, src] of Object.entries(card.pictures || {})) {
+    const mark = "[[picture:" + name + "]]";
+    if (name in editPictures || shown.has(name) || draft.front.includes(mark) || draft.back.includes(mark)) continue;
+    const image = element("img");
+    image.src = src;
+    image.dataset.name = name;
+    image.alt = "A picture on this card";
+    remember();
+    editPictures[name] = src;
+    const caret = caretInCard();   // where the cursor last was, Term or Passage; else the end of the passage
+    if (caret) {
+      const range = caret.range.cloneRange();
+      range.collapse(false);
+      range.insertNode(image);
+      const after = document.createRange();   // a next picture goes after this one
+      after.setStartAfter(image);
+      after.collapse(true);
+      lastCaret = { editor: caret.editor, range: after };
+      draft[caret.editor.dataset.side] = docText(caret.editor);
+    } else {
+      editor.append(image);
+      draft.back = docText(editor);
+    }
+  }   // the rest of the deck is drawn after Save or Cancel
+  showCaretMark();
+}
+
+function startEditing(id) {
+  editing = id;
+  draft = null;
+  lastCaret = null;
+  undoSteps = [];
+  redoSteps = [];
+  editPictures = {};
+  tellEditing(id);   // text and pictures from a web page now go to this card, at its cursor
+  say("Editing: whatever you add goes in where the cursor is. Save when the card is right.");
+  draw();
+}
+
+// Undo in Edit: Ctrl+Z takes back the last thing put in, deleted or typed, one step at a time, and Ctrl+Y (or
+// Ctrl+Shift+Z) puts it back. The browser's own undo cannot follow what sentmine puts in, nor an editor drawn again
+// when a picture arrives, so the steps are the card's two sides as text, kept here.
+let undoSteps = [];   // { front, back } as they were before each step
+let redoSteps = [];
+let lastTyping = 0;
+let editPictures = {};   // name -> address of every picture that has been in the card during this edit
+
+function remember() {
+  if (!draft) return;
+  const now = { front: draft.front.split(CURSOR).join(""), back: draft.back.split(CURSOR).join("") };
+  const last = undoSteps[undoSteps.length - 1];
+  if (last && last.front === now.front && last.back === now.back) return;
+  undoSteps.push(now);
+  if (undoSteps.length > 200) undoSteps.shift();
+  redoSteps = [];
+  showUndo();
+}
+
+function showUndo() {   // Undo and Redo are greyed out when there is nothing to take back or put back
+  const undo = document.querySelector(".editing-card .undo-button");
+  const redo = document.querySelector(".editing-card .redo-button");
+  if (undo) undo.disabled = undoSteps.length === 0;
+  if (redo) redo.disabled = redoSteps.length === 0;
+}
+
+function stepBack(steps, others) {
+  if (!draft || !steps.length) return;
+  others.push({ front: draft.front, back: draft.back });
+  const to = steps.pop();
+  for (const side of ["front", "back"]) {
+    const editor = document.querySelector("." + side + "-editor");
+    if (!editor || draft[side] === to[side]) continue;
+    const from = draft[side];
+    draft[side] = to[side];
+    fillDoc(editor, to[side], editPictures);
+    let same = 0;   // the cursor goes where the two differ
+    while (same < from.length && same < to[side].length && from[same] === to[side][same]) same += 1;
+    placeCaret(editor, same);
+  }
+  lastTyping = 0;
+  showCaretMark();
+  showUndo();
+}
+
+// The cursor at a place in a side's text, as docText counts it: a picture counts as its place in the text.
+function placeCaret(editor, at) {
+  const range = document.createRange();
+  let seen = 0, placed = false;
+  for (const node of editor.childNodes) {
+    const length = node.nodeName === "IMG" ? ("\n[[picture:" + node.dataset.name + "]]\n").length : node.textContent.length;
+    if (seen + length >= at) {
+      if (node.nodeType === Node.TEXT_NODE) range.setStart(node, Math.max(0, at - seen));
+      else range.setStartAfter(node);
+      placed = true;
+      break;
+    }
+    seen += length;
+  }
+  if (!placed) { range.selectNodeContents(editor); range.collapse(false); }
+  range.collapse(true);
+  lastCaret = { editor, range };
+  editor.focus();
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range.cloneRange());
+}
+
+function isPictureDelete(editor, key) {   // whether Backspace or Delete is about to take a picture out
+  if (key !== "Backspace" && key !== "Delete") return false;
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return false;
+  const range = selection.getRangeAt(0);
+  if (!range.collapsed) return range.cloneContents().querySelector("img") !== null;
+  const node = range.startContainer, offset = range.startOffset;
+  const beside = node === editor ? editor.childNodes[key === "Backspace" ? offset - 1 : offset]
+    : node.nodeType === Node.TEXT_NODE && key === "Backspace" && offset === 0 ? node.previousSibling
+    : node.nodeType === Node.TEXT_NODE && key === "Delete" && offset === node.textContent.length ? node.nextSibling : null;
+  return !!beside && beside.nodeName === "IMG";
+}
+
+document.addEventListener("keydown", (event) => {
+  if (editing === null || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+  const active = document.activeElement;
+  if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA")) return;   // the deck name keeps its own undo
+  const key = event.key.toLowerCase();
+  if (key === "z" && !event.shiftKey) {
+    event.preventDefault();
+    stepBack(undoSteps, redoSteps);
+  } else if (key === "y" || (key === "z" && event.shiftKey)) {
+    event.preventDefault();
+    stepBack(redoSteps, undoSteps);
+  }
+}, true);
+
+function showNewestCard() {
+  const cards = $("cards").children;
+  if (cards.length) cards[cards.length - 1].scrollIntoView({ block: "nearest" });
+}
+
+// The edit mode: the page tells the app which card is open in Edit, again every 30 seconds while it is, so that
+// text and pictures from a web page go to it; and again when it closes.
+function tellEditing(card, keepalive = false) {
+  // in the side panel, the extension names its right-click items after it: "Add to the card you are editing"
+  if (window.parent !== window) window.parent.postMessage({ sentmine: "editing", editing: card !== null }, "*");
+  return fetch(API + "/editing", { method: "PUT", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ card }), keepalive }).catch(() => {});
+}
+
+function closeEditing() {
+  undoSteps = [];
+  redoSteps = [];
+  editPictures = {};
+  tellEditing(null);
+  editing = null;
+  draft = null;
+  lastCaret = null;
+  taken.clear();
+  draw();
+}
+
+setInterval(() => { if (editing !== null) tellEditing(editing); }, 30000);
+window.addEventListener("pagehide", () => { if (editing !== null) tellEditing(null, true); });
+
+function editHint() {
+  const parts = CLIP ? ["Everything goes in where the cursor is: right-click text or a picture on the web page"]
+    : ["Everything goes in where the cursor is: click a sentence in the text"];
+  if (state.pdf && !CLIP) parts.push("drag a box on the PDF page for a picture");
+  parts.push(CLIP ? "or paste a picture (Ctrl+V)" : "paste a picture (Ctrl+V)");
+  if (!CLIP) parts.push("or right-click text or a picture on a web page");
+  return parts.join(", ") + ". To remove a picture, click it and press Delete; Undo takes back the last step. Save when the card is right.";
+}
+
+// The sentences `first` to `last` of the text, as one passage: a space between sentences, a blank line between
+// paragraphs.
+function sentencesText(first, last) {
+  const paragraphs = [];
+  for (const paragraph of state.paragraphs) {
+    const chosen = paragraph.filter((drawn) => drawn.sentence >= first && drawn.sentence <= last)
+      .map((drawn) => drawn.pieces.map((piece) => piece.text).join(""));
+    if (chosen.length) paragraphs.push(chosen.join(" "));
+  }
+  return paragraphs.join("\n\n");
+}
+
+// What a click or a drag in the text puts in at the cursor: in the Term, the words themselves (the term); in the
+// Passage, their whole sentences.
+function putIn(first, last, words) {
+  const caret = caretInCard();
+  if (caret && caret.editor.dataset.side === "front" && words) insertAtCursor(words);
+  else insertSentences(first, last);
+}
+
+function insertSentences(first, last) {
+  const text = sentencesText(Math.min(first, last), Math.max(first, last));
+  if (text) insertAtCursor(text);
+}
+
+// Text put in where the cursor last was, Term or Passage (the end of the Passage when there is none), with a
+// space before it when it would touch a word; the cursor goes on after it.
+function insertAtCursor(text) {
+  remember();
+  const caret = caretInCard();
+  const editor = caret ? caret.editor : document.querySelector(".back-editor");
+  if (!editor || !draft) return;
+  let range;
+  if (caret) {
+    range = caret.range.cloneRange();
+    range.collapse(false);
+  } else {
+    range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+  }
+  const before = document.createRange();
+  before.selectNodeContents(editor);
+  before.setEnd(range.startContainer, range.startOffset);
+  const rest = document.createRange();
+  rest.selectNodeContents(editor);
+  rest.setStart(range.endContainer, range.endOffset);
+  const touchesBefore = before.toString() && !/\s$/.test(before.toString());
+  const touchesAfter = rest.toString() && !/^\s/.test(rest.toString());
+  const node = document.createTextNode((touchesBefore ? " " : "") + text + (touchesAfter ? " " : ""));
+  range.insertNode(node);
+  const after = document.createRange();   // just after the text, before the space that keeps it off the next word
+  after.setStart(node, node.length - (touchesAfter ? 1 : 0));
+  after.collapse(true);
+  lastCaret = { editor, range: after };
+  if (editor.contains(document.activeElement) || document.activeElement === editor) {   // the real cursor moves on too
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(after.cloneRange());
+  }
+  draft[editor.dataset.side] = docText(editor);
+  say("Put in the card where the cursor is.");
+  showCaretMark();
+}
+
+// A thin line where the next sentence or picture will go, while the cursor itself is elsewhere (on the PDF, on a
+// web page). Hidden while typing in the card, where the real cursor shows the place.
+function showCaretMark() {
+  const mark = document.querySelector(".editing-card .caret-mark");
+  if (!mark) return;
+  const caret = caretInCard();
+  const typing = caret && caret.editor.contains(document.activeElement);
+  if (!caret || typing) { mark.hidden = true; return; }
+  const range = caret.range.cloneRange();
+  range.collapse(false);
+  const node = range.startContainer, offset = range.startOffset;
+  const before = node.nodeType === Node.TEXT_NODE ? (offset === 0 ? node.previousSibling : null) : node.childNodes[offset - 1];
+  let place = range.getClientRects()[0];
+  if (before && before.nodeName === "IMG" && !(place && place.height)) {   // just after a picture: at its right edge, by its foot
+    const picture = before.getBoundingClientRect();
+    place = { left: picture.right + 2, top: picture.bottom - 22, height: 22 };
+  }
+  if (!place) {   // an empty spot has no box of its own: a zero-width mark there has one
+    const probe = document.createTextNode("\u200b");
+    range.insertNode(probe);
+    place = probe.parentNode ? (() => { const r = document.createRange(); r.selectNode(probe); return r.getBoundingClientRect(); })() : null;
+    probe.remove();
+    caret.editor.normalize();
+  }
+  if (!place) { mark.hidden = true; return; }
+  const box = mark.parentElement.getBoundingClientRect();
+  Object.assign(mark.style, { left: place.left - box.left + "px", top: place.top - box.top + "px", height: Math.max(place.height, 16) + "px" });
+  mark.hidden = false;
+}
+
+document.addEventListener("focusin", showCaretMark);
+document.addEventListener("focusout", () => setTimeout(showCaretMark, 0));
+
+setInterval(refreshIfChanged, 2000);
+// The extension's side panel says when it sent something (a clip, or text for the card open in Edit): look now.
+window.addEventListener("message", (event) => {
+  if (event.data === "sentmine:refresh" && /^(chrome-)?extension:\/\//.test(event.origin)) refreshIfChanged();
+});
+document.addEventListener("visibilitychange", refreshIfChanged);
+
+function mayReplaceCards() {   // only the cards from the text in Read go; cards from web pages stay
+  const going = state.cards.filter((card) => card.source === "read").length;
+  return going === 0 || window.confirm("Reading a new text removes the " + going + (going === 1 ? " card" : " cards") +
+    " made from this text that you have not downloaded. Cards from web pages stay. Continue?");
 }
 
 function textLoaded() {
@@ -1001,6 +1854,8 @@ function firstData() {
     return null;
   }
 }
+applyTheme((firstData() || {}).theme);
+
 function opened(loaded) {
   if (loaded && loaded.memory_warning) {
     say(loaded.memory_warning + " Earlier cards will not be found, and new ones will not be remembered.", true);
@@ -1009,8 +1864,7 @@ function opened(loaded) {
     $("paste-box").open = false;
     $("paste-box").querySelector("summary").textContent = "Paste or open another text";
     if (CLIP) {
-      const clips = $("text").querySelectorAll("p");
-      clips[clips.length - 1].scrollIntoView({ block: "start" });
+      showNewestCard();
     } else {
       restorePlace();
     }

@@ -94,15 +94,15 @@ def test_a_token_with_a_digit_cannot_be_clicked():
 def test_picking_a_word_makes_a_card_from_its_sentence(session):
     result, card = session.pick_word(*place_of(session, "skew"))
     assert result == ADDED
-    assert (card.front, card.back) == (SKEW_SENTENCE, "skew")
-    assert card.front_html == "Outliers can <b>skew</b> it considerably."
-    assert card.back_html == "skew"
+    assert (card.front, card.back) == ("skew", SKEW_SENTENCE)   # the term on the front, the passage on the back
+    assert card.front_html == "skew"
+    assert card.back_html == "Outliers can <b>skew</b> it considerably."
 
 
-def test_the_back_is_lower_cased_and_the_front_keeps_its_capital(session):
+def test_the_front_is_lower_cased_and_the_passage_keeps_its_capital(session):
     _, card = session.pick_word(*place_of(session, "outliers"))
-    assert card.back == "outliers (outlier)"  # the base form follows when it differs
-    assert card.front_html.startswith("<b>Outliers</b> can")
+    assert card.front == "outliers (outlier)"  # the base form follows when it differs
+    assert card.back_html.startswith("<b>Outliers</b> can")
 
 
 def test_clicking_the_same_word_again_removes_its_card(session):
@@ -133,7 +133,7 @@ def test_a_second_occurrence_makes_no_second_card():
     result, card = reading.pick_word(*place_of(reading, "stubborn", 1))
     assert result == DUPLICATE
     assert len(reading.cards) == 1
-    assert card.front == "The stubborn old dog refused to move."
+    assert card.back == "The stubborn old dog refused to move."
 
 
 def test_another_form_of_the_word_makes_no_second_card():
@@ -142,7 +142,7 @@ def test_another_form_of_the_word_makes_no_second_card():
     reading.pick_word(*place_of(reading, "sighed"))
     result, _ = reading.pick_word(*place_of(reading, "sigh"))
     assert result == DUPLICATE
-    assert [card.back for card in reading.cards] == ["sighed (sigh)"]
+    assert [card.front for card in reading.cards] == ["sighed (sigh)"]
 
 
 @pytest.mark.parametrize("place", [(99, 0), (-1, 0), (0, 99), (0, -1)])
@@ -159,9 +159,9 @@ def test_a_two_sentence_definition(session):
     result, card = session.add_definition("standard deviation", DEFINITION)
     assert result == ADDED
     assert (card.front, card.back) == ("standard deviation", DEFINITION)
-    session.set_cloze(card.id, False)  # as a term -> passage card; cloze is tested in test_cloze_cards
-    assert card.front_html == "standard deviation"  # nothing in bold
-    assert card.back_html == DEFINITION
+    assert not card.cloze  # term -> passage until the reader makes it cloze; cloze is tested in test_cloze_cards
+    assert card.front_html == "standard deviation"
+    assert card.back_html == DEFINITION.replace("standard deviation", "<b>standard deviation</b>")
 
 
 def test_the_definition_is_text_of_the_tidied_page():
@@ -205,11 +205,11 @@ def test_an_empty_term_or_passage_is_refused(session, term, passage, missing):
 
 def test_special_characters_are_escaped_on_both_sides(session):
     _, card = session.add_definition("x < y", "x < y & y > z")
-    assert card.front_html == "[...] &amp; y &gt; z"  # a cloze card: the term is in the passage
-    assert card.note.fields[0] == "{{c1::x &lt; y}} &amp; y &gt; z"
-    session.set_cloze(card.id, False)
     assert card.front_html == "x &lt; y"
-    assert card.back_html == "x &lt; y &amp; y &gt; z"
+    assert card.back_html == "<b>x &lt; y</b> &amp; y &gt; z"
+    session.set_cloze(card.id, True)
+    assert card.front_html == "[...] &amp; y &gt; z"
+    assert card.note.fields[0] == "{{c1::x &lt; y}} &amp; y &gt; z"
 
 
 # --- preview: edit and delete ------------------------------------------------
@@ -218,7 +218,7 @@ def test_special_characters_are_escaped_on_both_sides(session):
 def test_cards_are_kept_in_the_order_they_were_made(session):
     session.add_definition("standard deviation", DEFINITION)
     session.pick_word(*place_of(session, "skew"))
-    assert [card.front for card in session.cards] == ["standard deviation", SKEW_SENTENCE]
+    assert [card.front for card in session.cards] == ["standard deviation", "skew"]
 
 
 def test_editing_changes_the_card(session):
@@ -229,9 +229,9 @@ def test_editing_changes_the_card(session):
 
 def test_an_edited_word_card_keeps_its_word_in_bold(session):
     _, card = session.pick_word(*place_of(session, "skew"))
-    session.edit(card.id, "Outliers skew it.", "skew: to distort")
-    assert card.front_html == "Outliers <b>skew</b> it."
-    assert card.back_html == "skew: to distort"
+    session.edit(card.id, "skew: to distort", "Outliers skew it.")
+    assert card.front_html == "skew: to distort"
+    assert card.back_html == "Outliers <b>skew</b> it."
 
 
 @pytest.mark.parametrize("front, back", [("", "back"), ("front", "  ")])
@@ -239,7 +239,7 @@ def test_a_card_cannot_be_edited_to_have_an_empty_side(session, front, back):
     _, card = session.pick_word(*place_of(session, "skew"))
     with pytest.raises(Problem):
         session.edit(card.id, front, back)
-    assert (card.front, card.back) == (SKEW_SENTENCE, "skew")
+    assert (card.front, card.back) == ("skew", SKEW_SENTENCE)
 
 
 def test_a_deleted_word_can_be_picked_again(session):
@@ -270,7 +270,7 @@ def test_the_deck_holds_the_cards_as_the_preview_shows_them(session, tmp_path):
     notes, _ = read_notes(deck, tmp_path)
     assert [(front, back) for _, front, back in notes] == [
         ("standard deviation", "How spread out a set of values is."),
-        ("Outliers can <b>skew</b> it considerably.", "skew"),
+        ("skew", "Outliers can <b>skew</b> it considerably."),
     ]
 
 

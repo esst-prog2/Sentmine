@@ -1,44 +1,56 @@
 ---
 name: sentmine promo page
-description: One static page that shows sentmine at work, dressed in sentmine's own reading-app interface.
+description: One static page that shows sentmine at work, dressed in sentmine's own reading-app interface (warm paper, Newsreader, the wordmark).
 colors:
-  paper: "#f6f5f1"
-  panel: "#ffffff"
-  ink: "#1f2328"
-  soft-ink: "#5c6470"
-  hairline: "#d9d6cd"
-  hover-wash: "#ecebe5"
-  action-blue: "#1a5fd0"
-  action-blue-deep: "#154fae"
+  paper: "#f3eee4"
+  panel: "#fbf8f2"
+  ink: "#23201b"
+  soft-ink: "#645d52"
+  hairline: "#e2dbcc"
+  hover-wash: "#ebe4d5"
+  link-blue: "#2d6f8e"
+  link-blue-deep: "#235a74"
   on-accent: "#ffffff"
-  picked-yellow: "#ffe27a"
-  selection-blue: "#c8dafc"
+  ink-button: "#1f232a"
+  ink-button-hover: "#343a44"
+  on-ink-button: "#fbf8f2"
+  picked-yellow: "#f8df7a"
+  marker: "#f6d84e"
+  pick-amber: "#c98a0b"
+  cloze: "#a63a12"
+  cloze-wash: "#fbe2d4"
+  selection: "#f5e6a3"
 typography:
   display:
-    fontFamily: "system-ui, \"Segoe UI\", -apple-system, sans-serif"
-    fontSize: "clamp(1.75rem, 3.4vw, 2.75rem)"
-    fontWeight: 700
+    fontFamily: "Newsreader, Georgia, \"Times New Roman\", serif"
+    fontSize: "clamp(2rem, 4.6vw, 3.5rem)"
+    fontWeight: 500
     lineHeight: 1.08
-    letterSpacing: "-0.02em"
-  headline:
-    fontFamily: "system-ui, \"Segoe UI\", -apple-system, sans-serif"
-    fontSize: "clamp(1.35rem, 2.2vw, 1.75rem)"
-    fontWeight: 700
-    lineHeight: 1.2
     letterSpacing: "-0.015em"
+  headline:
+    fontFamily: "Newsreader, Georgia, \"Times New Roman\", serif"
+    fontSize: "clamp(1.6rem, 2.6vw, 2.1rem)"
+    fontWeight: 500
+    lineHeight: 1.15
+    letterSpacing: "-0.01em"
   title:
-    fontFamily: "system-ui, \"Segoe UI\", -apple-system, sans-serif"
-    fontSize: "1.3rem"
-    fontWeight: 700
-    lineHeight: 1.3
+    fontFamily: "Newsreader, Georgia, \"Times New Roman\", serif"
+    fontSize: "1.45rem"
+    fontWeight: 500
+    lineHeight: 1.25
+  card-front:
+    fontFamily: "Newsreader, Georgia, \"Times New Roman\", serif"
+    fontSize: "1.6rem"
+    fontWeight: 400
+    lineHeight: 1.2
+  card-back:
+    fontFamily: "Newsreader, Georgia, \"Times New Roman\", serif"
+    fontSize: "1.12rem"
+    fontWeight: 400
+    lineHeight: 1.6
   body:
     fontFamily: "system-ui, \"Segoe UI\", -apple-system, sans-serif"
     fontSize: "17px"
-    fontWeight: 400
-    lineHeight: 1.6
-  lede:
-    fontFamily: "system-ui, \"Segoe UI\", -apple-system, sans-serif"
-    fontSize: "1.12rem"
     fontWeight: 400
     lineHeight: 1.6
   label:
@@ -51,17 +63,17 @@ typography:
     fontSize: "0.82rem"
     fontWeight: 400
     lineHeight: 1.5
-  book-display:
-    fontFamily: "Georgia, \"Times New Roman\", serif"
-    fontSize: "clamp(1.7rem, 4.2vw, 2.6rem)"
+  tag:
+    fontFamily: "system-ui, \"Segoe UI\", -apple-system, sans-serif"
+    fontSize: "0.6875rem"
+    fontWeight: 600
+    lineHeight: 1
+    letterSpacing: "0.08em"
+  source-line:
+    fontFamily: "ui-monospace, \"Cascadia Mono\", Consolas, monospace"
+    fontSize: "0.8rem"
     fontWeight: 400
-    lineHeight: 1.3
-    letterSpacing: "-0.01em"
-  book-line:
-    fontFamily: "Georgia, \"Times New Roman\", serif"
-    fontSize: "1.15rem"
-    fontWeight: 400
-    lineHeight: 1.6
+    lineHeight: 1.5
   code:
     fontFamily: "ui-monospace, Consolas, \"Cascadia Mono\", monospace"
     fontSize: "0.875rem"
@@ -69,9 +81,13 @@ typography:
     lineHeight: 1.7
 rounded:
   word: "3px"
-  control: "6px"
-  frame: "8px"
-  panel: "10px"
+  focus: "4px"
+  tag: "6px"
+  code: "8px"
+  control: "10px"
+  popover: "12px"
+  shot: "14px"
+  panel: "16px"
 spacing:
   gutter: "clamp(16px, 4vw, 48px)"
   stack: "16px"
@@ -87,15 +103,15 @@ components:
     backgroundColor: "{colors.hover-wash}"
     textColor: "{colors.ink}"
   button-main:
-    backgroundColor: "{colors.action-blue}"
-    textColor: "{colors.on-accent}"
+    backgroundColor: "{colors.ink-button}"
+    textColor: "{colors.on-ink-button}"
     rounded: "{rounded.control}"
     padding: "7px 14px"
   button-main-hover:
-    backgroundColor: "{colors.action-blue-deep}"
-    textColor: "{colors.on-accent}"
+    backgroundColor: "{colors.ink-button-hover}"
+    textColor: "{colors.on-ink-button}"
   app-header:
-    backgroundColor: "{colors.panel}"
+    backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     padding: "12px clamp(16px, 4vw, 48px)"
   panel:
@@ -106,193 +122,193 @@ components:
   page-line:
     backgroundColor: "{colors.panel}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.control}"
+    rounded: "{rounded.panel}"
     padding: "clamp(20px, 2.5vw, 32px) clamp(18px, 5vw, 64px)"
   word-pick-picked:
     backgroundColor: "{colors.picked-yellow}"
     textColor: "{colors.ink}"
     rounded: "{rounded.word}"
+  cloze-tag:
+    backgroundColor: "{colors.cloze-wash}"
+    textColor: "{colors.cloze}"
+    rounded: "{rounded.tag}"
+    padding: "5px 7px"
   known-card:
     backgroundColor: "{colors.panel}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.frame}"
-    padding: "10px 14px"
+    rounded: "{rounded.popover}"
+    padding: "12px 16px"
   step-shot:
     backgroundColor: "{colors.panel}"
-    rounded: "{rounded.frame}"
+    rounded: "{rounded.shot}"
   code-block:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.paper}"
-    rounded: "{rounded.frame}"
+    rounded: "{rounded.code}"
     padding: "16px 18px"
 ---
 
 # Design System: sentmine promo page
 
-Source of truth: `docs/index.html` (one file; all CSS inline in its `<style>` block, tokens as custom properties on `:root`). The tokens are the light set of sentmine's own app pages (`src/sentmine/web/index.html`, `cards.html`), copied value for value. The promo page is light only (`color-scheme: light`); the app's dark set is not part of this page.
+Source of truth: `docs/index.html` (one file; all CSS inline in its `<style>` block, tokens as custom properties on `:root`). The tokens are the light set of sentmine's own app pages (`src/sentmine/web/index.html`, `cards.html`), with the same names and values. The promo page is light only; the app's warm dark set (`--page #15120e`, `--panel #1f1a15`, `--ink #ede4d4`, `--pick #f0c24a`) is not part of this page.
 
 ## Overview
 
 **Creative North Star: "The Page Is the Reader"**
 
-The promo page wears sentmine's working interface instead of a marketing skin: a white app header with a hairline under it, paper-coloured ground, white panels with warm grey hairlines, one blue for actions, one yellow for the picked word, and a solid blue underline for a word that comes back. Interface text is the system UI face; anything that comes from the book is Georgia, usually italic. The visitor meets the product's own objects (a clickable sentence, a card, the card returning on a later page) before any claim.
+The promo page wears sentmine's working interface instead of a marketing skin: warm paper, a light header with the wordmark, cream panels with warm hairlines, the book and the cards in Newsreader, one yellow for the picked word, and a solid blue underline for a word that comes back. Interface text is the system UI face; the book, the cards and the headings are Newsreader. Behind everything, a few faint card outlines drift slowly down the page, as if on their way to the deck. The visitor meets the product's own objects (a clickable sentence, a card, the card returning on a later page) before any claim.
 
-Density is calm and document-like: single column of prose at 60 to 72ch, generous section padding, two-column splits only where two objects belong side by side (sentence card and its return; steps and their deck). Nothing is decorative: every image is a real screenshot, every number links to its source, and the one animation marks a card that just changed.
+Density is calm and document-like: single column of prose at 60 to 72ch, generous section padding, two-column splits only where two objects belong side by side (sentence card and its return; steps and their deck; a picture card and its explanation). Every image is a real screenshot, every number links to its source.
 
 **Key Characteristics:**
-- The app's own tokens, unchanged: paper, white panel, hairline, ink, soft ink, action blue, picked yellow.
-- Two voices of type: system UI for interface, Georgia for the book.
-- Flat panels with hairline borders; shadow only on things that float or are pictures of a screen.
+- The app's own tokens: paper, cream panel, warm hairline, ink, soft ink, link blue, picked yellow, cloze rust.
+- Two voices of type: Newsreader for the book, the cards and headings; system UI for interface text.
+- Cards and pictures of screens lift softly; panels stay flat.
 - One continuous object (a card) carried through the page, never a row of feature tiles.
 - Real rasters only, each with provenance.
 
 ## Colors
 
-A warm neutral paper interface with one cool blue for action and one yellow that means "this word is picked".
+Warm paper with ink, one muted blue for links and the return line, one yellow that means "this word is picked", and one rust that means "cloze".
 
 ### Primary
-- **Action Blue** (`action-blue`): links, the main Install button, the opening's "Click any word" hint, focus outlines, the cloze gap `[...]`, and the solid underline on known words. Hover deepens to **Action Blue Deep** (`action-blue-deep`). White text on it uses `on-accent`.
+- **Ink Button** (`ink-button`): the main Install button, near-black with paper text (`on-ink-button`); hover lightens to `ink-button-hover`. The same dark button the app uses for Send to Anki.
+- **Link Blue** (`link-blue`): links, the opening's "Click any word" hint, focus outlines, and the solid underline on known words. Hover deepens to **Link Blue Deep**.
 
 ### Secondary
-- **Picked Yellow** (`picked-yellow`): only the word the reader has picked (`aria-pressed="true"` in the opening sentence), as in the app. It is a state colour, not a highlight colour for emphasis.
+- **Picked Yellow** (`picked-yellow`): the word the reader has picked (`aria-pressed="true"`), and the word marked inside its sentence on a card's back, as in the app.
+- **Marker** (`marker`) and **Pick Amber** (`pick-amber`): only inside the wordmark: the marker stroke under *sent* and the pickaxe head on the i.
+- **Cloze** (`cloze`) on **Cloze Wash** (`cloze-wash`): the CLOZE tag on a cloze card and the term marked in its sentence. 4.9:1.
 
 ### Neutral
-- **Paper** (`paper`): page ground, the default button fill, and the text colour inside code blocks.
-- **Panel White** (`panel`): header, panels, the book-sentence frame, the known-card popover, screenshot frames, and the Try it section's ground.
+- **Paper** (`paper`): page ground (on `html`, so the falling cards sit between it and the content), the header (92% with a blur), default buttons, text in code blocks.
+- **Panel** (`panel`): panels, the book-sentence frame, the popover, screenshot frames.
 - **Ink** (`ink`): body text and headings; also the code-block background.
-- **Soft Ink** (`soft-ink`): leads, captions, metadata, nav links at rest, sources in the facts list. Measured about 5.5:1 on paper.
-- **Hairline** (`hairline`): every 1px border and divider, the dashed rule between a card's front and back.
-- **Hover Wash** (`hover-wash`): hover fill on buttons and on clickable words.
-- **Selection Blue** (`selection-blue`): text selection, with ink text.
+- **Soft Ink** (`soft-ink`): leads, captions, metadata, nav links at rest, sources in the facts list.
+- **Hairline** (`hairline`): every 1px border and divider.
+- **Hover Wash** (`hover-wash`): hover fill on buttons, nav links and clickable words.
+- **Selection** (`selection`): text selection, with ink text.
 
-Supporting tokens: `--code-head` `#2b3036` (install-block header), `--code-selection` `#2d4a7a` (selection inside code), `--picked-soft` `#fff8d6` (settle flash), `--scrollbar` `#c4c0b5` (scrollbar thumb). Every colour in the CSS is a token on `:root`; no hex value appears outside it.
+Supporting tokens: `--code-head` `#2b2620` (install-block header), `--code-selection` `#5c4b17`, `--picked-soft` `#fdf3c9` (settle flash), `--scrollbar` `#cfc6b4`, `--falling` `rgba(120, 92, 40, 0.11)` (falling card outlines), `--lift` (card shadow, below). Every colour in the CSS is a token on `:root`.
 
 ### Named Rules
-**The Borrowed Palette Rule.** The page uses the app's colour tokens with the app's names and values. A new colour enters the page only if it first exists in the app.
+**The Borrowed Palette Rule.** The page uses the app's colour tokens with the app's names and values. A new colour enters the page only if it first exists in the app. (The cloze colour was darkened to `#a63a12` in both on 2026-11-18 for AA contrast.)
 
-**The Yellow Means Picked Rule.** Picked Yellow marks exactly one thing: the word currently chosen to become a card. Never a callout, badge or emphasis fill.
+**The Yellow Means Picked Rule.** Picked Yellow marks the word chosen to become a card, and that word inside its card. Never a callout, badge or emphasis fill. The wordmark's Marker is a different, brighter yellow and appears nowhere else.
 
-**The Return Line Rule.** A 2px solid Action Blue underline, offset 4px (on the app's PDF pages also a blue dot in the margin and a count at the page's corner), means "you already have a card for this word" and nothing else. It is one CSS rule, shared by `.known`, `.back-again span` and `.underline-demo`.
+**The Return Line Rule.** A 2px solid Link Blue underline, offset 4px, means "you already have a card for this word" and nothing else.
 
 ## Typography
 
+**Book and Card Font:** Newsreader (SIL Open Font License, subset WOFF files in `docs/fonts/`, roman and italic, weights 200 to 800, `font-display: swap`), falling back to Georgia.
 **Interface Font:** system-ui (with "Segoe UI", -apple-system, sans-serif)
-**Book Font:** Georgia (with "Times New Roman", serif)
-**Code Font:** ui-monospace (with Consolas, "Cascadia Mono", monospace)
+**Mono:** ui-monospace (with "Cascadia Mono", Consolas, monospace) for code and for a card's source line.
 
-**Character:** The interface speaks in the reader's own operating-system face, so the page feels like the app on their machine; the book speaks in Georgia italic, so anything retyped from the text reads as quoted material, not as the page's own voice.
+**Character:** Newsreader carries everything that is reading: the book, the cards, and the page's own headings, so the page reads like a well-set book. The interface speaks in the reader's operating-system face, like the app's buttons. Anything retyped from the book is Newsreader italic.
 
 ### Hierarchy
-- **Display** (700, `clamp(1.75rem, 3.4vw, 2.75rem)` = 44px at 1440 wide, 28px at 390; line-height 1.08; -0.02em; max 24em; balanced): the opening headline only, larger than every section heading.
-- **Book display** (Georgia italic 400, `clamp(1.7rem, 4.2vw, 2.6rem)`, 1.45rem below 640px; line-height 1.3; -0.01em): the retyped study question in the opening, every word a button.
-- **Headline** (700, `clamp(1.35rem, 2.2vw, 1.75rem)`, line-height 1.2, -0.015em, max 22em, balanced): section headings.
-- **Title** (700, 1.3rem, 1.3): step headings. Panel titles are body size at 700.
-- **Body** (400, 17px, 1.6): all prose, measure 60 to 68ch; `text-wrap: pretty` on paragraphs and list items.
-- **Lede** (1.12rem, soft ink, max 62ch): the paragraph under a section heading. The opening's line under the headline is 1.05rem, max 72ch.
-- **Book line** (Georgia italic, 1.15rem, 1.6): the page-25 return sentence. The study-question label above the opening sentence is Georgia 700 at 1.1rem in soft ink.
-- **Label** (0.85 to 0.9rem, soft ink): card metadata, deck state, facts sources. Captions are 0.82rem / 1.5, max 68ch.
-- **Code** (0.875rem in install blocks, 0.95rem elsewhere, line-height 1.7); inline code is 0.9em.
+- **Display** (500, `clamp(2rem, 4.6vw, 3.5rem)`, 1.08, -0.015em, balanced): the opening headline only.
+- **Book display** (Newsreader italic 400, `clamp(1.7rem, 4.2vw, 2.6rem)`, 1.45rem below 640px; 1.3): the retyped study question, every word a button.
+- **Headline** (500, `clamp(1.6rem, 2.6vw, 2.1rem)`, 1.15): section headings.
+- **Title** (500, 1.45rem, 1.25): step headings. Panel titles are Newsreader 500 at 1.35rem.
+- **Card front** (Newsreader 400, 1.6rem; 1.35rem in the deck): the term. **Card back** (Newsreader, 1.12rem; 1.02rem in the deck): the sentence with the term marked, then the meaning.
+- **Body** (system UI 400, 17px, 1.6): all prose, measure 60 to 68ch.
+- **Label** (0.85rem, soft ink) and **Caption** (0.82rem / 1.5, max 68ch).
+- **Tag** (system UI 600, 0.6875rem, uppercase, 0.08em): CLOZE.
+- **Source line** (mono 0.8rem, soft ink): a card's origin, as in the app.
 
 ### Named Rules
-**The Two Voices Rule.** System UI is the page and the app talking; Georgia is the book. Never set interface copy in Georgia or book text in the system face.
+**The Reading Voice Rule.** Newsreader is reading (book, cards, headings); system UI is operating (buttons, nav, prose about the app). Never set a button in Newsreader.
 
-**The No Webfont Rule.** No downloaded fonts: the page loads in the faces already on the reader's computer, as the app does.
+**The One Webfont Rule.** Newsreader is the only downloaded font, served from the repo itself with its licence; nothing loads from a font service.
 
 ## Layout
 
-Full-bleed bands with a fluid side gutter (`gutter`, 16 to 48px); sections separated by a 1px hairline top border and `section-y` vertical padding. Content is left-aligned, not centred; prose is held to a measure (`max-width: 68ch`).
+Full-bleed bands with a fluid side gutter (`gutter`, 16 to 48px); sections separated by a 1px hairline top border and `section-y` vertical padding. Content is left-aligned; prose is held to a measure.
 
-- **Section order as shipped:** opening; One card, five steps; Your cards come back while you read; Why I built it; Measured, with sources; Try it; footer.
-- **Opening:** headline and one line, then a stage (single column, `stack` gap): the book-sentence frame full width, then a two-column grid of equal columns (the card it made; the same word twelve pages later), then a one-line caption.
-- **How it works:** two columns, steps `minmax(0, 1fr)` and deck `minmax(0, 24rem)`, `column-gap` between. Each step is followed by `clamp(48px, 7vw, 80px)`. The deck is sticky at `top: var(--below-bar)` (86px).
-- **Comes back:** two columns at 1.25fr / 1fr, vertically centred.
-- **Facts:** each row a grid of claim and a 15rem source column.
-- **Install:** `repeat(auto-fit, minmax(min(100%, 26rem), 1fr))`, max 64rem.
-- **Anchors:** `scroll-padding-top: var(--below-bar)` clears the sticky header; `--below-bar` is `--bar-height` (62px) plus 24px, shared with the deck's sticky top; smooth scrolling unless reduced motion is requested.
+- **Section order as shipped:** opening; video; One card, five steps; Your cards come back while you read; Formulas and graphs on the card; Cards from web pages, too; Why I built it; Measured, with sources; Try it; footer.
+- **Opening:** headline and one line, then the book-sentence frame full width, then two equal columns (the card it made; the same word twelve pages later), then a caption.
+- **How it works:** steps `minmax(0, 1fr)` beside a sticky deck `minmax(0, 24rem)`. The deck is sticky at `top: var(--below-bar)`.
+- **Comes back / Formulas / Browser:** two columns, picture and text, vertically centred.
+- **Anchors:** `scroll-padding-top: var(--below-bar)`; `--below-bar` is `--bar-height` (66px) plus 24px.
 
-**Breakpoints.** At 900px and below every two-column grid becomes one column, the deck stops being sticky and shows its final state (step 5) after the steps, and facts rows stack. At 640px and below the header drops its section nav and the GitHub button (Install stays), the sentence frame padding becomes 20px 18px and the book display drops to 1.45rem.
+**Breakpoints.** At 900px and below every two-column grid becomes one column, the deck stops being sticky and shows its final state. At 640px and below the header keeps only the wordmark and Install.
 
 ## Elevation & Depth
 
-Flat by default: depth is tonal (white panels on paper) and drawn with 1px hairlines. Shadows exist in exactly two places.
+Depth is tonal (cream panels on paper) and drawn with hairlines; cards and pictures lift softly.
 
 ### Shadow Vocabulary
-- **Popover** (`box-shadow: 0 10px 28px rgba(31, 35, 40, 0.16), 0 1px 3px rgba(31, 35, 40, 0.14)`): the known-card that floats under a word you already have a card for, with a rotated-square pointer (`-1px -1px 1px rgba(31, 35, 40, 0.08)`) aimed at the word by script. It is the app's own hover card, shown open.
-- **Screenshot frame** (`box-shadow: 0 2px 10px rgba(31, 35, 40, 0.06)`): the faint lift on step screenshots, so a picture of a screen reads as a picture, not as live UI.
+- **Lift** (`--lift: 0 1px 2px rgba(70, 52, 20, 0.06), 0 10px 26px rgba(70, 52, 20, 0.08)`): the book-sentence frame and the step screenshots. A warm, low shadow, the same as the app's cards.
+- **Popover** (`0 10px 28px rgba(31, 35, 40, 0.16), 0 1px 3px rgba(31, 35, 40, 0.14)`): the known-card under a word you already have a card for, with a rotated-square pointer aimed at the word by script.
 
 ### Named Rules
-**The Only Floating Things Rule.** A shadow means the element floats over the page (the popover) or is a photograph of a screen (the step shots). Panels, cards and buttons stay flat.
+**The Cards Lift Rule.** Things that are a card or a picture of a screen lift; panels, buttons and the header stay flat. Never a card inside a lifted card.
+
+### Falling cards
+A fixed layer (`.falling`, `aria-hidden`, `z-index: -1`, no pointer events) holds 14 empty card outlines (1.5px `--falling` border, 12px radius, card proportion 1:0.64, 110 to 190px wide) at random places from a fixed seed. Each falls the height of the screen in 38 to 70 s, linear, turning a few degrees, on an endless loop with a negative start delay so the page opens mid-fall. They are outlines only, faint enough that text over them stays fully readable. Under reduced motion they lie still where they are.
 
 ## Shapes
 
-Soft, small corners and hairline borders throughout: 3px on a clickable word's highlight, 6px on buttons and the book-sentence frame, 8px on screenshot frames, code blocks and the popover, 10px on panels. Focus outlines are 2px Action Blue with a 4px radius and 3px offset (1px offset on words). The install block joins a dark header (top corners 8px) to its code (bottom corners 8px) as one rounded slab. Inside a card, a dashed hairline separates front from back; between cards in the deck, a solid hairline.
+Soft corners: 3px on a word's highlight, 4px on focus outlines, 6px on the CLOZE tag, 8px on code blocks, 10px on buttons and nav links, 12px on the popover and falling cards, 14px on screenshot frames, 16px on panels and the sentence frame. Focus outlines are 2px Link Blue with a 3px offset.
 
 ## Components
 
+### Wordmark
+An inline SVG (paths, no font needed): *sent* in Newsreader italic on a tilted Marker stroke, *mine* upright, and the i of mine drawn as a pickaxe: an ink handle leaning towards *sent* and a Pick Amber head. It uses `currentColor`, so it follows the ink. 38px high in the header, with the link labelled "sentmine, to the top".
+
 ### Buttons
-- **Shape:** gently rounded (6px), 1px hairline border, 500 weight at 0.95rem, padding 7px 14px.
-- **Default:** paper fill, ink text (GitHub, Copy). Hover: hover-wash fill, border darkens to soft ink.
-- **Main:** Action Blue fill and border, white text, 600 weight (Install). Hover: Action Blue Deep.
-- **Copy:** the default button made smaller (padding 2px 12px, 0.85rem) in the install-block header; its label reads "Copied" for 2s, or "Select and copy" if the clipboard refuses.
-- **Transition:** background and border colour, .15s.
+- **Default:** paper fill, hairline border, ink text, 10px corners (GitHub, Copy). Hover: hover-wash.
+- **Main:** Ink Button fill, paper text, 600 weight (Install). Hover: Ink Button Hover.
 
-### App Header (Navigation)
-The app's own header: sticky at the top, white, hairline below, padding 12px by gutter. Brand "sentmine" at 700 / 1.15rem in ink; section links in soft ink with a 2px transparent bottom border that becomes hairline on hover; a spacer; then GitHub (default button) and Install (main button). Below 640px only brand and Install remain.
-
-### Opening Status
-Sentmine's status line carries the headline: Display headline, one soft-ink line beneath, no border under it in the opening.
+### App Header
+Sticky, paper at 92% with a 6px backdrop blur, hairline below. The wordmark, then section links (soft ink, 10px rounded hover wash), a spacer, GitHub and Install.
 
 ### Clickable Sentence (signature)
-The study question retyped large in Georgia italic inside a white frame (hairline, 6px). Above it, the study-question label (left) and a blue hint "Click any word in the sentence." (right). Every word is a `<button>` with `aria-pressed`; hover gives hover-wash, the picked word gets Picked Yellow. The group is one tab stop (roving tabindex): Arrow Left/Right, Home and End move and pick. Picking rebuilds the card beside it, the word in bold in its sentence and the base form on the back. A caption names the book and says the sentence is retyped.
+The study question retyped large in Newsreader italic inside a lifted frame. Every word is a `<button>` with `aria-pressed`; the picked word gets Picked Yellow. One tab stop (roving tabindex). Picking rebuilds the card beside it: the word with its base form on the front, the sentence with the word marked on the back.
 
-### Card Panel
-A panel titled "Cards": the front is the sentence with the word in bold, a dashed hairline, the back with the word and its meaning, then label-size metadata. It is `aria-live="polite"` so a new pick is announced.
+### Card
+As in the app: the term in Newsreader on the front; on the back the whole sentence with the term in Picked Yellow, the meaning below, and a mono source line ("p. 13 · ..."). A cloze card carries the CLOZE tag beside its term and marks the term in Cloze on Cloze Wash.
 
 ### Return Panel with Popover
-A panel titled "Page 25, twelve pages later": the later sentence in Georgia italic with the word under the solid blue underline, and below it the known-card popover (see Elevation) showing "Your card from 2026-11-14" and the original card front, its pointer kept on the word by script on resize. The word is `aria-describedby` the popover.
+"Page 25, twelve pages later": the later sentence in Newsreader italic with the word under the return line, and the known-card popover ("Your card from 2026-11-18", the term, the sentence).
 
 ### Sticky Deck
-A panel beside the five steps that holds one card through them. A soft-ink state line names the step; meaning, cloze card, "Sent to the deck" line and the page-25 return line appear cumulatively as each step crosses the middle of the viewport (IntersectionObserver, root margin -40% / -50%). Without JavaScript or below 900px it shows a fixed state.
+A panel beside the five steps that holds the cards through them; meaning, cloze card, "Sent to the deck" and the return line appear as each step crosses the middle of the viewport.
 
 ### Step Shots
-Each step is a title, one paragraph, and a cropped real screenshot in a white frame (hairline, 8px, faint shadow, clipped) that links to the full screenshot with a zoom-in cursor. Every image has explicit width and height and descriptive alt text; all but the first are lazy-loaded.
+A title, one paragraph, and a cropped real screenshot in a lifted frame that links to the full screenshot. Explicit width and height, descriptive alt text, lazy-loaded after the first.
 
-### Facts Panel
-A panel (padding 4px 24px, max 60em) holding a plain list: each row is the claim and, in a 15rem soft-ink column, the linked source with its date. Rows are separated by hairlines.
-
-### Install Blocks
-Two side-by-side slabs: a dark header (`--code-head`, paper text, the system name and a Copy button) over an ink code block in paper text. A `<details>` "Optional: Anki and AI meanings" follows, its summary in 600 weight with a soft-ink marker.
-
-### Footer
-Hairline above, soft ink at 0.95rem, a wrapping row: what comes next, the course attribution, the source link.
+### Facts, Install, Footer
+Facts: a panel with claim and dated source per row. Install: two slabs, a dark header with Copy over an ink code block. Footer: what comes next, the course attribution, the source link.
 
 ### Motion
-One animation: **settle** (`.5s cubic-bezier(.16, 1, .3, 1)`), a fade from `--picked-soft` to transparent on the deck card that just changed. Otherwise only .15s colour transitions on hover. Under `prefers-reduced-motion: reduce` all animations and transitions are off and scrolling is instant.
+The falling cards (above); **settle** (`.5s cubic-bezier(.16, 1, .3, 1)`), a fade from `--picked-soft` on the deck card that just changed; .15s colour transitions on hover. Under `prefers-reduced-motion: reduce` all of it stops and scrolling is instant.
 
 ## Do's and Don'ts
 
 ### Do:
 - **Do** take every colour, radius and border from the app's tokens; check `src/sentmine/web/index.html` before adding one.
-- **Do** set anything quoted from a book in Georgia italic and caption it with the book's title.
-- **Do** use only real screenshots from a real run, captured untouched; crop copyrighted pages small around the word or card and link the crop to its full screenshot.
+- **Do** set anything quoted from a book in Newsreader italic and caption it with the book's title.
+- **Do** use only real screenshots from a real run, captured untouched; crop copyrighted pages small and link the crop to its full screenshot.
 - **Do** record each shipping raster's provenance (below) when adding one.
 - **Do** link every number to its source and date.
-- **Do** write "sentmine" in lower case everywhere, including at the start of a sentence.
-- **Do** keep keyboard parity: visible 2px blue focus outline, one tab stop per word group, explicit image sizes and alt text.
-- **Do** respect `prefers-reduced-motion`.
+- **Do** write "sentmine" in lower case everywhere.
+- **Do** keep keyboard parity, explicit image sizes and alt text, and respect `prefers-reduced-motion`.
 
 ### Don't:
-- **Don't** put an author name anywhere on the page or in `docs/` (it is published); attribute to "a project for Advanced Programming at ELTE".
+- **Don't** put an author name anywhere on the page or in `docs/`; attribute to "a project for Advanced Programming at ELTE".
 - **Don't** invent users, testimonials, download counts or numbers.
-- **Don't** state what other tools can or cannot do; the page names none now, and any future mention is worded as what a web search found, with the month.
 - **Don't** use generated, stock or AI-made images.
-- **Don't** use Picked Yellow or the blue return underline for anything but their app meanings.
-- **Don't** add shadows to panels, cards or buttons; only the popover and screenshot frames lift.
+- **Don't** use Picked Yellow, the return underline or the Cloze colour for anything but their app meanings.
+- **Don't** lift panels or put a lifted card inside one.
+- **Don't** make the falling cards filled, bright or fast: they are a watermark, not a feature.
 - **Don't** break the story into a split hero over a row of feature cards; carry one card through.
-- **Don't** load webfonts.
 
 ### Raster provenance
-- `docs/img/1-click-a-word.png` to `docs/img/6-cards-come-back.png`: full screenshots from one real run of sentmine on 2026-11-14 (5 and 6, and the crop `step-5-again.png`, retaken the same day with the app's new look, on a copy of that run's card memory) on the solution manual to Pearl, Glymour and Jewell, *Causal Inference in Statistics: A Primer*, with Anki open; captured with headless Edge, untouched.
-- `docs/img/step-1-click.png`, `step-2-meaning.png`, `step-3-cloze.png`, `step-4-send.png`, `step-5-again.png`: crops of those screenshots, cut small around the word or card because the book is copyrighted; each is captioned on the page with the book's title and links to its full screenshot.
-- `docs/img/7-side-panel.png`: the extension's side panel at 400 px in a real run, with two clips from Wikipedia's *Causal inference* article (CC BY-SA 4.0), credited on the page.
+- `docs/img/1-click-a-word.png`, `2-suggest-meaning.png`, `3-cloze-card.png`, `5-already-has-a-card.png`, `6-cards-come-back.png`, `8-formula-in-edit.png`: full screenshots from one real run of sentmine on 2026-11-18 in its new look, with an empty card memory and a real `gpt-5-nano` key, on the solution manual to Pearl, Glymour and Jewell, *Causal Inference in Statistics: A Primer*; captured with headless Edge, untouched. The meaning on card 2 is the model's real answer.
+- `docs/img/step-1-click.png`, `step-2-meaning.png`, `step-3-cloze.png`, `step-5-again.png`, `step-8-formula.png`: crops of those, cut small because the book is copyrighted; each is captioned with the book's title and links to its full screenshot.
+- `docs/img/4-send-to-anki.png` and its crop `step-4-send.png`: from the run of 2026-11-14 with Anki open, before the new look (said so on the page).
+- `docs/img/7-side-panel.png`: the extension's side panel at 400 px in a real run on 2026-11-18, with two cards made from Wikipedia's *Causal inference* article (CC BY-SA 4.0), credited on the page.
+- `docs/fonts/`: Newsreader by Production Type, SIL Open Font License (`OFL.txt` beside it), subset to WOFF.
 - No generated, stock or AI-made images.

@@ -44,7 +44,8 @@ def test_the_readme_demo_from_paste_to_deck(client, tmp_path):
     skew = word_place(state, "skew")
     state = client.post("/api/word", json=skew).get_json()
     assert (state["result"], state["count_text"]) == ("added", "2 cards")
-    assert state["cards"][1]["front_html"] == "Outliers can <b>skew</b> it considerably."
+    assert state["cards"][1]["front_html"] == "skew"
+    assert state["cards"][1]["back_html"] == "Outliers can <b>skew</b> it considerably."
 
     state = client.post("/api/word", json=skew).get_json()  # clicked again by mistake
     assert (state["result"], state["count_text"]) == ("removed", "1 card")
@@ -66,7 +67,7 @@ def test_the_readme_demo_from_paste_to_deck(client, tmp_path):
     notes, _ = read_notes(deck, tmp_path)
     assert [(front, back) for _, front, back in notes] == [
         ("standard deviation", shorter),
-        ("Outliers can <b>skew</b> it considerably.", "skew"),
+        ("skew", "Outliers can <b>skew</b> it considerably."),
     ]
 
 
@@ -139,3 +140,20 @@ def test_the_deck_file_name_is_safe(name, file_name):
 
 def test_the_app_listens_on_this_computer_only():
     assert HOST == "127.0.0.1"
+
+
+def test_the_book_font_is_served_by_sentmine_itself():
+    client = create_app().test_client()
+    response = client.get("/fonts/Newsreader.woff")
+    assert response.status_code == 200 and response.mimetype == "font/woff" and response.data[:4] == b"wOFF"
+    assert client.get("/fonts/../app.py").status_code == 404
+    assert client.get("/fonts/other.woff").status_code == 404
+
+
+def test_the_theme_chosen_in_one_view_is_known_to_all():
+    client = create_app().test_client()
+    assert client.get("/api/version").get_json()["theme"] is None   # the computer's own, until the reader chooses
+    assert client.put("/clip/api/theme", json={"theme": "light"}).get_json() == {"theme": "light"}
+    assert client.get("/api/version").get_json()["theme"] == "light"
+    assert client.get("/api/state").get_json()["theme"] == "light"
+    assert client.put("/api/theme", json={"theme": "blue"}).status_code == 400

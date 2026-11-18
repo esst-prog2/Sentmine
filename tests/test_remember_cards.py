@@ -25,13 +25,13 @@ def session_with(history, text):
 # --- base forms within one session -------------------------------------------------------
 
 
-def test_a_word_whose_base_form_differs_shows_it_on_the_back():
+def test_a_word_whose_base_form_differs_shows_it_on_the_front():
     reading = Session()
     reading.load("Its owner sighed.")
     _, card = reading.pick_word(*place_of(reading, "sighed"))
-    assert card.back == "sighed (sigh)"
-    assert card.back_html == "sighed (sigh)"
-    assert card.front_html == "Its owner <b>sighed</b>."
+    assert card.front == "sighed (sigh)"
+    assert card.front_html == "sighed (sigh)"
+    assert card.back_html == "Its owner <b>sighed</b>."
 
 
 def test_an_irregular_form_of_a_word_makes_no_second_card():
@@ -74,7 +74,7 @@ def test_made_anyway_carries_the_earlier_date(history):
     result, card = reading.pick_word(*place_of(reading, "skewed"), anyway=True)
     assert result == ADDED
     assert card.earlier == "2026-10-09"
-    assert card.back == "skewed (skew)"
+    assert card.front == "skewed (skew)"
 
 
 def test_a_definition_with_an_earlier_card(history):
@@ -101,7 +101,7 @@ def test_cards_are_remembered_when_downloaded_not_before(history, tmp_path):
     reading.pick_word(*place_of(reading, "sighed"))
     assert history.entries == []  # made, not yet downloaded
     assert reading.export(tmp_path / "new.apkg", day="2026-10-17") == ""
-    assert history.entries == [Entry("word", "sigh", "Its owner sighed.", "sighed (sigh)", "sighed", "2026-10-17")]
+    assert history.entries == [Entry("word", "sigh", "sighed (sigh)", "Its owner sighed.", "sighed", "2026-10-17")]
 
 
 def test_a_card_deleted_before_download_is_not_remembered(history, tmp_path):

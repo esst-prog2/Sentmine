@@ -1,16 +1,29 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { LONGEST_CLIP, clipFor, findSentmine, pdfName, tidy, whatToSend } from "../logic.js";
+import { LONGEST_CLIP, MENU, clipFor, findSentmine, pdfName, tidy, whatToSend, withContext } from "../logic.js";
 
-test("a right-click makes a clip of its kind, tidied", () => {
-  assert.deepEqual(clipFor("word", " Outliers can skew it.[3] "), { text: "Outliers can skew it.", kind: "word" });
-  assert.deepEqual(clipFor("definition", "A confounder is a variable."), { text: "A confounder is a variable.", kind: "definition" });
+test("one right-click item makes a clip, tidied", () => {
+  assert.deepEqual(Object.keys(MENU), ["card"]);
+  assert.deepEqual(clipFor("card", " Outliers can skew it.[3] "), { text: "Outliers can skew it." });
 });
 
 test("an empty, too long or unknown clip is refused with a reason", () => {
-  assert.match(clipFor("word", "   ").refuse, /Select a sentence/);
-  assert.match(clipFor("word", "x".repeat(LONGEST_CLIP + 1)).refuse, /a lot of text/);
-  assert.match(clipFor("poem", "A line.").refuse, /not one of/);
+  assert.match(clipFor("card", "   ").refuse, /Select a sentence/);
+  assert.match(clipFor("card", "x".repeat(LONGEST_CLIP + 1)).refuse, /a lot of text/);
+  assert.match(clipFor("word", "A line.").refuse, /not one of/);
+});
+
+test("the text around the selection goes along, its spaces at the edges kept and its reference marks out", () => {
+  const clip = clipFor("card", "skew");
+  const around = { selected: "skew", before: "The median[2] resists. Outliers can ", after: " the mean.[3] Next." };
+  assert.deepEqual(withContext(clip, around),
+    { text: "skew", before: "The median resists. Outliers can ", after: " the mean. Next." });
+});
+
+test("without what the page said, the selection goes alone", () => {
+  const clip = clipFor("card", "A confounder is a variable.");
+  assert.deepEqual(withContext(clip, null), clip);
+  assert.deepEqual(withContext(clip, { selected: "  " }), clip);
 });
 
 const page = (text, selection = "", contentType = "text/html", download = "", downloadName = "") =>
@@ -69,4 +82,17 @@ test("sentmine is found by its answer, not by its port", async () => {
   assert.equal(await findSentmine(fakeFetch({ 8000: { app: "something else" }, 8001: { app: "sentmine" } })), "http://127.0.0.1:8001");
   assert.equal(await findSentmine(fakeFetch({ 8003: { app: "sentmine" }, 8005: { app: "sentmine" } })), "http://127.0.0.1:8003");
   assert.equal(await findSentmine(fakeFetch({})), null);
+});
+
+import { boxOnShot, storedSize, WIDEST_PICTURE } from "../logic.js";
+
+test("a box on the page becomes the same box on a screenshot drawn at twice the size", () => {
+  assert.deepEqual(boxOnShot({ x: 10, y: 20, width: 100, height: 50 }, 800, 1600, 1200), { x: 20, y: 40, width: 200, height: 100 });
+  assert.deepEqual(boxOnShot({ x: 750, y: 0, width: 100, height: 50 }, 800, 800, 600), { x: 750, y: 0, width: 50, height: 50 });
+  assert.equal(boxOnShot({ x: 900, y: 0, width: 100, height: 50 }, 800, 800, 600), null);
+});
+
+test("a wide picture is made narrower, keeping its shape", () => {
+  assert.deepEqual(storedSize(800, 600), { width: 800, height: 600 });
+  assert.deepEqual(storedSize(3200, 1000), { width: WIDEST_PICTURE, height: 500 });
 });

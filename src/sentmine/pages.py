@@ -6,6 +6,7 @@ characters on the pages, by matching runs of letters in order. The rules are in
 openspec/specs/pdf-pages.
 """
 
+import ctypes
 import re
 import unicodedata
 import zlib
@@ -19,11 +20,17 @@ from sentmine.document import PDFIUM
 from sentmine.reading import clickable_words
 
 PICTURE_WIDTH = 1600  # pixels; sharp enough for a wide panel on a high-density screen
+PART_SCALE = 3  # a part of a page for a card, drawn at 216 dpi: sharp on any screen in Anki
+SMALLEST_PART = 0.005  # of the page's width or height: a box smaller than this is a slip, not a choice
 CHUNK = 1500  # runs of letters matched at a time, so a long book does not take long
 _LETTERS = re.compile(r"[^\W\d_]+")
 
 Place = tuple[int, int]  # (page, character index on the page)
 Box = tuple[int, int, float, float, float, float]  # (sentence, word, left, top, width, height), fractions of the page
+# A link on a page: where it is (fractions of the page) and where it goes: another page (and how far down it),
+# or a web address.
+Link = dict
+SAFE_ADDRESS = re.compile(r"^(https?://|mailto:)", re.IGNORECASE)
 
 
 @dataclass
@@ -31,6 +38,8 @@ class Pages:
     document: pypdfium2.PdfDocument  # kept open to draw its pages; used only while holding PDFIUM
     sizes: list[tuple[float, float]]  # each page's width and height, in points
     boxes: list[list[Box]]  # each page's word boxes
+    links: list[list[Link]] | None = None  # each page's links
+    outline: list[tuple[int, str, int]] | None = None  # the PDF's bookmarks: (level, title, page from 0)
 
 
 def _letters(text: str) -> str:
@@ -124,6 +133,8 @@ def locate(data: bytes, sentences: list[str]) -> Pages:
     with PDFIUM:
         document = pypdfium2.PdfDocument(data)
         page_runs, places, char_boxes, frames = _page_runs(document)
+        links = [_page_links(document, number, frames) for number in range(len(frames))]
+        outline = _outline(document, len(frames))
 
     text_runs, owners = [], []
     for number, sentence in enumerate(sentences):
@@ -149,7 +160,76 @@ def locate(data: bytes, sentences: list[str]) -> Pages:
             ))
     for page_boxes in boxes:
         page_boxes.sort(key=lambda box: (box[0], box[1]))  # reading order, so a drag selects in order
-    return Pages(document, sizes, boxes)
+    return Pages(document, sizes, boxes, links, outline)
+
+
+def _page_target(document, dest, frames) -> dict | None:
+    """Where a link inside the PDF goes: the page (from 0) and, when the PDF says, how far down it."""
+    page = pdfium_c.FPDFDest_GetDestPageIndex(document.raw, dest)
+    if not 0 <= page < len(frames):
+        return None
+    has_x, has_y, has_zoom = ctypes.c_int(0), ctypes.c_int(0), ctypes.c_int(0)
+    x, y, zoom = ctypes.c_float(0), ctypes.c_float(0), ctypes.c_float(0)
+    target = {"page": page}
+    if pdfium_c.FPDFDest_GetLocationInPage(dest, ctypes.byref(has_x), ctypes.byref(has_y), ctypes.byref(has_zoom),
+                                           ctypes.byref(x), ctypes.byref(y), ctypes.byref(zoom)) and has_y.value:
+        _, bottom, _, top = frames[page]
+        target["y"] = round(min(max((top - y.value) / (top - bottom), 0.0), 1.0), 4)
+    return target
+
+
+def _page_links(document, number: int, frames) -> list[Link]:
+    """The links on page `number`: to another page of the PDF, or to a web address. Call while holding PDFIUM."""
+    page = document[number]
+    found: list[Link] = []
+    try:
+        frame_left, frame_bottom, frame_right, frame_top = frames[number]
+        width, height = frame_right - frame_left, frame_top - frame_bottom
+        position, link = ctypes.c_int(0), pdfium_c.FPDF_LINK()
+        while pdfium_c.FPDFLink_Enumerate(page.raw, ctypes.byref(position), ctypes.byref(link)):
+            rect = pdfium_c.FS_RECTF()
+            if not pdfium_c.FPDFLink_GetAnnotRect(link, ctypes.byref(rect)) or width <= 0 or height <= 0:
+                continue
+            target = None
+            dest = pdfium_c.FPDFLink_GetDest(document.raw, link)
+            action = pdfium_c.FPDFLink_GetAction(link)
+            if dest:
+                target = _page_target(document, dest, frames)
+            elif action:
+                kind = pdfium_c.FPDFAction_GetType(action)
+                if kind == pdfium_c.PDFACTION_GOTO:
+                    dest = pdfium_c.FPDFAction_GetDest(document.raw, action)
+                    target = _page_target(document, dest, frames) if dest else None
+                elif kind == pdfium_c.PDFACTION_URI:
+                    size = pdfium_c.FPDFAction_GetURIPath(document.raw, action, None, 0)
+                    buffer = ctypes.create_string_buffer(size)
+                    pdfium_c.FPDFAction_GetURIPath(document.raw, action, buffer, size)
+                    address = buffer.value.decode("utf-8", "replace").strip()
+                    target = {"url": address} if SAFE_ADDRESS.match(address) else None   # no javascript: or file:
+            if target is None:
+                continue
+            left, right = sorted((rect.left, rect.right))
+            bottom, top = sorted((rect.bottom, rect.top))
+            found.append({
+                "box": [round((left - frame_left) / width, 5), round((frame_top - top) / height, 5),
+                        round((right - left) / width, 5), round((top - bottom) / height, 5)],
+                **target,
+            })
+    finally:
+        page.close()
+    return found
+
+
+def _outline(document, page_count: int) -> list[tuple[int, str, int]]:
+    """The PDF's bookmarks, as a list of chapters to jump to. Call while holding PDFIUM."""
+    outline = []
+    for bookmark in document.get_toc():
+        dest = bookmark.get_dest()
+        page = dest.get_index() if dest is not None else None
+        title = " ".join((bookmark.get_title() or "").split())
+        if title and page is not None and 0 <= page < page_count:
+            outline.append((bookmark.level, title, page))
+    return outline
 
 
 def _png(width: int, height: int, rows: bytes) -> bytes:
@@ -160,15 +240,44 @@ def _png(width: int, height: int, rows: bytes) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(rows, 6)) + chunk(b"IEND", b"")
 
 
+def _drawn(page, **render) -> bytes:
+    """A page, or part of it, drawn as a PNG; call while holding PDFIUM."""
+    bitmap = page.render(rev_byteorder=True, **render)  # RGB, no alpha
+    stride, drawn_width, drawn_height = bitmap.stride, bitmap.width, bitmap.height
+    buffer = bytes(bitmap.buffer)
+    bitmap.close()
+    row = drawn_width * 3
+    rows = b"".join(b"\x00" + buffer[y * stride : y * stride + row] for y in range(drawn_height))
+    return _png(drawn_width, drawn_height, rows)
+
+
 def picture(pages: Pages, number: int, width: int = PICTURE_WIDTH) -> bytes:
     """Page `number` (from 0) drawn as a PNG about `width` pixels wide."""
     with PDFIUM:
         page = pages.document[number]
-        bitmap = page.render(scale=width / page.get_width(), rev_byteorder=True)  # RGB, no alpha
-        stride, drawn_width, drawn_height = bitmap.stride, bitmap.width, bitmap.height
-        buffer = bytes(bitmap.buffer)
-        bitmap.close()
-        page.close()
-    row = drawn_width * 3
-    rows = b"".join(b"\x00" + buffer[y * stride : y * stride + row] for y in range(drawn_height))
-    return _png(drawn_width, drawn_height, rows)
+        try:
+            return _drawn(page, scale=width / page.get_width())
+        finally:
+            page.close()
+
+
+def part(pages: Pages, number: int, box: tuple[float, float, float, float]) -> bytes:
+    """The part of page `number` inside `box` (left, top, width, height, fractions of the page, as the word
+    boxes are), drawn from the PDF itself as a sharp PNG: a formula or a graph for a card."""
+    left, top, width, height = box
+    if not 0 <= number < len(pages.sizes):
+        raise ValueError("That page is not in the PDF being read.")
+    if width < SMALLEST_PART or height < SMALLEST_PART:
+        raise ValueError("Draw a larger box around the formula or graph.")
+    if left < 0 or top < 0 or left + width > 1.0001 or top + height > 1.0001:
+        raise ValueError("Draw the box inside one page.")
+    with PDFIUM:
+        page = pages.document[number]
+        try:
+            page_width, page_height = page.get_width(), page.get_height()
+            # pdfium crops by how much to cut from each side, in points: left, bottom, right, top
+            crop = (left * page_width, max(0.0, 1 - top - height) * page_height,
+                    max(0.0, 1 - left - width) * page_width, top * page_height)
+            return _drawn(page, scale=PART_SCALE, crop=crop)
+        finally:
+            page.close()

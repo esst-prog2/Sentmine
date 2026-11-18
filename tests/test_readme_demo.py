@@ -39,14 +39,15 @@ def test_the_word_card():
     session.load(WORD_SENTENCE)
     _, card = session.pick_word(*place_of(session, "simultaneously"))
     shown = demo()
-    assert f"front: {flat(card.front)} (simultaneously in bold) back: {card.back}" in shown
+    assert f"front: {card.front} back: {flat(card.back)} (simultaneously in bold)" in shown
 
 
 def test_the_cloze_card():
     session = Session()
     session.load(DEFINITION)
     _, card = session.add_definition(TERM, DEFINITION)
-    assert card.cloze
+    assert not card.cloze and "Make it cloze" in demo()
+    session.set_cloze(card.id, True)
     assert f"front: {flat(card.front_html)} back: the same sentence, with {TERM} in bold" in demo()
 
 

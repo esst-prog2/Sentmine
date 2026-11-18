@@ -1,0 +1,60 @@
+## 1. One shape of card
+
+- [x] 1.1 The word card's front and back swapped (word, then its sentence); the term in bold in every passage; cloze for every card, off at first; tests
+- [x] 1.2 Cards remembered in the earlier shape shown as they were (`old_layout`); tests
+- [x] 1.3 Suggest meaning under the passage, replacing its own earlier meaning; tests
+
+## 2. Whole sentences and one right-click
+
+- [x] 2.1 `whole_sentences` for a selection with the text around it; Read's definition drag snapped to the text's sentences; tests
+- [x] 2.2 `Session.add_clip` and `/clip/api/text`: one word or a bold term makes the card at once; tests
+- [x] 2.3 The extension: one menu item; the paragraph around the selection and a bold phrase read at the right-click, without a page's style or a formula's source; node tests
+- [x] 2.4 The page: one label, cloze on every card, one kind of clip
+
+## 3. The words that show the meaning
+
+- [x] 3.1 The prompt asks for the key on a second line; only a short part really in the sentence is kept; the card underlines it, also in Anki; tests with written answers
+- [x] 3.2 Tried on the real model: the first wording often gave the whole sentence (3 of 9 kept); with "never the whole sentence", 4 of 6 kept
+
+## 4. Checks and wrap-up
+
+- [x] 4.1 Headless Edge on Wikipedia's Poisson distribution: a word, a bold term, a rough selection; the earlier clip, editor, paste, picture, keyboard, gesture and place checks again
+- [x] 4.2 README, the promo page's extension section, `openspec validate one-card --strict`
+- [ ] 4.3 The reader tries it for a week of reading (needs the reader)
+
+## 10. The selection is the term
+
+- [x] 10.3 The side panel shows the cards only, the newest scrolled into view; the button reads Show my cards beside the page; Read's hint and Edit's hint in the panel brought up to date; the clip, Wikipedia, panel and keyboard checks updated
+
+- [x] 10.1 Every selection or drag is the term (a word cut in half made whole) and the whole sentences it touches the passage; one word still makes a word card; the bold term, the 8-word limit and the card waiting for its term removed; tests
+- [x] 10.2 The browser checks: Wikipedia, the real panel, the clip check and the gesture check (a long drag is a term) pass
+
+## 9. No waiting clip
+
+- [x] 9.1 A long selection with no term makes a card for its whole sentences at once, opened in Edit in the side panel with the cursor in the Term; Cancel deletes it; a deck is refused while a card has no term; its term gives it its key; tests
+- [x] 9.2 With the cursor in the Term, a clicked word, a drag, or text right-clicked on a web page goes in exactly as selected; the panel check (13 checks) and the clip check rewritten for the flow
+
+## 8. Undo, and the side panel kept open
+
+- [x] 8.3 A picture taken out by Undo or Delete does not come back with the next look at the app; while a card is open in Edit in the side panel, the right-click items say they add to it; the web-picture and panel checks
+
+- [x] 8.1 Undo and Redo buttons in Edit, and Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z: the card's own history of steps (put in, deleted, a run of typing); the gesture check
+- [x] 8.2 The side panel no longer loads sentmine's page again after a right-click (it asks it to look for changes), so a card open in Edit there stays open; a check through the real panel, which fails with the old panel script
+
+## 7. Edit is the one mode
+
+- [x] 7.1 Add sentences and the Cut button removed; in Edit, a click on a sentence, a drag over text, a box on a PDF page, a pasted picture, and text or a picture right-clicked on a web page go in at the cursor; no card is made meanwhile
+- [x] 7.2 The app knows the card open in Edit (said again every 30 s, forgotten after 3 minutes); web text for it waits in an inbox the editor takes; tests
+- [x] 7.3 Cancel puts the card back as it was; a line shows where the next thing goes; put-in text keeps its spaces and the cursor goes on after it
+- [x] 7.4 Headless Edge: the gesture check (edit mode on the PDF), the Wikipedia check (web text into the card), and all the other checks
+
+## 6. Fixes after trying it
+
+- [x] 6.1 A few words (2 to 8) selected inside one sentence on a web page make their card at once, as a drag in Read does
+- [x] 6.2 A picture pasted again (already on the card) still goes to the cursor; a real Ctrl+V check in the Term
+
+## 5. Pictures where the cursor was; a drag makes its card; Add sentences
+
+- [x] 5.1 A picture cut from the PDF or sent from a web page goes where the cursor last was, Term or Passage; Esc leaves no mark; the editor check
+- [x] 5.2 A drag (or keyboard marking) over a term of up to 8 words makes its card at once with its sentence; a longer drag says what to do; tests and the gesture and keyboard checks
+- [x] 5.3 Add sentences: the card keeps its sentence numbers; a click adds or takes out a sentence, lit in the text; an edited passage keeps what was typed; clip numbers move when a clip is removed; tests and the gesture check

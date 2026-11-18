@@ -21,7 +21,7 @@ sentmine = "sentmine.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-sentmine = ["data/*.txt", "web/*.html"]
+sentmine = ["data/*.txt", "web/*.html", "web/fonts/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

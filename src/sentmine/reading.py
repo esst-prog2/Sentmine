@@ -3,14 +3,16 @@
 import hashlib
 import html
 import re
+import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
 from sentmine.deck import Note, card_back, card_front, write_notes
 from sentmine.history import Entry
 from sentmine.lemma import base_form
+from sentmine.meaning import key_in
 from sentmine.memory import CardMemory, MemoryProblem
 from sentmine.sentences import paragraphs, split_sentences
 from sentmine.words import Word, find_words
@@ -34,15 +36,24 @@ class Problem(ValueError):
 @dataclass
 class Flashcard:
     id: int
-    kind: str  # WORD or DEFINITION
-    front: str  # plain text: the sentence, or the term
-    back: str  # plain text: the word, or the marked passage
+    kind: str  # WORD or DEFINITION: how it is found again (a word by its base form); both look the same
+    front: str  # the term: a word as written, or the term marked; text and pictures
+    back: str  # the passage: the word's sentence, or the marked definition; text and pictures
     key: str  # two cards with the same key are the same card
     word: str = ""  # word cards: the word shown in bold on the front
     place: tuple[int, int] | None = None  # word cards: the sentence and word that were clicked
     earlier: str = ""  # made anyway: the date of the earlier card in the memory
-    heading: str = ""  # word cards: the first line of the back; a suggested meaning goes under it
-    cloze: bool = False  # definition cards: the passage with the term hidden, instead of term -> passage
+    sentence: str = ""  # word cards: the sentence the word was clicked in, for Suggest meaning
+    meaning: str = ""  # word cards: the suggested meaning last put on the back, so a new one replaces it
+    key_part: str = ""  # word cards: the words of the sentence that show the suggested meaning, underlined on the back
+    old_layout: bool = False  # a word card remembered before 2026-11-18: the sentence on the front, the word on the back
+    cloze: bool = False  # the passage with the term hidden, instead of term -> passage
+    pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a page, on the back: (file name, PNG)
+    source: str = ""  # the session that made it ("read" or "clip"), so only its own text marks its word
+    origin: str = ""  # where it came from: a PDF's file name, a web page's title; "" for a pasted text
+    origin_url: str = ""  # a web page's address
+    origin_place: str = ""  # where in it: "p. 13"
+    text_id: str = ""  # the text it was made from, for the met-again count
 
     @property
     def history_key(self) -> str:
@@ -50,35 +61,72 @@ class Flashcard:
         return self.key.split(":", 1)[1]
 
     @property
+    def term(self) -> str:
+        """What is marked in the passage, and hidden on a cloze card: the word as written, or the front's text."""
+        if self.kind == WORD and self.word and not self.old_layout:
+            return self.word
+        return without_pictures(self.front)
+
+    @property
     def can_cloze(self) -> bool:
-        """A definition card whose term appears in its passage, so there is something to hide."""
-        return self.kind == DEFINITION and _term_pattern(self.front).search(self.back) is not None
+        """The term appears in the passage, so there is something to hide."""
+        return not self.old_layout and bool(self.term) and _term_pattern(self.term).search(without_pictures(self.back)) is not None
+
+    @property
+    def _front_pictures_html(self) -> str:
+        """A cloze card has no front of its own: the front's pictures go after the answer."""
+        return "".join(f'<div><img src="{name}"></div>' for name in PICTURE.findall(self.front))
 
     @property
     def front_html(self) -> str:
-        if self.kind == WORD:
-            return card_front(self.front, self.word).replace("\n", "<br>")
+        if self.old_layout:
+            return _with_pictures(self.front, lambda part: card_front(part, self.word).replace("\n", "<br>"))
         if self.cloze:
-            return _marked_html(self.front, self.back, lambda found: "[...]")
+            return _marked_html(self.term, self.back, lambda found: "[...]")
         return _plain_html(self.front)
 
     @property
     def back_html(self) -> str:
-        if self.cloze:
-            return _marked_html(self.front, self.back, lambda found: "<b>" + found + "</b>")
-        return _plain_html(self.back)
+        """The passage with the term in bold; a cloze card shows the front's pictures after it."""
+        if self.old_layout:
+            return _plain_html(self.back)
+        bold = _marked_html(self.term, self.back, lambda found: "<b>" + found + "</b>", self.key_part) if self.term else _plain_html(self.back)
+        return bold + self._front_pictures_html if self.cloze else bold
+
+    @property
+    def origin_text(self) -> str:
+        """Where the card came from, as shown: "primer.pdf, p. 13"."""
+        return ", ".join(part for part in (self.origin, self.origin_place) if part)
+
+    @property
+    def source_html(self) -> str:
+        """A small line for the back of the Anki card, so the passage can be found again; none without a real source."""
+        if not self.origin or (self.origin == UNNAMED_PAGE and not self.origin_url):
+            return ""
+        text = html.escape(self.origin_text)
+        if self.origin_url:
+            text = f'<a href="{html.escape(self.origin_url, quote=True)}">{text}</a>'
+        return f'<div style="font-size: 0.8em; color: #777; margin-top: 0.8em">Source: {text}</div>'
 
     @property
     def note(self) -> Note:
-        """The card as Download and Send to Anki write it."""
+        """The card as Download and Send to Anki write it: the back as the reader arranged it, text and
+        pictures, and the source under it."""
+        media = tuple(self.pictures)
         if self.cloze:
-            return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), ""), cloze=True)
-        return Note((self.front_html, self.back_html))
+            return Note((_marked_html(self.term, self.back, lambda found: "{{c1::" + found + "}}", self.key_part),
+                         self._front_pictures_html + self.source_html),
+                        cloze=True, media=media)
+        return Note((self.front_html, self.back_html + self.source_html), media=media)
 
 
 def entry_card(entry: Entry) -> Flashcard:
-    """An earlier card from the memory, as a card the page can show."""
-    return Flashcard(0, entry.kind, entry.front, entry.back, "", word=entry.word)
+    """An earlier card from the memory, as a card the page can show. A word card remembered before both kinds
+    looked the same has its sentence on the front and the word (and its meaning) on the back."""
+    first_line = entry.back.split("\n", 1)[0]
+    old = (entry.kind == WORD and bool(entry.word) and " " in entry.front.strip()
+           and re.fullmatch(re.escape(entry.word.lower()) + r"( \(.+\))?", first_line) is not None)
+    return Flashcard(0, entry.kind, entry.front, entry.back, "", word=entry.word, old_layout=old)
 
 
 def word_back(word: str, base: str) -> str:
@@ -87,7 +135,7 @@ def word_back(word: str, base: str) -> str:
 
 
 def _plain_html(text: str) -> str:
-    return html.escape(text, quote=False).replace("\n", "<br>")
+    return _with_pictures(text, lambda part: html.escape(part, quote=False).replace("\n", "<br>"))
 
 
 def _terms_pattern(terms: dict[str, Entry]) -> re.Pattern | None:
@@ -103,15 +151,69 @@ def _term_pattern(term: str) -> re.Pattern:
     return re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)", re.IGNORECASE)
 
 
-def _marked_html(term: str, passage: str, mark: Callable[[str], str]) -> str:
-    """The passage as HTML, with every place of the term, itself escaped, replaced by `mark(place)`."""
-    parts, position = [], 0
-    for found in _term_pattern(term).finditer(passage):
-        parts.append(_plain_html(passage[position : found.start()]))
-        parts.append(mark(_plain_html(found.group())))
-        position = found.end()
-    parts.append(_plain_html(passage[position:]))
-    return "".join(parts)
+def _marked_html(term: str, passage: str, mark: Callable[[str], str], key: str = "") -> str:
+    """The passage as HTML, with every place of the term, itself escaped, replaced by `mark(place)`, and the first
+    place of `key` (the words that show a suggested meaning) underlined; its pictures stay where they are."""
+    def with_term(text: str) -> str:
+        parts, position = [], 0
+        for found in _term_pattern(term).finditer(text):
+            parts.append(_plain_html(text[position : found.start()]))
+            parts.append(mark(_plain_html(found.group())))
+            position = found.end()
+        parts.append(_plain_html(text[position:]))
+        return "".join(parts)
+
+    underlined = [False]
+
+    def marked(text: str) -> str:
+        if not key or underlined[0] or key not in text:
+            return with_term(text)
+        underlined[0] = True
+        before, after = text.split(key, 1)
+        return with_term(before) + "<u>" + with_term(key) + "</u>" + with_term(after)
+
+    return _with_pictures(passage, marked)
+
+
+_ANY_SPACE = re.compile(r"\s+")
+
+
+def _sentence_spans(text: str) -> list[tuple[int, int]]:
+    """Where each sentence of `text` (one line, single spaces) begins and ends."""
+    spans, cursor = [], 0
+    for sentence in split_sentences(text):
+        start = text.find(sentence, cursor)
+        if start < 0:
+            continue
+        spans.append((start, start + len(sentence)))
+        cursor = start + len(sentence)
+    return spans
+
+
+def whole_sentences(selected: str, before: str = "", after: str = "") -> tuple[str, str]:
+    """A selection made loosely, as whole sentences: the sentences it touches, with `before` and `after` the text
+    around it on the page. A single word comes back as its sentence and the word, else the word is ""."""
+    if not selected.strip():
+        return "", ""
+    raw = before + selected + after
+    first = len(before) + len(selected) - len(selected.lstrip())   # the selection without the spaces around it
+    last = len(before) + len(selected.rstrip())
+    text = _ANY_SPACE.sub(" ", raw)   # spaces made one; a prefix collapses to a prefix of the same length
+    start, end = len(_ANY_SPACE.sub(" ", raw[:first])), len(_ANY_SPACE.sub(" ", raw[:last]))
+    middle = text[start:end]
+    chosen = [text[a:b] for a, b in _sentence_spans(text) if a < end and b > start]
+    passage = " ".join(chosen) if chosen else middle
+    word = middle.strip(".,;:!?\"'()[]")
+    single = len(clickable_words(word)) == 1 and clickable_words(word)[0].text == word
+    return passage, word if single and passage != word else ""
+
+
+def whole_words(selected: str, before: str = "", after: str = "") -> str:
+    """The selection with a word it starts or ends inside made whole, from the text around it: "founder is" after
+    "A con" is "confounder is"."""
+    head = re.search(r"\w*$", before).group() if selected[:1].isalnum() or selected[:1] == "_" else ""
+    tail = re.match(r"\w*", after).group() if selected[-1:].isalnum() or selected[-1:] == "_" else ""
+    return head + selected + tail
 
 
 def tidy(text: str) -> str:
@@ -130,19 +232,70 @@ def clickable_words(sentence: str) -> list[Word]:
     return [word for word in find_words(sentence) if not word.ignored]
 
 
-CLIP_KINDS = ("word", "definition")
+# A picture's place in the text of a card's back: [[picture:sentmine-<16 hex>.png]], on a line of its own.
+PICTURE = re.compile(r"\n?\[\[picture:(sentmine-[0-9a-f]{16}\.png)\]\]\n?")
+
+
+def picture_name(png: bytes) -> str:
+    """A picture's file name, from its content: the same picture is stored once."""
+    return "sentmine-" + hashlib.sha256(png).hexdigest()[:16] + ".png"
+
+
+def picture_place(name: str) -> str:
+    return f"[[picture:{name}]]"
+
+
+def without_pictures(text: str, instead: str = "") -> str:
+    """The text with each picture's place taken out, or replaced by `instead` on a line of its own."""
+    return PICTURE.sub(f"\n{instead}\n" if instead else "\n", text).strip()
+
+
+def _with_pictures(text: str, render: Callable[[str], str]) -> str:
+    """The text as HTML: `render` for the text between the pictures, an image where each picture is."""
+    parts, position = [], 0
+    for found in PICTURE.finditer(text):
+        parts.append(render(text[position : found.start()]))
+        parts.append(f'<div><img src="{found.group(1)}"></div>')
+        position = found.end()
+    parts.append(render(text[position:]))
+    return "".join(parts)
+UNNAMED_PAGE = "a web page"  # a clip whose page gave no title
+EDITING_SECONDS = 180  # a page with a card open in Edit says so every 30 seconds; after this, Edit counts as closed
+
+
+class Deck:
+    """The cards being made, one list for the text in Read and the clips from web pages."""
+
+    def __init__(self) -> None:
+        self.cards: list[Flashcard] = []
+        self.next_id = 1
+        self.chosen: int | None = None  # the card pictures from a web page go to; the newest one unless chosen
+        self.editing: int | None = None  # the card open in Edit, in Read or the side panel
+        self.editing_until = 0.0  # when that is taken as forgotten (a page closed while editing), time.monotonic()
+        self.inbox: list[dict] = []  # text from a web page for the card open in Edit: {"id", "card", "text"}
+        self.next_inbox = 1
 
 
 class Session:
     """One text and its cards, kept in memory for one reader."""
 
-    def __init__(self, memory: CardMemory | None = None) -> None:
+    def __init__(self, memory: CardMemory | None = None, deck: Deck | None = None, name: str = "read") -> None:
         self.paragraphs: list[list[str]] = []  # each paragraph is a list of sentences
-        self.cards: list[Flashcard] = []
+        self.deck = deck if deck is not None else Deck()  # shared with the other session when there is one
+        self.name = name  # "read" or "clip": which cards are this session's own
+        self.origin = ""  # what its cards say they came from: a file's name; "" for a pasted text
+        self.clip_sources: list[tuple[str, str]] = []  # for clips: the page's title and address, one per paragraph
         self.memory = memory  # None: the session remembers nothing between runs
         self.text_id = ""  # which text is read: the same words give the same id
-        self.clip_kinds: list[str] = []  # for clips from web pages: "word" or "definition", one per paragraph
-        self._next_id = 1
+
+    @property
+    def cards(self) -> list[Flashcard]:
+        """Every card of the deck, this session's and the other's."""
+        return self.deck.cards
+
+    @property
+    def own_cards(self) -> list[Flashcard]:
+        return [card for card in self.deck.cards if card.source == self.name]
 
     @property
     def sentences(self) -> list[str]:
@@ -154,22 +307,38 @@ class Session:
         if not tidied:
             raise Problem("There is no text to read: paste a text first.")
         self.paragraphs = [split_sentences(paragraph) for paragraph in tidied.split("\n\n")]
-        self.cards = []
-        self.clip_kinds = []
+        self.deck.cards[:] = [card for card in self.deck.cards if card.source != self.name]   # the old text's cards go
+        self.clip_sources = []
         self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
 
-    def add(self, text: str, kind: str = "word") -> None:
-        """A clip from a web page: added after the clips before it, whose cards stay. A definition clip is kept
-        as one paragraph, since all of it is the definition."""
-        if kind not in CLIP_KINDS:
-            raise Problem(f"A clip is a {' or a '.join(CLIP_KINDS)}.")
-        tidied = tidy(text)
+    def add(self, text: str, title: str = "", url: str = "") -> None:
+        """A clip from a web page (its title and address, when known): one paragraph, added after the clips
+        before it, whose cards stay."""
+        tidied = " ".join(tidy(text).split())
         if not tidied:
             raise Problem("The selection has no text to read.")
-        parts = [" ".join(tidied.split())] if kind == "definition" else tidied.split("\n\n")
-        self.paragraphs += [split_sentences(part) for part in parts]
-        self.clip_kinds += [kind] * len(parts)
+        self.paragraphs.append(split_sentences(tidied))
+        self.clip_sources.append((title or UNNAMED_PAGE, url))
         self.text_id = hashlib.sha256(tidied.encode("utf-8")).hexdigest()[:16]
+
+    def add_clip(self, selected: str, before: str = "", after: str = "", title: str = "",
+                 url: str = "") -> tuple[str, Flashcard | Entry]:
+        """A selection from a web page, and its card at once: the term is what was selected, the passage the whole
+        sentences it touches (the clip). One word makes its word card, from its sentence."""
+        passage, word = whole_sentences(selected, before, after)
+        if not passage:
+            raise Problem("The selection has no text to read.")
+        self.add(passage, title, url)
+        number = len(self.sentences) - len(self.paragraphs[-1])
+        if word:
+            for index, sentence in enumerate(self.paragraphs[-1]):
+                found = [at for at, one in enumerate(clickable_words(sentence)) if one.text == word]
+                if found:
+                    return self.pick_word(number + index, found[0])
+        words = " ".join(whole_words(selected.strip(), before + selected[: len(selected) - len(selected.lstrip())],
+                                     selected[len(selected.rstrip()):] + after).split())
+        term = words.strip(".,;:!?\"'()[]“”‘’ ") or words
+        return self.add_definition(term, sentences=(number, len(self.sentences) - 1))
 
     def remove_clip(self, number: int) -> None:
         """Take a clip away. Its cards stay, since they hold their own text; the clicked places of the
@@ -179,9 +348,9 @@ class Session:
         first = sum(len(paragraph) for paragraph in self.paragraphs[:number])
         count = len(self.paragraphs[number])
         del self.paragraphs[number]
-        if number < len(self.clip_kinds):
-            del self.clip_kinds[number]
-        for card in self.cards:
+        if number < len(self.clip_sources):
+            del self.clip_sources[number]
+        for card in self.own_cards:
             if card.place is None:
                 continue
             sentence, word = card.place
@@ -214,7 +383,7 @@ class Session:
         term when it is part of a remembered term (`terms`), else its base form when that is
         in `known` (remembered word cards).
         """
-        picked = {card.place for card in self.cards if card.place is not None}
+        picked = {card.place for card in self.own_cards if card.place is not None}
         known = known or {}
         find_terms = _terms_pattern(terms or {})
         paragraphs = []
@@ -270,21 +439,30 @@ class Session:
             earlier = self._earlier(WORD, base)
             if earlier is not None and not anyway:
                 return EARLIER, earlier
-            back = word_back(text, base)
             card = Flashcard(
-                0, WORD, sentences[sentence], back, key, word=text, place=(sentence, word),
-                earlier=earlier.date if earlier else "", heading=back,
+                0, WORD, word_back(text, base), sentences[sentence], key, word=text, place=(sentence, word),
+                earlier=earlier.date if earlier else "", sentence=sentences[sentence],
             )
             return ADDED, self._add(card)
-        if existing.place == (sentence, word):
+        if existing.place == (sentence, word) and existing.source == self.name:
             self.cards.remove(existing)
             return REMOVED, existing
         return DUPLICATE, existing
 
-    def add_definition(self, term: str, passage: str, anyway: bool = False) -> tuple[str, Flashcard | Entry]:
-        """A term and the passage the reader marked as its definition; the memory is checked as for words."""
+    def add_definition(self, term: str, passage: str = "", anyway: bool = False,
+                       sentences: tuple[int, int] | None = None) -> tuple[str, Flashcard | Entry]:
+        """A term and its passage: the sentences `sentences` (first, last) of the text, as a drag over the term
+        gives them, or a passage the reader marked, taken as the whole sentences of the text it touches. The memory
+        is checked as for words."""
         term = " ".join(term.split())
-        passage = tidy_selection(passage)
+        if sentences is not None:
+            first, last = sorted(sentences)
+            if not 0 <= first <= last < len(self.sentences):
+                raise Problem("That sentence is not in the text.")
+            numbers = list(range(first, last + 1))
+            passage = self._passage_of(numbers)
+        else:
+            passage, numbers = self._whole_sentences_of(tidy_selection(passage))
         if not term:
             raise Problem("No term is selected: select the term first.")
         if not passage:
@@ -297,37 +475,91 @@ class Session:
         if earlier is not None and not anyway:
             return EARLIER, earlier
         card = Flashcard(0, DEFINITION, term, passage, key, earlier=earlier.date if earlier else "")
-        card.cloze = card.can_cloze
         return ADDED, self._add(card)
+
+    def _passage_of(self, numbers) -> str:
+        """The sentences `numbers` of the text, in reading order, a paragraph break between paragraphs."""
+        wanted, parts, at = set(numbers), [], 0
+        for paragraph in self.paragraphs:
+            chosen = [sentence for index, sentence in enumerate(paragraph, at) if index in wanted]
+            if chosen:
+                parts.append(" ".join(chosen))
+            at += len(paragraph)
+        return "\n\n".join(parts)
+
+    def _whole_sentences_of(self, passage: str) -> tuple[str, list[int]]:
+        """The passage as the whole sentences of the text it touches, paragraph breaks kept, and their numbers;
+        as it is, with no numbers, when it is not found in the text (as typed)."""
+        spans, flat, paragraph_of = [], "", []
+        for number, paragraph in enumerate(self.paragraphs):
+            for sentence in paragraph:
+                if flat:
+                    flat += " "
+                spans.append((len(flat), len(flat) + len(sentence)))
+                paragraph_of.append(number)
+                flat += sentence
+        wanted = _ANY_SPACE.sub(" ", passage).strip()
+        at = flat.find(wanted) if wanted else -1
+        if at < 0:
+            return passage, []
+        end = at + len(wanted)
+        touched = [index for index, (a, b) in enumerate(spans) if a < end and b > at]
+        return self._passage_of(touched), touched
 
     def edit(self, card_id: int, front: str, back: str) -> Flashcard:
         card = self._card(card_id)
-        front, back = front.strip(), back.strip()
+        held = {name for name, _ in card.pictures}
+        front, back = (PICTURE.sub(lambda found: found.group() if found.group(1) in held else "\n", side.replace("\ufffc", "")).strip()
+                       for side in (front, back))   # only its own pictures, on either side; never the page's cursor mark
         if not front or not back:
             raise Problem("A card needs a front and a back; delete the card to remove it.")
         card.front, card.back = front, back
+        placed = set(PICTURE.findall(front)) | set(PICTURE.findall(back))
+        card.pictures[:] = [(name, png) for name, png in card.pictures if name in placed]   # a picture taken out of the text is gone
         card.cloze = card.cloze and card.can_cloze  # the edit may have taken the term out of the passage
         return card
 
     def set_cloze(self, card_id: int, cloze: bool) -> Flashcard:
-        """Make a definition card a cloze card, or a term -> passage card."""
+        """Make a card a cloze card, or a term -> passage card."""
         card = self._card(card_id)
-        if card.kind != DEFINITION:
-            raise Problem("Only definition cards can be cloze cards.")
         if cloze and not card.can_cloze:
-            raise Problem(f"'{card.front}' is not in the passage, so there is nothing to hide.")
+            raise Problem(f"'{card.term}' is not in the passage, so there is nothing to hide.")
         card.cloze = cloze
         return card
 
     def delete(self, card_id: int) -> None:
         self.cards.remove(self._card(card_id))
 
-    def suggest(self, card_id: int, ask: Callable[[str, str], str]) -> Flashcard:
-        """Put a meaning from `ask(word, sentence)` on the back, under the word, replacing any earlier one."""
+    def add_picture(self, card_id: int, png: bytes) -> Flashcard:
+        """Put a picture at the end of a card's back, unless it is on the card already; its file name comes
+        from its content."""
         card = self._card(card_id)
-        if card.kind != WORD:
-            raise Problem("Only word cards get a suggested meaning: the back of this card is the passage you marked.")
-        card.back = f"{card.heading}\n{ask(card.word, card.front)}"
+        name = picture_name(png)
+        if name not in {known for known, _ in card.pictures}:
+            card.pictures.append((name, png))
+        if name not in PICTURE.findall(card.front) + PICTURE.findall(card.back):
+            card.back = card.back + "\n" + picture_place(name)   # at the end; the editor can move it
+        return card
+
+    def picture(self, card_id: int, name: str) -> bytes:
+        """The PNG of a card's picture."""
+        for known, png in self._card(card_id).pictures:
+            if known == name:
+                return png
+        raise Problem("That picture is not on the card any more.")
+
+    def suggest(self, card_id: int, ask: Callable[[str, str], str]) -> Flashcard:
+        """Put a meaning from `ask(word, sentence)` at the end of the back, replacing the one suggested before."""
+        card = self._card(card_id)
+        if card.kind != WORD or card.old_layout:
+            raise Problem("Only a card made from one word gets a suggested meaning: its passage is your definition.")
+        sentence = card.sentence or without_pictures(card.back)
+        meaning = ask(card.word, sentence)
+        back = card.back
+        if card.meaning and ("\n\n" + card.meaning) in back:
+            back = back.replace("\n\n" + card.meaning, "", 1)
+        card.back, card.meaning = back.rstrip() + "\n\n" + meaning, str(meaning)
+        card.key_part = key_in(sentence, getattr(meaning, "key", ""))   # only words that really are in the sentence
         return card
 
     def export(self, path: Path, day: str | None = None) -> str:
@@ -358,20 +590,94 @@ class Session:
             return ""
         day = day or date.today().isoformat()
         entries = [
-            Entry(card.kind, card.history_key, card.front, card.back, card.word, day) for card in self.cards
+            Entry(card.kind, card.history_key, without_pictures(card.front, "[picture]"),
+                  without_pictures(card.back, "[picture]"), card.word, day,
+                  "" if card.origin == UNNAMED_PAGE and not card.origin_url else card.origin,   # no name, no source
+                  card.origin_url, card.origin_place) for card in self.cards
         ]
         try:
             self.memory.add(entries)
-            if self.text_id:  # the text they were made from does not count as meeting them again
-                self.memory.made_from([(entry.kind, entry.key) for entry in entries], self.text_id, day)
+            # the text each card was made from does not count as meeting it again
+            for text_id in {card.text_id for card in self.cards if card.text_id}:
+                made = [(card.kind, card.history_key) for card in self.cards if card.text_id == text_id]
+                self.memory.made_from(made, text_id, day)
         except MemoryProblem as error:
             return f"{done}, but these cards were not remembered. {error}"
         return ""
 
+    def sentence_of(self, card: Flashcard) -> int | None:
+        """The sentence of this session's text a card was made from: the clicked one, or the one a marked
+        passage starts in; None when it cannot be told."""
+        if card.place is not None:
+            return card.place[0]
+        start = " ".join(card.back.split())[:40]
+        for number, sentence in enumerate(self.sentences):
+            flat = " ".join(sentence.split())
+            if start and (start in flat or flat[:40] in " ".join(card.back.split())):
+                return number
+        return None
+
     def _add(self, card: Flashcard) -> Flashcard:
-        card.id = self._next_id
-        self._next_id += 1
+        card.id = self.deck.next_id
+        self.deck.next_id += 1
+        card.source, card.origin, card.text_id = self.name, self.origin, self.text_id
+        sentence = self.sentence_of(card)
+        if self.clip_sources and sentence is not None:   # a clip's card comes from that clip's page
+            paragraph, seen = 0, 0
+            for paragraph, sentences in enumerate(self.paragraphs):
+                seen += len(sentences)
+                if sentence < seen:
+                    break
+            if paragraph < len(self.clip_sources):
+                card.origin, card.origin_url = self.clip_sources[paragraph]
         self.cards.append(card)
+        self.deck.chosen = card.id   # a new card is the one its picture is usually for
+        return card
+
+    @property
+    def chosen_card(self) -> int | None:
+        """The card pictures from a web page go to: the one the reader chose, else the newest; None without cards."""
+        ids = [card.id for card in self.cards]
+        if self.deck.chosen in ids:
+            return self.deck.chosen
+        return ids[-1] if ids else None
+
+    def set_editing(self, card_id: int | None, now: float | None = None) -> None:
+        """The card open in Edit (it also becomes the chosen card), kept for EDITING_SECONDS unless said again;
+        None when Edit is closed, which drops the text not yet taken."""
+        now = time.monotonic() if now is None else now
+        if card_id is None:
+            self.deck.editing, self.deck.inbox = None, []
+            return
+        self.deck.chosen = self.deck.editing = self._card(card_id).id
+        self.deck.editing_until = now + EDITING_SECONDS
+
+    def editing_card(self, now: float | None = None) -> int | None:
+        now = time.monotonic() if now is None else now
+        ids = {card.id for card in self.cards}
+        return self.deck.editing if self.deck.editing in ids and now < self.deck.editing_until else None
+
+    def send_to_editor(self, selected: str, before: str = "", after: str = "", now: float | None = None) -> str:
+        """Text selected on a web page while a card is open in Edit: its whole sentences wait for that card's
+        editor, which puts them at its cursor. Returns them."""
+        card = self.editing_card(now)
+        if card is None:
+            raise Problem("No card is open in Edit.")
+        passage, _ = whole_sentences(selected, before, after)
+        if not passage:
+            raise Problem("The selection has no text to read.")
+        exact = " ".join(selected.split()).strip(".,;:!? ")   # for the Term: what was selected, no more
+        self.deck.inbox.append({"id": self.deck.next_inbox, "card": card, "text": passage, "exact": exact})
+        self.deck.next_inbox += 1
+        return passage
+
+    def take_from_inbox(self, ids: list[int]) -> None:
+        """The editor has put these in its card."""
+        self.deck.inbox = [item for item in self.deck.inbox if item["id"] not in set(ids)]
+
+    def choose_card(self, card_id: int) -> Flashcard:
+        card = self._card(card_id)
+        self.deck.chosen = card.id
         return card
 
     def _card(self, card_id: int) -> Flashcard:

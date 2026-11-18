@@ -1,6 +1,7 @@
 """The memory of every card the reader has downloaded: a SQLite database in the reader's own folder."""
 
 import os
+import shutil
 import sqlite3
 from collections.abc import Iterable
 from collections.abc import Iterator
@@ -17,7 +18,7 @@ SHOWN_AT_MOST = 200
 MONTHS_SHOWN = 6
 
 # Each step brings the layout up by one version; it runs in one transaction with its version number.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 _CREATE_TABLE = """
     CREATE TABLE cards (
         id INTEGER PRIMARY KEY,
@@ -42,8 +43,12 @@ _CREATE_MEETINGS = """
         PRIMARY KEY (kind, key, text_id)
     )
 """
-_INSERT = "INSERT OR IGNORE INTO cards (kind, key, front, back, word, made_on) VALUES (?, ?, ?, ?, ?, ?)"
-_COLUMNS = "id, kind, key, front, back, word, made_on"
+# Layout 4: where a card came from (a PDF's name or a web page's title, its address, the page in it).
+_SOURCE_COLUMNS = ("source", "source_url", "source_place")
+_INSERT = ("INSERT OR IGNORE INTO cards (kind, key, front, back, word, made_on, source, source_url, source_place) "
+           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+_COLUMNS = "id, kind, key, front, back, word, made_on, source, source_url, source_place"
+SOURCES_SHOWN = 5
 
 
 class MemoryProblem(Exception):
@@ -116,8 +121,26 @@ class CardMemory:
                         if _version(db) < 3:
                             db.execute(_CREATE_MEETINGS)
                             db.execute("PRAGMA user_version = 3")
+                if _version(db) < 4:
+                    self._keep_a_copy(db, 4)
+                    with _transaction(db):
+                        if _version(db) < 4:
+                            there = {row[1] for row in db.execute("PRAGMA table_info(cards)")}
+                            for column in _SOURCE_COLUMNS:
+                                if column not in there:
+                                    db.execute(f"ALTER TABLE cards ADD COLUMN {column} TEXT NOT NULL DEFAULT ''")
+                            db.execute("PRAGMA user_version = 4")
             except sqlite3.DatabaseError as error:
                 raise MemoryProblem(f"The card memory '{self.path}' could not be opened ({error}).") from None
+
+    def _keep_a_copy(self, db: sqlite3.Connection, layout: int) -> None:
+        """Before the layout changes, a copy of a memory that has cards, beside it; made once."""
+        copy = self.path.with_name(f"{self.path.name}.before-layout-{layout}")
+        try:
+            if not copy.exists() and db.execute("SELECT COUNT(*) FROM cards").fetchone()[0]:
+                shutil.copy2(self.path, copy)
+        except OSError:
+            pass  # the change itself is one transaction; the copy is an extra
 
     def _move_old_history(self, db: sqlite3.Connection) -> None:
         """Layout 2: copy the old history file's cards in, once. The old file is never changed."""
@@ -129,7 +152,11 @@ class CardMemory:
         with _transaction(db):
             if _version(db) < 2:
                 before = db.total_changes
-                db.executemany(_INSERT, [_row(entry) for entry in entries])
+                # the table as layout 1 made it: the source columns come with layout 4
+                db.executemany(
+                    "INSERT OR IGNORE INTO cards (kind, key, front, back, word, made_on) VALUES (?, ?, ?, ?, ?, ?)",
+                    [_row(entry)[:6] for entry in entries],
+                )
                 moved = db.total_changes - before
                 db.execute("PRAGMA user_version = 2")
         if entries:
@@ -234,7 +261,7 @@ class CardMemory:
         """Cards in total, by kind, this week (from Monday), and in each of the last six months."""
         today = today or date.today()
         if self.problem:
-            return {"total": 0, "words": 0, "definitions": 0, "this_week": 0, "months": []}
+            return {"total": 0, "words": 0, "definitions": 0, "this_week": 0, "months": [], "sources": []}
         monday = (today - timedelta(days=today.weekday())).isoformat()
         total, words, this_week = self._query(
             "SELECT COUNT(*), COALESCE(SUM(kind = 'word'), 0), COALESCE(SUM(made_on >= ?), 0) FROM cards", (monday,)
@@ -249,6 +276,10 @@ class CardMemory:
             "definitions": total - words,
             "this_week": this_week,
             "months": [{"month": month, "cards": counted.get(month, 0)} for month in months],
+            # the books and pages most cards came from
+            "sources": [{"source": source, "cards": cards} for source, cards in self._query(
+                "SELECT source, COUNT(*) FROM cards WHERE source != '' GROUP BY source ORDER BY 2 DESC, 1 LIMIT ?",
+                (SOURCES_SHOWN,))],
         }
 
     def delete(self, card_id: int) -> None:
@@ -307,12 +338,13 @@ def _version(db: sqlite3.Connection) -> int:
 
 
 def _row(entry: Entry) -> tuple:
-    return (entry.kind, entry.key, entry.front, entry.back, entry.word, entry.date)
+    return (entry.kind, entry.key, entry.front, entry.back, entry.word, entry.date,
+            entry.source, entry.source_url, entry.source_place)
 
 
 def _card(row: tuple) -> RememberedCard:
-    card_id, kind, key, front, back, word, made_on = row
-    return RememberedCard(card_id, Entry(kind, key, front, back, word, made_on))
+    card_id, kind, key, front, back, word, made_on, source, source_url, source_place = row
+    return RememberedCard(card_id, Entry(kind, key, front, back, word, made_on, source, source_url, source_place))
 
 
 def _last_months(today: date, count: int) -> list[str]:

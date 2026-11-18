@@ -4,6 +4,7 @@ The order of requests is in openspec/specs/send-to-anki and its design: the note
 deck are made if missing, cards already in the deck are found first, and only the rest are added.
 """
 
+import base64
 import json
 import urllib.error
 import urllib.request
@@ -112,5 +113,8 @@ def send_notes(notes: Sequence[Note | tuple[str, str]], deck: str, post: Callabl
         if note.fields[0] not in there
     ]
     if new:
+        sent = [note for note in notes if note.fields[0] not in there]
+        for name, data in {name: data for note in sent for name, data in note.media}.items():
+            _call(post, "storeMediaFile", filename=name, data=base64.b64encode(data).decode("ascii"))
         _call(post, "addNotes", notes=new)
     return len(new), len(notes) - len(new)

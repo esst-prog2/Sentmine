@@ -143,7 +143,7 @@ def test_a_word_picked_on_a_page_makes_its_card():
     upload(client)
     sentence, word = client.get("/api/pages/0/words").get_json()["boxes"][7][:2]  # "skew"
     made = client.post("/api/word", json={"sentence": sentence, "word": word}).get_json()
-    assert made["cards"][0]["front"] == "Outliers can skew it considerably in small samples."
+    assert made["cards"][0]["back"] == "Outliers can skew it considerably in small samples."
 
 
 def test_another_pdf_has_another_version_even_after_a_restart():

@@ -21,8 +21,42 @@ export async function findSentmine(fetchFn, ports = PORTS, wait = 600) {
   return answers.find((base) => base !== null) || null;
 }
 
-// The right-click items on selected text, by the kind of clip each one makes.
-export const MENU = { word: "Word card from this sentence", definition: "Definition card from this" };
+// The right-click item on selected text: its card, the selection as the term and the whole sentences it touches as
+// the passage (one word: its word card).
+export const MENU = { card: "Make a card from this" };
+
+// The same items while a card is open in Edit in the side panel: what is chosen goes in at its cursor.
+export const EDITING_MENU = {
+  card: "Add to the card you are editing",
+  picture: "Add this picture to the card you are editing",
+};
+
+// The right-click items that put a picture on the newest card in the side panel.
+export const PICTURE_MENU = {
+  picture: "Add this picture to the card you last made or edited",
+};
+
+export const NO_CARD_YET =
+  "Make a card first: select a word or a sentence, right-click it, and choose Make a card from this.";
+
+export const WIDEST_PICTURE = 1600;   // pixels; a picture wider than this is made smaller, as Anki shows it no wider
+
+// A box drawn on the visible page (CSS pixels of a window `viewportWidth` wide), in the pixels of a screenshot
+// of that window, kept inside the screenshot.
+export function boxOnShot(box, viewportWidth, shotWidth, shotHeight) {
+  const scale = shotWidth / viewportWidth;
+  const x = Math.max(0, Math.round(box.x * scale));
+  const y = Math.max(0, Math.round(box.y * scale));
+  const width = Math.min(shotWidth - x, Math.round(box.width * scale));
+  const height = Math.min(shotHeight - y, Math.round(box.height * scale));
+  return width > 0 && height > 0 ? { x, y, width, height } : null;
+}
+
+// The size a picture is stored at: as it is, or narrowed to WIDEST_PICTURE keeping its shape.
+export function storedSize(width, height) {
+  if (width <= WIDEST_PICTURE) return { width, height };
+  return { width: WIDEST_PICTURE, height: Math.round(height * WIDEST_PICTURE / width) };
+}
 
 export const LONGEST_CLIP = 3000;   // characters: a sentence or a definition, not a whole page
 
@@ -34,13 +68,30 @@ export function clipFor(menuItemId, selected) {
   if (text.length > LONGEST_CLIP) {
     return { refuse: "That is a lot of text for one card. Select one sentence or one definition, or send the whole page with the sentmine button." };
   }
-  return { text, kind: menuItemId };
+  return { text };
+}
+
+// What the page says is around the selection (see aroundSelection in background.js), made ready to send: the
+// reference marks taken out, the spaces at the edges kept, since sentmine finds the sentences from them.
+export function withContext(clip, around) {
+  if (!around || typeof around.selected !== "string" || around.selected.trim() === "") return clip;
+  return {
+    text: withoutMarks(around.selected),
+    before: withoutMarks(String(around.before || "")).slice(-1500),
+    after: withoutMarks(String(around.after || "")).slice(0, 1500),
+  };
+}
+
+const MARKS = /\[\s*(\d+|[a-z]|edit|citation needed|note \d+)\s*\]/gi;
+
+function withoutMarks(text) {
+  return text.replace(MARKS, "");
 }
 
 // Marks a web page puts in its text that are not part of it: reference numbers like [12], [edit].
 export function tidy(text) {
   return text
-    .replace(/\[\s*(\d+|[a-z]|edit|citation needed|note \d+)\s*\]/gi, "")
+    .replace(MARKS, "")
     .replace(/[ \t]+([.,;:])/g, "$1")
     .replace(/[ \t]{2,}/g, " ")
     .trim();

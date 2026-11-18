@@ -1,5 +1,7 @@
 # sentmine
 
+Promo page: https://esst-prog2.github.io/Sentmine/
+
 A small reading app that runs on my own computer. I open a PDF or paste a
 text I am reading and turn parts of it into Anki flashcards as I go: a new
 word inside its real sentence, or a term with the passage that defines it.
@@ -18,26 +20,35 @@ On page 13 I do not know the word `simultaneously`, so I click it. It
 turns yellow on the page and a card appears:
 
 ```
-front:  Two fair coins are flipped simultaneously to determine the
+front:  simultaneously
+back:   Two fair coins are flipped simultaneously to determine the
         payoffs of two players in the town’s casino.
         (simultaneously in bold)
-back:   simultaneously
 ```
 
 I press **Suggest meaning** on the card. The small model `gpt-5-nano` gets
-the word and its sentence, and the back becomes:
+the word and its sentence, and puts the meaning under the sentence:
 
 ```
-back:   simultaneously
+back:   Two fair coins are flipped simultaneously to determine the
+        payoffs of two players in the town’s casino.
+
         At the same time; the two coin flips occur together, not one
         after the other.
 ```
 
+The model also names the few words of the sentence that show that meaning,
+and the card underlines them (here, for example, `flipped simultaneously to
+determine`). sentmine underlines only words that really are in the sentence;
+when the model names none, the card simply has no underline.
+
 On page 5 I want to remember a term. I drag over `Simpson’s reversal`;
-the words turn blue as I drag, and the status line says
-`Term: Simpson’s reversal Now drag over its definition.` I drag over the
-sentence that explains it. Because the term is inside that sentence,
-sentmine makes a cloze card, which hides the term:
+the words turn blue as I drag, and the card is made at once, with the
+sentence the term is in as its passage. Every card has the same shape: the
+term on the front, the passage on the back with the term in bold. (Had the
+explanation gone on in the next sentence, I would press **Edit** on the card
+and click that sentence to put it in.) Because the term is inside the
+passage, I press **Make it cloze**, which hides the term:
 
 ```
 front:  Strangely, the experimental data revealed a [...]: Although the
@@ -47,8 +58,7 @@ front:  Strangely, the experimental data revealed a [...]: Although the
 back:   the same sentence, with Simpson’s reversal in bold
 ```
 
-The button **Make it term → passage** would turn it into a card with the
-term on the front instead; I keep the cloze.
+**Make it term → passage** would turn it back; I keep the cloze.
 
 I name the deck `causal` and press **Send to Anki**. Anki is open with
 the AnkiConnect add-on, so the cards go straight in, and the status line
@@ -73,109 +83,137 @@ hand, so now I choose what becomes a card myself, while reading.
 
 ## 2. The shape
 
+These sections describe the app as it is now (November 2026). The plan
+from September is in the git history.
+
 ```
-in         a text, pasted into the page (plain text, any length)
-out        new.apkg   an Anki-importable deck with two kinds of card:
-                      word card        front = the sentence with the word
-                                       in bold, back = the word
-                      definition card  front = the term, back = the
-                                       passage I marked, of any length
-on screen  the text on the left; in Word mode a click picks a word and a
-           second click unpicks it; in Definition mode I select a term,
-           then drag over its definition; the header counts the cards;
-           the preview on the right shows each card and lets me edit or
-           delete it; Download writes the deck
-on disk    nothing is saved until I press Download; the app runs only on
-           my own computer and sends the text nowhere
+in         a PDF that contains text, shown as its own pages; a .txt file;
+           a pasted text; or, with the browser extension, the PDF or
+           article in a browser tab, or anything I select on a web page
+out        cards for Anki, all of one shape: front = the term (what I
+           selected; for one word, the word and its base form), back = the
+           whole sentences it is in, with the term in bold, and pictures
+           and a suggested meaning if I add them; or a cloze card, the term
+           hidden in its own passage. Sent straight into my Anki deck
+           (AnkiConnect), or downloaded as a deck file (.apkg)
+on screen  Read: the text or the PDF's pages; a click on a word or a drag
+           over words makes a card, a second click removes it; the same
+           with the keyboard; the Cards panel shows each card to edit (text
+           and pictures, with undo), delete, make cloze or give a suggested
+           meaning; a word I already have a card for has a blue line, and
+           pointing at it shows my card.
+           My cards: every card I kept, searchable, with my progress.
+           Beside a web page: a side panel with the cards I made there
+on disk    the card memory, one SQLite file in my user folder, holds the
+           cards I sent or downloaded and where I met them again; the
+           text I read is not saved
+network    the app runs only on my own computer, and the text stays
+           there, except that Suggest meaning sends the word and its
+           sentence to OpenAI (only with my own key); Send to Anki talks
+           to Anki on this computer
 ```
 
 ## 3. The size
 
-**First useful version**
+**What it does now**
 
-- start the app with one command and open the reading page in the browser
-- paste a text; tidy it with simple rules (join lines broken inside a
-  sentence, remove extra spaces and blank lines)
-- Word mode: click a word to make a card from its sentence; click again
-  to remove it
-- Definition mode: select a term of one or more words, then mark the
-  passage that defines it - one sentence, several, or a whole paragraph;
-  line breaks inside the passage are kept
-- one card per word or term: picking the same one again tells me so and
-  makes no second card
-- a preview of every card, where I can edit the front and the back or
-  delete the card
-- a count of the cards so far
-- download a valid `.apkg` deck of the cards as they appear in the preview
+- start with one command (`sentmine`); the page opens in the browser
+- open a PDF with text and read it as its real pages, or open a `.txt`
+  file, or paste a text (tidied: broken lines joined, extra spaces gone)
+- a card from one click on a word, or one drag over any words (the term),
+  with the whole sentences around it (the passage), by mouse or keyboard
+- one deck for everything: cards from the PDF and from web pages are listed
+  together, in Read and in the browser's side panel
+- one card per word or term: picking one I already have shows my earlier
+  card, and I can skip it or make it anyway
+- edit a card's two sides as small documents of text and pictures, with
+  undo: everything I add goes in at the cursor, whether a sentence clicked in
+  the text, a formula or graph boxed on a PDF page, a pasted screenshot, or
+  text or an image right-clicked on a web page
+- delete, switch any card to cloze, or ask for a suggested meaning (with my
+  own OpenAI key), which also underlines the words that show it
+- send the cards to Anki in one click, or download a deck
+- the cards I keep are remembered; in the next text the words and terms I
+  have cards for are marked, and each card counts the texts it came back in
+- every card keeps its source (the PDF's name and page, or the web page's
+  title and address): on the Anki card, and in My cards
+- My cards: search, progress, the sources most cards came from, delete
+- my place in the text is kept when I switch to My cards and back
+- a PDF's own links work (to its pages, or to websites in a new tab); a page
+  bar jumps to a page or, when the PDF has bookmarks, to a chapter
+- a browser extension: open the current tab in sentmine, or right-click
+  anything selected on a web page and get its card at once, in a side panel
 
-**Not this term** (the first four are the planned next changes, in order)
+**Not yet**
 
-- loading a PDF that contains text, such as lecture slides
-- suggesting with AI the meaning of a word, or the passage that defines a
-  term, to accept or edit in the preview
-- reading scanned PDF pages with AI
-- loading an article from a web link
-- sending cards straight into Anki (AnkiConnect), without the download
-- a browser extension for picking words on the original website
-- remembering between sessions which cards I already made
-- highlighting words that are probably new to me, from a known-words list
-  (the first design's filter)
+- formulas from web pages as real formulas (they come as pictures now)
+- scanned PDFs (there is no text to read in them)
+- marking the words I have cards for on the web page itself
+- reading my Anki review results back into the app
 - languages written without spaces between words, such as Chinese or
   Japanese
-- audio, images, formulas, or a phone app
+- audio, or a phone app
 
 ## 4. How we would know it works
 
-- Given the paragraph above, clicking `skew` in Word mode makes a card
-  whose front is exactly `Outliers can skew it considerably.` with `skew`
-  in bold, and whose back is `skew`.
-- Given the term `standard deviation` selected and the first two
-  sentences marked, the card's front is `standard deviation` and its back
-  is exactly those two sentences, joined across the line break.
-- Given a marked passage that spans two paragraphs, the back keeps the
-  break between them.
+The checks are automated: `pip install -e ".[dev]"`, then `pytest` (665
+tests on 18 November 2026). Some of them:
+
+- Given the text `Outliers can skew it considerably.`, clicking `skew`
+  makes a card whose front is `skew` and whose back is exactly that
+  sentence with `skew` in bold.
+- Given a selection from the end of one sentence into the next, the card's
+  term is the selection and its passage is both whole sentences.
 - Given a word or term that already has a card, picking it again makes no
-  new card and the count stays the same.
-- Given a picked word, clicking it again removes its card and the count
-  goes down by one.
-- Given a card edited in the preview, the downloaded deck contains the
-  edited text, not the original.
+  new card, and the count stays the same.
+- Given a picked word, clicking it again removes its card.
+- Given a card edited in the preview, the deck contains the edited text.
 - Given no cards, Download writes no file and says why.
-- Given the downloaded `.apkg`, importing it into Anki succeeds and the
-  number of cards matches the header.
+- Given a card for `run` in the memory, `ran` in a new text is marked as
+  a word I already have a card for.
+- Given a PDF, each word is found on its page where it is printed; on
+  four real PDFs of 10 to 166 pages, 99.9 to 100% of the words were found
+  (planning log, 6 November 2026).
+- Given a clip from a web page, the text and cards in Read do not change.
+- Given a request from another website, the app refuses to change
+  anything.
 
 ## 5. What could stop this
 
-Pasted text is messy. Text copied from slides or a website brings titles,
-page numbers and broken lines with it, and a damaged sentence makes a
-damaged card. The simple tidy-up rules will not catch everything. The
-preview is the defence: I see every card before it is saved and can fix
-it. Formulas and tables do not survive copying at all, so a definition
-that depends on one will be incomplete.
+A PDF's text is not always clean. Scanned pages have no text at all, and
+formulas and tables come out of the text layer as they are, so a card
+from a sentence with a formula can be incomplete. The page itself is
+shown as a picture, so what I read is right even when the text behind it
+is not.
 
-It may not be faster than making cards by hand. The claim is that a click
-or a drag beats copying text into Anki, but pasting the text first is an
-extra step. I will measure it: ten cards made by hand against ten made in
-the app, from the same text.
+Web pages are messy too: menus, boxes and line breaks cut sentences. That
+is why the extension never guesses what to take from a page: I select what I
+want and right-click it, and it looks only at that paragraph to find the
+whole sentences around my selection.
 
-Two kinds of card in one page could make both awkward. If switching
-between Word and Definition mode gets in the way of reading, the first
-version keeps Definition mode and Word mode moves to a later change.
+The base form comes from a word list and is not always right (`least`
+gives `less`). The card shows it, so I can edit it.
 
-Similar tools exist for vocabulary: Readlang lets a reader click a word
-to save a flashcard. It is built around translating foreign words. Mine
-also makes cards from the definitions in my own course material, stays on
-my computer, and puts everything in the Anki deck I already use.
+The shape of a word card changed on 18 November 2026: before, the sentence
+was on the front and the word on the back. sentmine shows earlier cards as
+they were made, but a deck in Anki may hold both shapes.
 
-A web page is new ground for this project. The first version was a
-command-line tool; the sentence splitting and the deck writing carry over
-and are already tested, but the page itself is new work.
+Speed was measured, not assumed: ten cards by hand took about 3 minutes,
+ten in the app about 1 minute (9 October 2026); ten cards into Anki took
+about 30 seconds by downloading and importing the deck and about 5
+seconds with Send to Anki (4 November 2026). Each was one timing by hand.
 
-The first version needs no network, account or API, and handles no
-personal data. Course material may be copyrighted, so the demo uses a
-short text I wrote myself. The planned AI features will need an API key
-and will send text to an outside service, so they stay switched off
-unless a key is present, and the app must work fully without them.
+Similar tools exist: a web search on 14 November 2026 found Pick2anki (a
+plugin for Zotero's PDF reader), Vocabsieve and browser add-ons that send
+a word with its sentence to Anki. sentmine also makes cards from the
+definitions in my own course book, on its real pages, and brings my
+cards back while I read.
+
+Course material is copyrighted, so the demo and the promo page show only
+small parts of it, with the book named. Suggest meaning needs an API key
+and sends text to an outside service, so it stays off without a key, and
+everything else works without it. The app was built and tested on
+Windows.
 
 ## 6. Install and run
 
@@ -187,8 +225,10 @@ sentmine             # starts the reading app and opens it in the browser
 ```
 
 The page is at http://127.0.0.1:8000 and is served only to this computer.
-Stop the app with Ctrl+C in the terminal. The text and cards on the page
-are not kept between runs, so download the deck before closing.
+Stop the app with Ctrl+C in the terminal. The text on the page and the
+cards not yet sent or downloaded are not kept between runs, so send or
+download them before closing; the cards you send or download are kept in
+your card memory (below).
 
 Every card you download is remembered in your card memory, a SQLite
 database in your own user folder (on Windows `%APPDATA%\sentmine\cards.db`;
@@ -202,8 +242,40 @@ set `SENTMINE_DATABASE` to its path. A backup is a copy of that one file.
 Everything works from the keyboard too: Tab into the text, move from word
 to word with the arrow keys, and press Enter for a card (Enter again removes
 it). Shift and the arrow keys mark several words, as a drag does: Enter makes
-them the term, and the next marking its definition. A word you already have
-a card for shows that card when the keyboard reaches it.
+them a term's card, with their sentence. A word you already have a card for
+shows that card when the keyboard reaches it.
+
+One rule makes every card: **what you select (or drag over) is the term, and
+the whole sentences it touches are the passage**, even when the selection
+starts in one sentence and ends in the next (a word cut in half is made
+whole). Change either in **Edit**.
+
+**Edit** is the one place to change a card. Press it, and both sides become
+small documents of text and pictures: the Term on the front, the Passage on
+the back. Click where you want something, in either side, and then
+everything you add goes in there:
+
+- **click a sentence** in the text in Read, and the whole sentence goes in
+  (with the cursor in the Term, just the word or the words you drag over);
+  no new card is made while you edit;
+- on a PDF, **drag a box** on the page around a formula or a graph: that
+  part of the page goes in as a picture, cut from the PDF itself so it stays
+  sharp (Esc cancels the box);
+- **paste a picture** with Ctrl+V: a copied image or a screenshot
+  (Win+Shift+S);
+- on a web page, **right-click** text or an image: while a card is open in
+  Edit in the side panel, the items read *Add to the card you are editing*
+  and *Add this picture to the card you are editing*, and what you chose
+  goes in there too.
+
+When you click away from the card, a thin line shows where the next thing
+will go. Type around it as usual; to remove a picture, click it and press
+Delete; to take out a sentence, delete it like any text. **Undo** (Ctrl+Z)
+takes back the last thing put in, deleted or typed, one step at a time, and
+**Redo** (Ctrl+Y) puts it back. **Save** ends it;
+**Cancel** puts the card back as it was, pictures included. Pictures go into
+the deck file and into Anki where you put them (on a cloze card, a picture
+on the front is shown after the answer).
 
 Instead of pasting, you can open a PDF that contains text, or a `.txt` file.
 Running heads and page numbers are removed and hyphenated words rejoined;
@@ -227,19 +299,25 @@ a file it sends the file behind the Download link; for files on your computer,
 use Open a file. The article is found with Mozilla's Readability
 (`extension/vendor`, Apache 2.0).
 
-**Cards from a web page, in a side panel.** Select a sentence on a web page,
-right-click it and choose *Word card from this sentence*; or select a
-definition and choose *Definition card from this*. A panel opens beside the
-page with the selection: click a word for a word card, or, in a definition,
-drag over its term. For a definition, select the whole definition with its
-term on the page; in the panel, drag over just the term. Clips are kept apart
-from the text in Read; *Remove* takes a clip away, and its cards stay until
-you send or download them from the panel. The button's *Show my clips beside
-the page* opens the panel without a new clip. The right-click
-needs no access to the page: the browser hands over only the selected text.
+**Cards from a web page, in a side panel.** Select something on a web page,
+right-click it and choose *Make a card from this*. Its card is made at once,
+by the same rule as in Read: the selection is the term, and the whole
+sentences it touches are the passage. One word makes a word card (so `ran`
+and `run` count as one word). A panel opens beside the page with your cards.
+
+Every card has the same shape: the term on the front, the passage on the
+back with the term in bold; **Make it cloze** hides the term instead.
+The button's *Show my cards beside the page* opens the panel without a new
+card. The right-click lets
+the extension read that one tab, only then: it takes the paragraph around
+the selection (to find whole sentences), and sends it nowhere but sentmine on
+this computer.
 
 The first design, a command-line tool that picks the words from a
 known-words list, still works: `sentmine passage.txt --known known.txt
 --deck new.apkg`.
 
 To work on it and run the tests: `pip install -e ".[dev]"`, then `pytest`.
+
+The book font is Newsreader (SIL Open Font License 1.1, `src/sentmine/web/fonts/OFL.txt`), served by sentmine
+itself, never from the internet; the wordmark is drawn from its letters.
