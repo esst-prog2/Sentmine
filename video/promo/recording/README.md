@@ -25,3 +25,9 @@ solution manual to Pearl, Glymour and Jewell, which is not in the repo (copyrigh
 - `record_anki.py` records Anki asking a card, through AnkiConnect, with `winshot.py`: Windows' PrintWindow, so
   the window draws itself (copying the screen gave only the lock screen). The card is reset to new, moved into a
   deck of its own for the review, and moved back.
+
+## The tour as it is now (`record_tour2.py`, `make_tour3.py`)
+
+`record_tour2.py` records the take at 3840×2160 (1280×720 drawn at 3×; the PDF pages then come at 2400 pixels) and
+logs where each thing happens. `make_tour3.py` writes `../index.html` from that: a title card with a real crop of
+page 13, the take trimmed 0.9 s and played 1.12× faster, a camera that follows the logged places, and the end card.

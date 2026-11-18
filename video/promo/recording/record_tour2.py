@@ -1,5 +1,5 @@
 """The product tour as ONE continuous take from a real run of sentmine, sharp enough to push in on: headless Edge's
-own frames at 2560×1440 (1280×720 drawn at 2×), a drawn pointer, pages scrolled smoothly (no cuts). It logs
+own frames at 3840×2160 (1280×720 drawn at 3×), a drawn pointer, pages scrolled smoothly (no cuts). It logs
 where each thing happens (the word, the card, the buttons, the popup) so the video's camera can follow it.
 Only the wait for the AI meaning is shortened (holds over 0.6 s cut to 0.6 s there).
 python record_tour2.py <port> <out folder> <deck>"""
@@ -18,7 +18,7 @@ from cdp import Browser
 port, out, DECK = sys.argv[1], sys.argv[2], sys.argv[3]
 BASE = f"http://127.0.0.1:{port}"
 PDF = "C:/Users/User/Downloads/Causal Inference in Statistics_ Solution M - Judea Pearl.pdf"
-W, H, DPR = 1280, 720, 2.0
+W, H, DPR = 1280, 720, 3.0
 os.makedirs(out, exist_ok=True)
 frames_dir = os.path.join(out, "frames")
 os.makedirs(frames_dir, exist_ok=True)
@@ -196,7 +196,7 @@ b.cdp("Input.dispatchMouseEvent", type="mouseMoved", x=pointer[0], y=pointer[1],
 
 # --- the take -----------------------------------------------------------------------------------------------------
 b.frames = []
-b.cdp("Page.startScreencast", format="jpeg", quality=80, maxWidth=2560, maxHeight=1440, everyNthFrame=1)
+b.cdp("Page.startScreencast", format="jpeg", quality=82, maxWidth=3840, maxHeight=2160, everyNthFrame=1)
 take_start = time.time()
 b.pump(0.6)
 mark("overview", "document.querySelector('main')")
@@ -294,7 +294,7 @@ listing = os.path.join(frames_dir, "list.txt")
 open(listing, "w").write("\n".join(lines) + "\n")
 clip = os.path.join(out, "tour.mp4")
 subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", listing,
-                "-vf", "scale=2560:1440:flags=lanczos,fps=30,format=yuv420p", "-c:v", "libx264", "-crf", "20", "-preset", "slow",
+                "-vf", "scale=3840:2160:flags=lanczos,fps=30,format=yuv420p", "-c:v", "libx264", "-crf", "20", "-preset", "slow",
                 "-an", clip], check=True)
 
 
