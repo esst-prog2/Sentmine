@@ -43,12 +43,12 @@ determine`). sentmine underlines only words that really are in the sentence;
 when the model names none, the card simply has no underline.
 
 On page 5 I want to remember a term. I drag over `Simpson’s reversal`;
-the words turn blue as I drag, and the status line says
-`Term: Simpson’s reversal Now drag over its definition.` I drag over the
-sentence that explains it; a drag that starts or ends inside a sentence
-takes the whole sentence. Every card has the same shape: the term on the
-front, the passage on the back with the term in bold. Because the term is
-inside the passage, I press **Make it cloze**, which hides the term:
+the words turn blue as I drag, and the card is made at once, with the
+sentence the term is in as its passage. Every card has the same shape: the
+term on the front, the passage on the back with the term in bold. (Had the
+explanation gone on in the next sentence, **Add sentences** on the card
+would let me click that sentence to add it.) Because the term is inside the
+passage, I press **Make it cloze**, which hides the term:
 
 ```
 front:  Strangely, the experimental data revealed a [...]: Although the
@@ -237,8 +237,16 @@ set `SENTMINE_DATABASE` to its path. A backup is a copy of that one file.
 Everything works from the keyboard too: Tab into the text, move from word
 to word with the arrow keys, and press Enter for a card (Enter again removes
 it). Shift and the arrow keys mark several words, as a drag does: Enter makes
-them the term, and the next marking its definition. A word you already have
-a card for shows that card when the keyboard reaches it.
+them a term's card, with their sentence. A word you already have a card for
+shows that card when the keyboard reaches it.
+
+A card's passage is the sentence its word or term is in. To make it longer,
+press **Add sentences** on the card: its sentences light up in the text, a
+click on any other sentence adds it (in reading order), and a click on a lit
+one takes it out; **Done** or Esc ends it. A drag over more than eight words
+is not taken as a term: drag over the term, then add sentences. If you have
+changed the passage with **Edit**, a clicked sentence is added at its end and
+taking one out is left to Edit, so what you typed is kept.
 
 A card can hold pictures, such as a formula or a graph. Press **Edit** on
 it: each side becomes a small document of text and pictures. Paste a picture

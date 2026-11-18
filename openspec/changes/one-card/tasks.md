@@ -21,3 +21,9 @@
 - [x] 4.1 Headless Edge on Wikipedia's Poisson distribution: a word, a bold term, a rough selection; the earlier clip, editor, paste, picture, keyboard, gesture and place checks again
 - [x] 4.2 README, the promo page's extension section, `openspec validate one-card --strict`
 - [ ] 4.3 The reader tries it for a week of reading (needs the reader)
+
+## 5. Pictures where the cursor was; a drag makes its card; Add sentences
+
+- [x] 5.1 A picture cut from the PDF or sent from a web page goes where the cursor last was, Term or Passage; Esc leaves no mark; the editor check
+- [x] 5.2 A drag (or keyboard marking) over a term of up to 8 words makes its card at once with its sentence; a longer drag says what to do; tests and the gesture and keyboard checks
+- [x] 5.3 Add sentences: the card keeps its sentence numbers; a click adds or takes out a sentence, lit in the text; an edited passage keeps what was typed; clip numbers move when a clip is removed; tests and the gesture check

@@ -76,6 +76,7 @@ def _card_json(card: Flashcard, prefix: str = "") -> dict:
         # the address carries the picture's name, which comes from its content, so the browser never shows an old one
         "pictures": {name: f"{address}{name}" for name, _ in card.pictures},  # for the editor: where each picture is served
         "source": card.source,  # "read" or "clip"
+        "sentences": card.sentences,  # the sentences of its text in its passage, for Add sentences
         "origin": card.origin_text,  # where it came from: "primer.pdf, p. 13", a web page's title
         "origin_url": card.origin_url,
     }
@@ -416,7 +417,14 @@ def create_app(
 
     @both("POST", "/api/definition")
     def add_definition():
-        result, card = reading.add_definition(sent("term"), sent("passage"), anyway())
+        body = request.get_json(silent=True) or {}
+        if "sentence" in body:   # a drag over the term: its sentence, or the sentences it ran across
+            last = body.get("last", body.get("sentence"))
+            if not isinstance(last, int) or isinstance(last, bool):
+                raise Problem("The request has no usable 'last'.")
+            result, card = reading.add_definition(sent("term"), anyway=anyway(), sentences=(sent("sentence", int), last))
+        else:
+            result, card = reading.add_definition(sent("term"), sent("passage"), anyway())
         place_in_pdf(result, card)
         return answer(result, card)
 
@@ -429,6 +437,11 @@ def create_app(
     def delete_card(card_id: int):
         reading.delete(card_id)
         return state("Card deleted.")
+
+    @both("PUT", "/api/cards/<int:card_id>/sentences")
+    def toggle_sentence(card_id: int):
+        card, added = reading.toggle_sentence(card_id, sent("sentence", int))
+        return state(("Sentence added to" if added else "Sentence taken out of") + f" the card for '{card.word or card.term}'.")
 
     @both("PUT", "/api/cards/<int:card_id>/cloze")
     def switch_cloze(card_id: int):

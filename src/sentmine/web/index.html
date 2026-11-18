@@ -16,23 +16,26 @@ try {
     color-scheme: light dark;
     --page: #f6f5f1; --panel: #ffffff; --ink: #1f2328; --soft: #5c6470; --line: #d9d6cd; --hover: #ecebe5;
     --accent: #1a5fd0; --accent-hover: #154fae; --on-accent: #ffffff; --selection: #c8dafc;
-    --picked: #ffe27a; --term: #bfe3c6; --warn: #b3261e;
+    --picked: #ffe27a; --term: #bfe3c6; --warn: #b3261e; --passage: rgba(26, 95, 208, 0.2);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme=light]) {
       --page: #16181c; --panel: #1f2227; --ink: #e8e6e1; --soft: #a2a8b3; --line: #343841; --hover: #2a2e35;
       --accent: #6ea8ff; --accent-hover: #8fbcff; --on-accent: #0d1117; --selection: #2d4a7a;
-      --picked: #7a6410; --term: #235c33; --warn: #ff8a80;
+      --picked: #7a6410; --term: #235c33; --warn: #ff8a80; --passage: rgba(110, 168, 255, 0.3);
     }
   }
   :root[data-theme=dark] {
         --page: #16181c; --panel: #1f2227; --ink: #e8e6e1; --soft: #a2a8b3; --line: #343841; --hover: #2a2e35;
         --accent: #6ea8ff; --accent-hover: #8fbcff; --on-accent: #0d1117; --selection: #2d4a7a;
-        --picked: #7a6410; --term: #235c33; --warn: #ff8a80;
+        --picked: #7a6410; --term: #235c33; --warn: #ff8a80; --passage: rgba(110, 168, 255, 0.3);
   }
   :root[data-theme=light] { color-scheme: light; }
   :root[data-theme=dark] { color-scheme: dark; }
   * { box-sizing: border-box; }
+  /* Add sentences: a click picks a sentence; the card it is for stands out */
+  body.adding #text .w { cursor: copy; }
+  .card.adding-to { box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; margin-left: -12px; }
   body {
     margin: 0; background: var(--page); color: var(--ink); accent-color: var(--accent);
     font: 16px/1.5 system-ui, "Segoe UI", sans-serif;
@@ -219,6 +222,7 @@ try {
     font: 0.8125rem system-ui, sans-serif; color: var(--soft); margin-bottom: 4px; }
   body > header { view-transition-name: app-header; }
 </style>
+<style id="passage-style"></style>
 </head>
 <body>
 
@@ -250,7 +254,7 @@ try {
         <input type="file" id="file" accept=".pdf,.txt">
       </label>
     </details>
-    <div id="text" class="empty" tabindex="0" aria-label="The text. Arrow keys move from word to word; Enter makes a card from the word; Shift and the arrow keys mark a term or a definition, then Enter.">No text yet.</div>
+    <div id="text" class="empty" tabindex="0" aria-label="The text. Arrow keys move from word to word; Enter makes a card from the word; Shift and the arrow keys mark a term, then Enter makes its card.">No text yet.</div>
     <div id="pdf-nav" hidden>
       <label>Page <input type="number" id="page-number" min="1" value="1" aria-label="Go to page"> of <span id="page-count">1</span></label>
       <details id="contents" hidden><summary>Contents</summary><ol id="contents-list"></ol></details>
@@ -260,7 +264,7 @@ try {
   <section>
     <h2>Cards</h2>
     <div id="cards"></div>
-    <div id="no-cards">No cards yet. Click a word for a word card. For a definition card, drag over a term, then over its definition.</div>
+    <div id="no-cards">No cards yet. Click a word for its card, or drag over a term: its sentence comes with it.</div>
   </section>
 </main>
 
@@ -306,6 +310,7 @@ const HINT = CLIP
 let state = { paragraphs: [], cards: [], count_text: "0 cards" };
 let term = null;       // the term dragged over, while its definition is still to be marked
 let editing = null;    // the id of the card being edited
+let adding = null;     // the id of the card whose passage takes or gives up a clicked sentence (Add sentences)
 let draft = null;      // what is typed in Edit, kept while the card is drawn again: { id, front, back }
 let lastPick = null;   // the last word click or definition sent, so "Make it anyway" can send it again
 let shownPdf = null;   // the version of the PDF whose pages are drawn, so its pictures are not drawn again
@@ -750,7 +755,7 @@ function endPageDrag(event) {
   for (const box of $("text").querySelectorAll(".pdf-page .w.dragged")) box.classList.remove("dragged");
   if (drag.moved) {
     const [first, last] = draggedWords(drag);
-    chose(textBetween(first, last));
+    chose(textBetween(first, last), first[0], last[0]);
   } else if (event.target === drag.from) {
     pickWord(drag.from);   // a press and release on a word without moving: a click
   }
@@ -826,6 +831,22 @@ function drawCard(card) {
   const buttons = element("div", "buttons");
   buttons.append(kind, edit, remove);
   if (card.origin) box.append(element("div", "origin", "From " + card.origin));
+  if (adding === card.id) {
+    box.classList.add("adding-to");
+    const done = element("button", "main small", "Done");
+    done.addEventListener("click", stopAdding);
+    buttons.append(done);
+    box.append(element("div", "paste-hint", "Click a sentence in the text to add it; click a lit one to take it out."));
+  } else if ((card.sentences || []).length && card.source === (CLIP ? "clip" : "read") && editing === null) {
+    const more = element("button", "small", "Add sentences");
+    more.title = "Click sentences in the text to add them to the passage";
+    more.addEventListener("click", () => {
+      adding = card.id;
+      say("Click a sentence to add it to the passage of '" + card.front.split("\n")[0] + "'; click a lit one to take it out. Done or Esc when it is right.");
+      draw();
+    });
+    buttons.append(more);
+  }
   if (card.cloze || card.can_cloze) {
     const other = element("button", "small", card.cloze ? "Make it term → passage" : "Make it cloze");
     other.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/cloze", { cloze: !card.cloze }));
@@ -1106,6 +1127,7 @@ function draw() {
   $("count").textContent = state.count_text;
   $("cards").replaceChildren(...state.cards.map(drawCard));
   $("no-cards").hidden = state.cards.length > 0;
+  markPassage();
 }
 
 // One handler tells a click from a drag. It listens on the document because a drag may end
@@ -1126,11 +1148,14 @@ document.addEventListener("mouseup", (event) => {
   }
   if (inText) {
     const clipped = CLIP && term === null ? clipOf(selection.anchorNode) : null;
+    const over = [...$("text").querySelectorAll(".w")].filter((word) => selection.containsNode(word, true));
     selection.removeAllRanges();
-    if (clipped) {
+    if (adding !== null) {
+      say("While adding sentences, click a sentence; a drag does nothing. Press Done when the passage is right.");
+    } else if (clipped) {
       pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
-    } else {
-      chose(selected);
+    } else if (over.length) {
+      chose(selected, Number(over[0].dataset.sentence), Number(over[over.length - 1].dataset.sentence));
     }
     return;
   }
@@ -1148,21 +1173,49 @@ function clipOf(node) {   // the clip a drag was in: a drag over a term makes it
   return element ? element.closest("#text .clip p") : null;
 }
 
-function chose(selected) {   // a drag: the term, or the definition of the waiting term
+// A drag over a term (or the marked words, from the keyboard) makes its card at once: the term, and the sentence it
+// is in (the sentences, when it runs across two). More of the text goes into the passage with Add sentences.
+const LONGEST_TERM = 8;   // words
+
+function chose(selected, first, last) {
   if (!selected) return;
-  if (term === null) {
-    term = termOf(selected);
-    say("");
+  if (adding !== null) {
+    say("While adding sentences, click a sentence; a drag does nothing. Press Done when the passage is right.");
     return;
   }
-  const chosen = term;
-  term = null;
-  pick(API + "/definition", { term: chosen, passage: selected });
+  if (selected.trim().split(/\s+/).length > LONGEST_TERM) {
+    say("Drag over just the term (up to " + LONGEST_TERM + " words): its sentence comes with it. " +
+      "For a longer passage, make the card, then press Add sentences on it.", true);
+    return;
+  }
+  pick(API + "/definition", { term: termOf(selected), sentence: first, last });
 }
 
 function pickWord(box) {
-  term = null;   // a click on a word drops a waiting term
+  term = null;
+  if (adding !== null) {   // Add sentences: the click is for the sentence, not a card for the word
+    call("PUT", API + "/cards/" + adding + "/sentences", { sentence: Number(box.dataset.sentence) });
+    return;
+  }
   pick(API + "/word", { sentence: Number(box.dataset.sentence), word: Number(box.dataset.word) });
+}
+
+function stopAdding() {
+  adding = null;
+  document.body.classList.remove("adding");
+  draw();
+}
+
+// The sentences of the passage, lit up in the text while sentences are added: one rule for every word of them,
+// so the words of a PDF page drawn later are lit too.
+function markPassage() {
+  const card = adding === null ? null : state.cards.find((one) => one.id === adding);
+  if (adding !== null && !card) adding = null;   // deleted meanwhile
+  document.body.classList.toggle("adding", adding !== null);
+  $("passage-style").textContent = card
+    ? card.sentences.map((number) => '#text .w[data-sentence="' + number + '"]').join(", ") +
+      " { background: var(--passage); border-radius: 3px; }"
+    : "";
 }
 
 document.addEventListener("keydown", (event) => {
@@ -1170,6 +1223,7 @@ document.addEventListener("keydown", (event) => {
     term = null;
     say("");
   }
+  if (event.key === "Escape" && adding !== null) stopAdding();
 });
 
 // The keyboard way to make cards: Tab into the text, the arrow keys move from word to word, Enter makes a
@@ -1252,7 +1306,7 @@ $("text").addEventListener("keydown", (event) => {
     const clipped = CLIP && term === null ? clipOf(range[0]) : null;
     clearMarks();
     if (clipped) pick(API + "/definition", { term: termOf(selected), passage: clipped.textContent.trim() });
-    else chose(selected);
+    else chose(selected, Number(range[0].dataset.sentence), Number(range[range.length - 1].dataset.sentence));
     return;
   }
   if (event.key === "Escape" && marked().length > 0) clearMarks();

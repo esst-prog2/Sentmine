@@ -45,6 +45,8 @@ class Flashcard:
     sentence: str = ""  # word cards: the sentence the word was clicked in, for Suggest meaning
     meaning: str = ""  # word cards: the suggested meaning last put on the back, so a new one replaces it
     key_part: str = ""  # word cards: the words of the sentence that show the suggested meaning, underlined on the back
+    sentences: list[int] = field(default_factory=list)  # the sentences of its session's text its passage is made of
+    made_passage: str = ""  # the passage as made from those sentences, so Add sentences can find it in the back
     old_layout: bool = False  # a word card remembered before 2026-11-18: the sentence on the front, the word on the back
     cloze: bool = False  # the passage with the term hidden, instead of term -> passage
     pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a page, on the back: (file name, PNG)
@@ -340,6 +342,13 @@ class Session:
                 card.place = None   # its sentence is gone
             elif sentence >= first + count:
                 card.place = (sentence - count, word)
+        for card in self.own_cards:
+            if not card.sentences:
+                continue
+            kept = [n if n < first else n - count for n in card.sentences if not first <= n < first + count]
+            if len(kept) < len(card.sentences):
+                card.made_passage = ""   # some of its sentences are gone: Add sentences can still add at the end
+            card.sentences = kept
 
     def meet(self, cards: list[tuple[str, str]], day: str | None = None) -> None:
         """Record the remembered cards (kind, key) met in this text. A memory that cannot be written records nothing."""
@@ -424,6 +433,7 @@ class Session:
             card = Flashcard(
                 0, WORD, word_back(text, base), sentences[sentence], key, word=text, place=(sentence, word),
                 earlier=earlier.date if earlier else "", sentence=sentences[sentence],
+                sentences=[sentence], made_passage=sentences[sentence],
             )
             return ADDED, self._add(card)
         if existing.place == (sentence, word) and existing.source == self.name:
@@ -431,10 +441,20 @@ class Session:
             return REMOVED, existing
         return DUPLICATE, existing
 
-    def add_definition(self, term: str, passage: str, anyway: bool = False) -> tuple[str, Flashcard | Entry]:
-        """A term and the passage the reader marked as its definition; the memory is checked as for words."""
+    def add_definition(self, term: str, passage: str = "", anyway: bool = False,
+                       sentences: tuple[int, int] | None = None) -> tuple[str, Flashcard | Entry]:
+        """A term and its passage: the sentences `sentences` (first, last) of the text, as a drag over the term
+        gives them, or a passage the reader marked, taken as the whole sentences of the text it touches. The memory
+        is checked as for words."""
         term = " ".join(term.split())
-        passage = self._whole_sentences_of(tidy_selection(passage))
+        if sentences is not None:
+            first, last = sorted(sentences)
+            if not 0 <= first <= last < len(self.sentences):
+                raise Problem("That sentence is not in the text.")
+            numbers = list(range(first, last + 1))
+            passage = self._passage_of(numbers)
+        else:
+            passage, numbers = self._whole_sentences_of(tidy_selection(passage))
         if not term:
             raise Problem("No term is selected: select the term first.")
         if not passage:
@@ -446,12 +466,51 @@ class Session:
         earlier = self._earlier(DEFINITION, term.casefold())
         if earlier is not None and not anyway:
             return EARLIER, earlier
-        card = Flashcard(0, DEFINITION, term, passage, key, earlier=earlier.date if earlier else "")
+        card = Flashcard(0, DEFINITION, term, passage, key, earlier=earlier.date if earlier else "",
+                         sentences=numbers, made_passage=passage if numbers else "")
         return ADDED, self._add(card)
 
-    def _whole_sentences_of(self, passage: str) -> str:
-        """The passage as the whole sentences of the text it touches, paragraph breaks kept; as it is when it is
-        not found in the text (as typed)."""
+    def _passage_of(self, numbers) -> str:
+        """The sentences `numbers` of the text, in reading order, a paragraph break between paragraphs."""
+        wanted, parts, at = set(numbers), [], 0
+        for paragraph in self.paragraphs:
+            chosen = [sentence for index, sentence in enumerate(paragraph, at) if index in wanted]
+            if chosen:
+                parts.append(" ".join(chosen))
+            at += len(paragraph)
+        return "\n\n".join(parts)
+
+    def toggle_sentence(self, card_id: int, number: int) -> tuple[Flashcard, bool]:
+        """Add sentence `number` of the text to a card's passage, or take it out when it is in; True when added.
+        A passage changed by hand keeps what was typed: a sentence is then added at its end, and none taken out."""
+        card = self._card(card_id)
+        if card.source != self.name:
+            raise Problem("Add sentences from the text the card came from: in Read for a card from Read, in the side panel for one from a web page.")
+        if not card.sentences:
+            raise Problem("The text this card came from is not here any more; change its passage with Edit.")
+        if not 0 <= number < len(self.sentences):
+            raise Problem("That sentence is not in the text.")
+        chosen = set(card.sentences)
+        adding = number not in chosen
+        if not adding and len(chosen) == 1:
+            raise Problem("A passage needs at least one sentence; delete the card to remove it.")
+        chosen = chosen | {number} if adding else chosen - {number}
+        passage = self._passage_of(chosen)
+        if card.made_passage and card.made_passage in card.back:
+            card.back = card.back.replace(card.made_passage, passage, 1)
+            card.made_passage = passage
+        elif adding:
+            card.back = card.back.rstrip() + "\n\n" + self.sentences[number]
+            card.made_passage = ""
+        else:
+            raise Problem("You changed this passage with Edit, so take the sentence out there.")
+        card.sentences = sorted(chosen)
+        card.cloze = card.cloze and card.can_cloze
+        return card, adding
+
+    def _whole_sentences_of(self, passage: str) -> tuple[str, list[int]]:
+        """The passage as the whole sentences of the text it touches, paragraph breaks kept, and their numbers;
+        as it is, with no numbers, when it is not found in the text (as typed)."""
         spans, flat, paragraph_of = [], "", []
         for number, paragraph in enumerate(self.paragraphs):
             for sentence in paragraph:
@@ -463,22 +522,15 @@ class Session:
         wanted = _ANY_SPACE.sub(" ", passage).strip()
         at = flat.find(wanted) if wanted else -1
         if at < 0:
-            return passage
+            return passage, []
         end = at + len(wanted)
         touched = [index for index, (a, b) in enumerate(spans) if a < end and b > at]
-        sentences = self.sentences
-        parts: list[list[str]] = []
-        for index in touched:
-            if parts and paragraph_of[index] == paragraph_of[touched[touched.index(index) - 1]]:
-                parts[-1].append(sentences[index])
-            else:
-                parts.append([sentences[index]])
-        return "\n\n".join(" ".join(part) for part in parts)
+        return self._passage_of(touched), touched
 
     def edit(self, card_id: int, front: str, back: str) -> Flashcard:
         card = self._card(card_id)
         held = {name for name, _ in card.pictures}
-        front, back = (PICTURE.sub(lambda found: found.group() if found.group(1) in held else "\n", side.replace("￼", "")).strip()
+        front, back = (PICTURE.sub(lambda found: found.group() if found.group(1) in held else "\n", side.replace("\ufffc", "")).strip()
                        for side in (front, back))   # only its own pictures, on either side; never the page's cursor mark
         if not front or not back:
             raise Problem("A card needs a front and a back; delete the card to remove it.")

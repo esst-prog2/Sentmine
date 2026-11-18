@@ -35,3 +35,14 @@ A word card remembered before this change, with its sentence on the front and th
 #### Scenario: Words that are not in the sentence
 - **WHEN** the model names words that are not in the sentence, or the whole sentence
 - **THEN** the meaning is put on the card and nothing is underlined
+
+### Requirement: Add sentences
+A card made from the text in Read, or from a clip in the side panel, SHALL offer Add sentences in that same view. While it is on, the sentences of the card's passage SHALL be lit in the text, a click on a word SHALL add that word's whole sentence to the passage in reading order instead of making a card, and a click on a lit sentence SHALL take it out, unless it is the last one. Done or Esc SHALL end it. When the passage was changed with Edit, a clicked sentence SHALL be added at the end of the back, taking one out SHALL be refused with a message, and what was typed SHALL be kept. A suggested meaning and the pictures on the back SHALL stay.
+
+#### Scenario: A sentence further on
+- **WHEN** the reader presses Add sentences on the card for `random` and clicks a word of the sentence before it
+- **THEN** the passage is that sentence, then the card's own sentence, and both are lit
+
+#### Scenario: Taking one out
+- **WHEN** the reader clicks a lit sentence that is not the only one
+- **THEN** it leaves the passage and is no longer lit
