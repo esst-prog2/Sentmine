@@ -140,3 +140,11 @@ def test_the_deck_file_name_is_safe(name, file_name):
 
 def test_the_app_listens_on_this_computer_only():
     assert HOST == "127.0.0.1"
+
+
+def test_the_book_font_is_served_by_sentmine_itself():
+    client = create_app().test_client()
+    response = client.get("/fonts/Newsreader.woff")
+    assert response.status_code == 200 and response.mimetype == "font/woff" and response.data[:4] == b"wOFF"
+    assert client.get("/fonts/../app.py").status_code == 404
+    assert client.get("/fonts/other.woff").status_code == 404

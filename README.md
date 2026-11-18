@@ -319,5 +319,5 @@ known-words list, still works: `sentmine passage.txt --known known.txt
 
 To work on it and run the tests: `pip install -e ".[dev]"`, then `pytest`.
 
-The sentmine wordmark is drawn from the letters of Nunito (SIL Open Font License 1.1); no font is loaded by
-the app.
+The book font is Newsreader (SIL Open Font License 1.1, `src/sentmine/web/fonts/OFL.txt`), served by sentmine
+itself, never from the internet; the wordmark is drawn from its letters.

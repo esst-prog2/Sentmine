@@ -35,6 +35,8 @@ BROWSER_DELAY_SECONDS = 0.8
 
 _PAGE = Path(__file__).parent / "web" / "index.html"
 _CARDS_PAGE = Path(__file__).parent / "web" / "cards.html"
+_FONTS = Path(__file__).parent / "web" / "fonts"   # Newsreader (SIL OFL 1.1), served from this computer
+_FONT_FILES = {"Newsreader.woff", "Newsreader-Italic.woff"}
 _DATA_MARK = "<!-- first data -->"  # where a page gets the data it first shows
 _EXTENSION_ORIGINS = ("chrome-extension://", "extension://", "moz-extension://")  # the browser extension
 _NOT_IN_A_FILE_NAME = re.compile(r"[^\w \-]+")
@@ -350,6 +352,15 @@ def create_app(
     @both("GET", "/api/version")
     def version():
         return jsonify(deck=deck_version())
+
+    @app.get("/fonts/<name>")
+    def font(name: str):
+        """The page's book font, from sentmine itself: no font is fetched from the internet."""
+        if name not in _FONT_FILES:
+            return jsonify(error="No such font."), 404
+        response = Response((_FONTS / name).read_bytes(), mimetype="font/woff")
+        response.headers["Cache-Control"] = "public, max-age=86400"
+        return response
 
     @app.get("/api/hello")
     def hello():
