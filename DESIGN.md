@@ -226,7 +226,7 @@ Supporting tokens: `--code-head` `#2b2620` (install-block header), `--code-selec
 
 Full-bleed bands with a fluid side gutter (`gutter`, 16 to 48px); sections separated by a 1px hairline top border and `section-y` vertical padding. Content is left-aligned; prose is held to a measure.
 
-- **Section order as shipped:** opening; video (the tour); One card, five steps; Your cards come back while you read (with the video "One word, one week" under it); Formulas and graphs on the card; Cards from web pages, too (with the video "Your book and the web" under it); Why I built it; Measured, with sources; Try it; footer.
+- **Section order as shipped:** opening; video (the tour); One card, five steps; Your cards come back while you read; Formulas and graphs on the card; Cards from web pages, too; Why I built it; Measured, with sources; Try it; footer.
 - **Opening:** headline and one line, then the book-sentence frame full width, then two equal columns (the card it made; the same word twelve pages later), then a caption.
 - **How it works:** steps `minmax(0, 1fr)` beside a sticky deck `minmax(0, 24rem)`. The deck is sticky at `top: var(--below-bar)`.
 - **Comes back / Formulas / Browser:** two columns, picture and text, vertically centred.
@@ -283,7 +283,7 @@ A title, one paragraph, and a cropped real screenshot in a lifted frame that lin
 Facts: a panel with claim and dated source per row. Install: two slabs, a dark header with Copy over an ink code block. Footer: what comes next, the course attribution, the source link.
 
 ### Videos
-Three 30-second films, no sound, each in a two-column `.film` block (video 2fr, caption and the lines it says 1fr): the tour under its own heading near the top, the other two under the sections they show. Each `<video>` has `preload="none"` and a poster that is the film's own opening card (designed, never a frame from the middle), so the page stays light and looks finished before play. The films use the page's look: paper, Newsreader captions on a paper card low in the frame, a yellow day or place tag, the wordmark and the address at the end. Their sources are HyperFrames projects in `video/promo` (the tour), `video/story` and `video/web`.
+One 30-second film, the tour, no sound, in a two-column `.film` block under its own heading near the top (video 2fr, caption and the lines it says 1fr). The `<video>` has `preload="none"` and a poster that is the film's own opening card (designed, never a frame from the middle), so the page stays light and looks finished before play. Homework 10 asks for one video; two more films were made ("One word, one week" and "Your book and the web") and kept in the repo, not on the page. The films use the page's look: paper, Newsreader captions on a paper card low in the frame, a yellow day or place tag, the wordmark and the address at the end. Its source is the HyperFrames project in `video/promo`; the other two are in `video/story` and `video/web`, their films in `docs/video/`.
 
 ### Motion
 The falling cards (above); **settle** (`.5s cubic-bezier(.16, 1, .3, 1)`), a fade from `--picked-soft` on the deck card that just changed; .15s colour transitions on hover. Under `prefers-reduced-motion: reduce` all of it stops and scrolling is instant.
@@ -314,8 +314,8 @@ The falling cards (above); **settle** (`.5s cubic-bezier(.16, 1, .3, 1)`), a fad
 - `docs/img/4-send-to-anki.png` and its crop `step-4-send.png`: from the run of 2026-11-14 with Anki open, before the new look (said so on the page).
 - `docs/img/7-side-panel.png`: the extension's side panel at 400 px in a real run on 2026-11-18, with two cards made from Wikipedia's *Causal inference* article (CC BY-SA 4.0), credited on the page.
 - `docs/video/sentmine-tour.mp4`: one continuous take of a real run of sentmine on 2026-11-18, recorded at 3840×2160 in headless Edge with a drawn pointer, trimmed 0.9 s and played 1.12× faster; only the wait for the AI meaning is shortened (said in its caption). It opens on a title card with a real crop of page 13 (`video/promo/assets/tour/page13-sentence.png`), which is also its poster.
-- `docs/video/sentmine-story.mp4`: real screens recorded on 2026-11-18: sentmine in headless Edge, and Anki's own window asking the card, recorded with Windows' PrintWindow; the days in it are the story's (said in the film and its caption).
-- `docs/video/sentmine-web.mp4`: real screens recorded on 2026-11-18: Wikipedia's *Simpson's paradox* (CC BY-SA 4.0) in headless Edge beside sentmine's side-panel view, and the book in sentmine; the browser's right-click menu is named in a caption, not shown.
+- `docs/video/sentmine-story.mp4` (not on the page): real screens recorded on 2026-11-18: sentmine in headless Edge, and Anki's own window asking the card, recorded with Windows' PrintWindow; the days in it are the story's (said in the film and its caption).
+- `docs/video/sentmine-web.mp4` (not on the page): real screens recorded on 2026-11-18: Wikipedia's *Simpson's paradox* (CC BY-SA 4.0) in headless Edge beside sentmine's side-panel view, and the book in sentmine; the browser's right-click menu is named in a caption, not shown.
 - The opening card's meanings: gpt-5-nano's answers through sentmine's Suggest meaning on 2026-11-18, uncorrected.
 - `docs/fonts/`: Newsreader by Production Type, SIL Open Font License (`OFL.txt` beside it), subset to WOFF.
 - No generated, stock or AI-made images.

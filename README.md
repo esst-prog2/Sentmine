@@ -1,8 +1,7 @@
 # sentmine
 
-Promo page: https://esst-prog2.github.io/Sentmine/ (with three 30-second videos
-recorded from real runs: the whole task, one word over a week with Anki, and
-the book and the web in one deck)
+Promo page: https://esst-prog2.github.io/Sentmine/ (with a 30-second video of
+the whole task, recorded from a real run)
 
 A small reading app that runs on my own computer. I open a PDF or paste a
 text I am reading and turn parts of it into Anki flashcards as I go: a new
