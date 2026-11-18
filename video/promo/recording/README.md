@@ -1,5 +1,10 @@
 # Recording the tour
 
+The tour now on the page (since 2026-11-18, evening) is ONE continuous take made by `record_tour2.py`: 2560×1440
+(1280×720 drawn at 2×) so the camera can push in sharply, pages scrolled smoothly instead of cut, and a log of where
+each thing happens (`../assets/tour/tour.json`) that the composition's camera follows. The text below is about the
+first version (`record_tour.py`), kept for the record.
+
 The five clips in `../assets/tour/` were recorded from one real run of sentmine on 2026-11-18:
 headless Edge's own screen frames (DevTools `Page.startScreencast`) while `record_tour.py`
 moves a drawn pointer and clicks. The app ran with an empty card memory and Suggest meaning on;
