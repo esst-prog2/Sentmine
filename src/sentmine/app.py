@@ -433,7 +433,7 @@ def create_app(
             raise Problem("The request has no usable 'cloze'.")
         card = reading.set_cloze(card_id, cloze)
         if card.cloze:
-            return state(f"Now a cloze card: '{card.front}' is hidden in the passage.")
+            return state(f"Now a cloze card: '{card.term}' is hidden in the passage.")
         return state("Now a term → passage card.")
 
     @both("POST", "/api/cards/<int:card_id>/meaning")
@@ -462,7 +462,7 @@ def create_app(
             except ValueError as error:
                 raise Problem(str(error)) from error
         card = reading.add_picture(card_id, png)
-        return state(f"Picture added to the card for '{card.word or card.front}'. Edit the card to move or remove it.")
+        return state(f"Picture added to the card for '{card.word or card.term}'. Edit the card to move or remove it.")
 
     @both("GET", "/api/cards/<int:card_id>/pictures/<name>")
     def card_picture(card_id: int, name: str):

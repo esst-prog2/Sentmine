@@ -25,4 +25,6 @@
 ## 5. Wrap-up
 
 - [x] 5.1 README, the whole suite, `openspec validate card-pictures --strict`
+- [x] 4.6 Pictures on the front too: both sides are documents; cloze shows the front's pictures after the answer; tests and headless Edge
+
 - [ ] 5.2 The reader tries it on a formula and a graph (needs the reader)

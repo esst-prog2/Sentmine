@@ -1,11 +1,15 @@
 ## ADDED Requirements
 
-### Requirement: The back of a card is a small document
-Pressing Edit on a card SHALL open its back (the Passage, on a definition card) as an editable document of text and pictures, each picture at the place the reader put it. The reader SHALL be able to type above and below a picture, and remove a picture by selecting it (a click) and pressing Delete, or by Backspace or Delete beside it. Save SHALL keep the arrangement, and a picture removed from the text SHALL be removed from the card. The front (Term) SHALL stay plain text. Opening Edit SHALL make that card the one pictures from a web page go to; there SHALL be no separate button for choosing it.
+### Requirement: Each side of a card is a small document
+Pressing Edit on a card SHALL open its front and its back as editable documents of text and pictures, each picture at the place the reader put it, on either side. The reader SHALL be able to type above and below a picture, and remove a picture by selecting it (a click) and pressing Delete, or by Backspace or Delete beside it. Save SHALL keep the arrangement, and a picture removed from both sides SHALL be removed from the card. A cloze card SHALL hide the front's text and show the front's pictures after the answer; the memory SHALL keep each side's text with [picture] where a picture was; a suggested meaning SHALL be asked with the sentence's text only. Opening Edit SHALL make that card the one pictures from a web page go to; there SHALL be no separate button for choosing it.
 
 #### Scenario: A line under a picture
 - **WHEN** the reader edits a card, pastes a picture after the first line, types a line under it, and saves
 - **THEN** the card's back shows the first line, the picture, then the new line, in that order
+
+#### Scenario: A graph on the front
+- **WHEN** the reader edits a card, puts the cursor in the front, pastes a graph, and saves
+- **THEN** the card's front shows its text and the graph
 
 #### Scenario: Removing a picture
 - **WHEN** the reader clicks a picture in the editor, presses Delete, and saves
@@ -34,7 +38,7 @@ On a web page, the extension SHALL offer *Add this picture to the card you last 
 - **THEN** the picture goes on the first card, not the newest, and the editor shows it next to the typed word
 
 ### Requirement: Pasting a picture
-Pasting an image (a copied picture or a screenshot) in Read or in the side panel SHALL put it in the back of the card being edited, where the cursor is (at the end when the cursor is in the front), or else at the end of the card last made or edited. It SHALL be stored as a PNG no wider than 1600 pixels. What is typed in the editor SHALL be kept. Pasted text SHALL be pasted as usual. With no card, the page SHALL say to make one first.
+Pasting an image (a copied picture or a screenshot) in Read or in the side panel SHALL put it in the card being edited, where the cursor is on either side (at the end of the back when the cursor is in neither), or else at the end of the card last made or edited. It SHALL be stored as a PNG no wider than 1600 pixels. What is typed in the editor SHALL be kept. Pasted text SHALL be pasted as usual. With no card, the page SHALL say to make one first.
 
 #### Scenario: A screenshot while editing
 - **WHEN** the reader is editing a card, has typed two lines, puts the cursor after the first, and pastes a screenshot

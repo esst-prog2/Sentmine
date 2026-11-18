@@ -56,22 +56,32 @@ class Flashcard:
         return self.key.split(":", 1)[1]
 
     @property
+    def term(self) -> str:
+        """The front without its pictures: the term a cloze card hides."""
+        return without_pictures(self.front)
+
+    @property
     def can_cloze(self) -> bool:
         """A definition card whose term appears in its passage, so there is something to hide."""
-        return self.kind == DEFINITION and _term_pattern(self.front).search(without_pictures(self.back)) is not None
+        return self.kind == DEFINITION and bool(self.term) and _term_pattern(self.term).search(without_pictures(self.back)) is not None
+
+    @property
+    def _front_pictures_html(self) -> str:
+        """A cloze card has no front of its own: the front's pictures go after the answer."""
+        return "".join(f'<div><img src="{name}"></div>' for name in PICTURE.findall(self.front))
 
     @property
     def front_html(self) -> str:
         if self.kind == WORD:
-            return card_front(self.front, self.word).replace("\n", "<br>")
+            return _with_pictures(self.front, lambda part: card_front(part, self.word).replace("\n", "<br>"))
         if self.cloze:
-            return _marked_html(self.front, self.back, lambda found: "[...]")
+            return _marked_html(self.term, self.back, lambda found: "[...]")
         return _plain_html(self.front)
 
     @property
     def back_html(self) -> str:
         if self.cloze:
-            return _marked_html(self.front, self.back, lambda found: "<b>" + found + "</b>")
+            return _marked_html(self.term, self.back, lambda found: "<b>" + found + "</b>") + self._front_pictures_html
         return _plain_html(self.back)
 
     @property
@@ -95,7 +105,8 @@ class Flashcard:
         pictures, and the source under it."""
         media = tuple(self.pictures)
         if self.cloze:
-            return Note((_marked_html(self.front, self.back, lambda found: "{{c1::" + found + "}}"), self.source_html),
+            return Note((_marked_html(self.term, self.back, lambda found: "{{c1::" + found + "}}"),
+                         self._front_pictures_html + self.source_html),
                         cloze=True, media=media)
         return Note((self.front_html, self.back_html + self.source_html), media=media)
 
@@ -377,13 +388,13 @@ class Session:
 
     def edit(self, card_id: int, front: str, back: str) -> Flashcard:
         card = self._card(card_id)
-        front, back = without_pictures(front), back.strip()   # the front is text only
         held = {name for name, _ in card.pictures}
-        back = PICTURE.sub(lambda found: found.group() if found.group(1) in held else "\n", back).strip()   # only its own pictures
+        front, back = (PICTURE.sub(lambda found: found.group() if found.group(1) in held else "\n", side).strip()
+                       for side in (front, back))   # only its own pictures, on either side
         if not front or not back:
             raise Problem("A card needs a front and a back; delete the card to remove it.")
         card.front, card.back = front, back
-        placed = set(PICTURE.findall(back))
+        placed = set(PICTURE.findall(front)) | set(PICTURE.findall(back))
         card.pictures[:] = [(name, png) for name, png in card.pictures if name in placed]   # a picture taken out of the text is gone
         card.cloze = card.cloze and card.can_cloze  # the edit may have taken the term out of the passage
         return card
@@ -394,7 +405,7 @@ class Session:
         if card.kind != DEFINITION:
             raise Problem("Only definition cards can be cloze cards.")
         if cloze and not card.can_cloze:
-            raise Problem(f"'{card.front}' is not in the passage, so there is nothing to hide.")
+            raise Problem(f"'{card.term}' is not in the passage, so there is nothing to hide.")
         card.cloze = cloze
         return card
 
@@ -402,12 +413,13 @@ class Session:
         self.cards.remove(self._card(card_id))
 
     def add_picture(self, card_id: int, png: bytes) -> Flashcard:
-        """Put a picture (a part of a PDF page) on the back of a card; its file name comes from its content."""
+        """Put a picture at the end of a card's back, unless it is on the card already; its file name comes
+        from its content."""
         card = self._card(card_id)
         name = "sentmine-" + hashlib.sha256(png).hexdigest()[:16] + ".png"
         if name not in {known for known, _ in card.pictures}:
             card.pictures.append((name, png))
-        if name not in PICTURE.findall(card.back):
+        if name not in PICTURE.findall(card.front) + PICTURE.findall(card.back):
             card.back = card.back + "\n" + picture_place(name)   # at the end; the editor can move it
         return card
 
@@ -424,7 +436,7 @@ class Session:
         if card.kind != WORD:
             raise Problem("Only word cards get a suggested meaning: the back of this card is the passage you marked.")
         places = "".join("\n" + picture_place(name) for name in PICTURE.findall(card.back))   # its pictures stay
-        card.back = f"{card.heading}\n{ask(card.word, card.front)}{places}"
+        card.back = f"{card.heading}\n{ask(card.word, card.term)}{places}"
         return card
 
     def export(self, path: Path, day: str | None = None) -> str:
@@ -455,7 +467,8 @@ class Session:
             return ""
         day = day or date.today().isoformat()
         entries = [
-            Entry(card.kind, card.history_key, card.front, without_pictures(card.back, "[picture]"), card.word, day,
+            Entry(card.kind, card.history_key, without_pictures(card.front, "[picture]"),
+                  without_pictures(card.back, "[picture]"), card.word, day,
                   "" if card.origin == UNNAMED_PAGE and not card.origin_url else card.origin,   # no name, no source
                   card.origin_url, card.origin_place) for card in self.cards
         ]
