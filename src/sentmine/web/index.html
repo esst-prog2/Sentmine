@@ -791,7 +791,8 @@ function drawCard(card) {
     const back = docEditor("back", names[1], card);
     const save = element("button", "main small", "Save");
     save.addEventListener("click", async () => {
-      const done = await call("PUT", API + "/cards/" + card.id, { front: docText(front), back: docText(back) });
+      const clean = (editor) => docText(editor).split(CURSOR).join("");   // a mark left by a picture that never came
+      const done = await call("PUT", API + "/cards/" + card.id, { front: clean(front), back: clean(back) });
       if (done) { editing = null; draft = null; draw(); }
     });
     const cancel = element("button", "small", "Cancel");
@@ -978,6 +979,8 @@ document.addEventListener("paste", async (event) => {
     range.deleteContents();
     range.insertNode(document.createTextNode(CURSOR));
     draft[editor.dataset.side] = docText(editor);
+  } else {
+    markCursor();   // pasted with the focus elsewhere: where the cursor last was in the card
   }
   let png;
   try {
@@ -992,12 +995,47 @@ document.addEventListener("paste", async (event) => {
   }
 });
 
+// Where the cursor last was in the card being edited, Term or Passage: a picture cut from the PDF page or sent
+// from a web page goes there, though the click on a button or another window took the cursor away.
+let lastCaret = null;   // { editor, range }
+document.addEventListener("selectionchange", () => {
+  const selection = window.getSelection();
+  if (editing === null || !selection.rangeCount) return;
+  const editor = [...document.querySelectorAll(".doc-editor")].find((one) => one.contains(selection.anchorNode));
+  if (editor) lastCaret = { editor, range: selection.getRangeAt(0).cloneRange() };
+});
+
+function caretInCard() {   // the last place of the cursor, while it is still in the editor on the page
+  if (editing === null || !draft || !lastCaret || !document.contains(lastCaret.editor)) return null;
+  return lastCaret.editor.contains(lastCaret.range.endContainer) ? lastCaret : null;
+}
+
+function markCursor() {   // the cursor's mark at its last place; false when there is none
+  const caret = caretInCard();
+  if (!caret) return false;
+  const range = caret.range.cloneRange();
+  range.collapse(false);
+  range.insertNode(document.createTextNode(CURSOR));
+  draft[caret.editor.dataset.side] = docText(caret.editor);
+  return true;
+}
+
+function dropCursor() {   // no picture came: the mark goes, from the editors and the draft
+  for (const editor of document.querySelectorAll(".doc-editor")) {
+    for (const node of [...editor.childNodes]) {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.includes(CURSOR)) node.textContent = node.textContent.split(CURSOR).join("");
+    }
+  }
+  if (draft) { draft.front = draft.front.split(CURSOR).join(""); draft.back = draft.back.split(CURSOR).join(""); }
+}
+
 // Cut from the PDF page (in the card editor): the reader drags a box around a formula or graph on a page of the
 // PDF; that part of the page, drawn from the PDF itself, goes into the card's back. Esc cancels.
 let boxFor = null;     // the card the box is for, while one is being drawn
 let boxing = null;     // { page, x, y, mark } while the mouse is down
 
 function startBox(cardId) {
+  if (editing === cardId) markCursor();   // the picture will go where the cursor was
   boxFor = cardId;
   document.body.classList.add("boxing");
   say("Drag a box around the formula or graph on the page. Esc cancels.");
@@ -1047,11 +1085,14 @@ document.addEventListener("mouseup", async (event) => {
   const page = Number(boxing.page.dataset.page);
   const card = boxFor;
   stopBox();
-  await call("POST", "/api/cards/" + card + "/pictures", { page, box });
+  if (!await call("POST", "/api/cards/" + card + "/pictures", { page, box })) dropCursor();
 }, true);
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && boxFor !== null) stopBox("No picture added.");
+  if (event.key === "Escape" && boxFor !== null) {
+    dropCursor();
+    stopBox("No picture added.");
+  }
 });
 
 function draw() {
@@ -1241,7 +1282,6 @@ function addArrivedPictures(fresh) {
   const editor = document.querySelector(".back-editor");
   if (!card || !editor || !draft) return;
   const shown = new Set([...document.querySelectorAll(".doc-editor img")].map((image) => image.dataset.name));
-  let added = false;
   for (const [name, src] of Object.entries(card.pictures || {})) {
     const mark = "[[picture:" + name + "]]";
     if (shown.has(name) || draft.front.includes(mark) || draft.back.includes(mark)) continue;
@@ -1249,10 +1289,21 @@ function addArrivedPictures(fresh) {
     image.src = src;
     image.dataset.name = name;
     image.alt = "A picture on this card";
-    editor.append(image);
-    added = true;
-  }
-  if (added) draft.back = docText(editor);   // the rest is drawn after Save or Cancel
+    const caret = caretInCard();   // where the cursor last was, Term or Passage; else the end of the passage
+    if (caret) {
+      const range = caret.range.cloneRange();
+      range.collapse(false);
+      range.insertNode(image);
+      const after = document.createRange();   // a next picture goes after this one
+      after.setStartAfter(image);
+      after.collapse(true);
+      lastCaret = { editor: caret.editor, range: after };
+      draft[caret.editor.dataset.side] = docText(caret.editor);
+    } else {
+      editor.append(image);
+      draft.back = docText(editor);
+    }
+  }   // the rest of the deck is drawn after Save or Cancel
 }
 
 setInterval(refreshIfChanged, 2000);

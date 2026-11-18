@@ -478,8 +478,8 @@ class Session:
     def edit(self, card_id: int, front: str, back: str) -> Flashcard:
         card = self._card(card_id)
         held = {name for name, _ in card.pictures}
-        front, back = (PICTURE.sub(lambda found: found.group() if found.group(1) in held else "\n", side).strip()
-                       for side in (front, back))   # only its own pictures, on either side
+        front, back = (PICTURE.sub(lambda found: found.group() if found.group(1) in held else "\n", side.replace("￼", "")).strip()
+                       for side in (front, back))   # only its own pictures, on either side; never the page's cursor mark
         if not front or not back:
             raise Problem("A card needs a front and a back; delete the card to remove it.")
         card.front, card.back = front, back

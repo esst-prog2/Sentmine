@@ -248,8 +248,9 @@ remove a picture, click it and press Delete. On a PDF, **Cut from the PDF
 page** in the editor lets you drag a box around a formula on the page (Esc
 cancels); it is cut from the PDF itself, so it stays sharp. On a web page,
 right-click an image and choose *Add this picture to the card you last made
-or edited*; while you are editing a card, it joins the end of its back.
-Pictures go into the deck file and into Anki where you put them (on a cloze
+or edited*. While you edit a card, a picture from the page or the PDF goes
+where your cursor last was, in the Term or the Passage (at the end of the
+Passage if you have not clicked into either). Pictures go into the deck file and into Anki where you put them (on a cloze
 card, a picture on the front is shown after the answer).
 
 Instead of pasting, you can open a PDF that contains text, or a `.txt` file.
