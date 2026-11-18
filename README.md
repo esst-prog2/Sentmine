@@ -256,9 +256,10 @@ everything you add goes in there:
   sharp (Esc cancels the box);
 - **paste a picture** with Ctrl+V: a copied image or a screenshot
   (Win+Shift+S);
-- on a web page, **right-click** text and choose *Make a card from this*, or
-  right-click an image and choose *Add this picture to the card you last
-  made or edited*: it goes in there too.
+- on a web page, **right-click** text or an image: while a card is open in
+  Edit in the side panel, the items read *Add to the card you are editing*
+  and *Add this picture to the card you are editing*, and what you chose
+  goes in there too.
 
 When you click away from the card, a thin line shows where the next thing
 will go. Type around it as usual; to remove a picture, click it and press

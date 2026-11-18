@@ -792,7 +792,8 @@ function drawCard(card) {
     }
     for (const name of Object.keys(card.pictures || {})) {
       const mark = "[[picture:" + name + "]]";
-      if (draft.front.includes(mark) || draft.back.includes(mark)) continue;
+      // one already handled in this edit (put in, then deleted or undone) does not come back
+      if (name in editPictures || draft.front.includes(mark) || draft.back.includes(mark)) continue;
       const side = draft.front.includes(CURSOR) ? "front" : "back";
       const place = "\n" + mark + "\n";
       if (draft[side].includes(CURSOR)) placed = { side, name };
@@ -1356,7 +1357,7 @@ function addArrived(fresh) {
   const shown = new Set([...document.querySelectorAll(".doc-editor img")].map((image) => image.dataset.name));
   for (const [name, src] of Object.entries(card.pictures || {})) {
     const mark = "[[picture:" + name + "]]";
-    if (shown.has(name) || draft.front.includes(mark) || draft.back.includes(mark)) continue;
+    if (name in editPictures || shown.has(name) || draft.front.includes(mark) || draft.back.includes(mark)) continue;
     const image = element("img");
     image.src = src;
     image.dataset.name = name;
@@ -1478,6 +1479,8 @@ document.addEventListener("keydown", (event) => {
 // The edit mode: the page tells the app which card is open in Edit, again every 30 seconds while it is, so that
 // text and pictures from a web page go to it; and again when it closes.
 function tellEditing(card, keepalive = false) {
+  // in the side panel, the extension names its right-click items after it: "Add to the card you are editing"
+  if (window.parent !== window) window.parent.postMessage({ sentmine: "editing", editing: card !== null }, "*");
   return fetch(API + "/editing", { method: "PUT", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ card }), keepalive }).catch(() => {});
 }

@@ -1,5 +1,24 @@
 // The side panel beside the page: sentmine's own page for the clips (/clip), shown in a frame.
-import { NOT_RUNNING, findSentmine } from "./logic.js";
+import { EDITING_MENU, MENU, NOT_RUNNING, PICTURE_MENU, findSentmine } from "./logic.js";
+
+// While a card is open in Edit here, the right-click items say that what is chosen goes into it.
+function nameMenu(editing) {
+  const titles = editing ? EDITING_MENU : { ...MENU, ...PICTURE_MENU };
+  for (const [id, title] of Object.entries(titles)) {
+    try {
+      const done = chrome.contextMenus.update(id, { title });
+      if (done && done.catch) done.catch(() => {});
+    } catch (error) {
+      // the item is not there (yet): nothing to name
+    }
+  }
+}
+
+window.addEventListener("message", (event) => {
+  const frameWindow = document.getElementById("clips").contentWindow;
+  if (event.source === frameWindow && event.data && event.data.sentmine === "editing") nameMenu(event.data.editing);
+});
+window.addEventListener("pagehide", () => nameMenu(false));   // the panel closed: the usual names again
 
 const frame = document.getElementById("clips");
 const say = document.getElementById("say");

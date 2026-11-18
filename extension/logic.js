@@ -25,6 +25,12 @@ export async function findSentmine(fetchFn, ports = PORTS, wait = 600) {
 // from its sentence, a selection with a term in bold a card for that term; anything else waits in the side panel.
 export const MENU = { card: "Make a card from this" };
 
+// The same items while a card is open in Edit in the side panel: what is chosen goes in at its cursor.
+export const EDITING_MENU = {
+  card: "Add to the card you are editing",
+  picture: "Add this picture to the card you are editing",
+};
+
 // The right-click items that put a picture on the newest card in the side panel.
 export const PICTURE_MENU = {
   picture: "Add this picture to the card you last made or edited",

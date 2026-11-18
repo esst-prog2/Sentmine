@@ -24,6 +24,8 @@
 
 ## 8. Undo, and the side panel kept open
 
+- [x] 8.3 A picture taken out by Undo or Delete does not come back with the next look at the app; while a card is open in Edit in the side panel, the right-click items say they add to it; the web-picture and panel checks
+
 - [x] 8.1 Undo and Redo buttons in Edit, and Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z: the card's own history of steps (put in, deleted, a run of typing); the gesture check
 - [x] 8.2 The side panel no longer loads sentmine's page again after a right-click (it asks it to look for changes), so a card open in Edit there stays open; a check through the real panel, which fails with the old panel script
 
