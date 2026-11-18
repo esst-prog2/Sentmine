@@ -20,6 +20,7 @@ from sentmine.document import PDFIUM
 from sentmine.reading import clickable_words
 
 PICTURE_WIDTH = 1600  # pixels; sharp enough for a wide panel on a high-density screen
+PICTURE_WIDTHS = (1600, 2400, 3200)  # what a page may ask for: as wide as the screen shows it, in three sizes so each is cached
 PART_SCALE = 3  # a part of a page for a card, drawn at 216 dpi: sharp on any screen in Anki
 SMALLEST_PART = 0.005  # of the page's width or height: a box smaller than this is a slip, not a choice
 CHUNK = 1500  # runs of letters matched at a time, so a long book does not take long

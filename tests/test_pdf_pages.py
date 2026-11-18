@@ -176,3 +176,13 @@ def test_a_page_that_is_not_there(path):
     upload(client)
     response = client.get(path)
     assert response.status_code == 400 and "not in the PDF" in response.get_json()["error"]
+
+
+@pytest.mark.parametrize("asked, drawn", [(None, 1600), (900, 1600), (1600, 1600), (2000, 2400), (2400, 2400), (2600, 3200), (99999, 3200)])
+def test_a_page_picture_is_as_wide_as_the_screen_shows_it(asked, drawn):
+    # a wide page on a high-density screen asks for more pixels; three sizes only, so each is cached
+    client = create_app().test_client()
+    state = upload(client).get_json()
+    width = "" if asked is None else f"&w={asked}"
+    response = client.get(f"/api/pages/0.png?v={state['pdf']['version']}{width}")
+    assert png_size(response.data)[0] == drawn

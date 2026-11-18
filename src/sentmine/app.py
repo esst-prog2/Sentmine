@@ -21,7 +21,7 @@ from sentmine.document import MOST_BYTES, DocumentProblem, read_file
 from sentmine.history import Entry
 from sentmine.meaning import MeaningProblem, find_api_key, suggest_meaning
 from sentmine.memory import CardMemory, MemoryProblem, RememberedCard, default_memory_path
-from sentmine.pages import Pages, locate, part, picture
+from sentmine.pages import PICTURE_WIDTHS, Pages, locate, part, picture
 from sentmine.reading import ADDED, DUPLICATE, EARLIER, REMOVED, Flashcard, Problem, Session, entry_card, picture_name
 from sentmine.words import plural
 
@@ -433,7 +433,10 @@ def create_app(
 
     @app.get("/api/pages/<int:number>.png")
     def page_picture(number: int):
-        response = Response(picture(pages_of(number), number), mimetype="image/png")
+        # w: the pixels the page is shown at (its width times the screen's density); the next size up of three
+        asked = request.args.get("w", type=int) or PICTURE_WIDTHS[0]
+        width = next((size for size in PICTURE_WIDTHS if size >= asked), PICTURE_WIDTHS[-1])
+        response = Response(picture(pages_of(number), number, width), mimetype="image/png")
         response.headers["Cache-Control"] = "private, max-age=3600"  # the address carries the PDF's version
         return response
 
