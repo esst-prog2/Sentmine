@@ -73,3 +73,15 @@ def test_the_message_after_reading_counts_words_and_terms(session):
     client = create_app(session).test_client()
     message = client.post("/api/text", json={"text": "Outliers skew a reversal; a confounder hides a Simpson’s reversal."}).get_json()["message"]
     assert message == "Text loaded. 2 words and 2 terms you have cards for are underlined."
+
+
+def test_a_straight_apostrophe_finds_the_curly_one(session):
+    # a term clipped from a web page ("Simpson's", straight) comes back in a PDF that prints "Simpson’s" (curly)
+    assert marked(session, "The data revealed a Simpson's reversal: although it was odd.") == [
+        ("Simpson's", "term:simpson’s reversal"), ("reversal", "term:simpson’s reversal")]
+
+
+def test_the_state_finds_the_card_of_a_term_written_with_the_other_apostrophe(session):
+    client = create_app(session).test_client()
+    state = client.post("/api/text", json={"text": "Then a Simpson's reversal appears."}).get_json()
+    assert "term:simpson’s reversal" in state["known_cards"]
