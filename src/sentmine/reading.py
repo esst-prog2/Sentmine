@@ -142,7 +142,8 @@ def _terms_pattern(terms: dict[str, Entry]) -> re.Pattern | None:
     """All remembered terms as one pattern of whole words, ignoring case, longest first; None without terms."""
     if not terms:
         return None
-    alternatives = "|".join(re.escape(term) for term in sorted(terms, key=len, reverse=True))
+    # either apostrophe finds either: a web page writes Simpson's, a PDF often Simpson’s
+    alternatives = "|".join(re.sub("['’]", "['’]", re.escape(term)) for term in sorted(terms, key=len, reverse=True))
     return re.compile(r"(?<!\w)(?:" + alternatives + r")(?!\w)", re.IGNORECASE)
 
 
@@ -386,6 +387,7 @@ class Session:
         picked = {card.place for card in self.own_cards if card.place is not None}
         known = known or {}
         find_terms = _terms_pattern(terms or {})
+        term_of = {term.replace("’", "'"): term for term in terms or {}}   # the found words back to the card's own term
         paragraphs = []
         number = 0
         for paragraph in self.paragraphs:
@@ -393,7 +395,8 @@ class Session:
             for sentence in paragraph:
                 pieces = []
                 position = 0
-                found = [(m.start(), m.end(), " ".join(m.group().lower().split())) for m in find_terms.finditer(sentence)] if find_terms else []
+                found = [(m.start(), m.end(), term_of.get(" ".join(m.group().lower().split()).replace("’", "'"), " ".join(m.group().lower().split())))
+                         for m in find_terms.finditer(sentence)] if find_terms else []
                 for index, word in enumerate(clickable_words(sentence)):
                     if word.start > position:
                         pieces.append({"text": sentence[position : word.start]})
