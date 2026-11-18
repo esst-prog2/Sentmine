@@ -6,20 +6,26 @@
 <title>sentmine: read the real page, click a word, get an Anki card</title>
 <meta name="description" content="sentmine is a reading app for students who read English course books. Click a word on the real PDF page to make an Anki card from its sentence; your cards come back when you meet them again.">
 <style>
+  @font-face { font-family: "Newsreader"; src: url("fonts/Newsreader.woff") format("woff"); font-weight: 200 800; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Newsreader"; src: url("fonts/Newsreader-Italic.woff") format("woff"); font-weight: 200 800; font-style: italic; font-display: swap; }
   :root {
-    --page: #f6f5f1; --panel: #ffffff; --ink: #1f2328; --soft: #5c6470; --line: #d9d6cd; --hover: #ecebe5;
-    --accent: #1a5fd0; --accent-hover: #154fae; --on-accent: #ffffff; --picked: #ffe27a; --picked-soft: #fff8d6; --selection: #c8dafc;
-    --code-head: #2b3036; --code-selection: #2d4a7a; --scrollbar: #c4c0b5;
-    --bar-height: 62px; --below-bar: calc(var(--bar-height) + 24px);
-    --book: Georgia, "Times New Roman", serif;
+    --page: #f3eee4; --panel: #fbf8f2; --ink: #23201b; --soft: #645d52; --line: #e2dbcc; --hover: #ebe4d5;
+    --accent: #2d6f8e; --accent-hover: #235a74; --on-accent: #ffffff; --picked: #f8df7a; --picked-soft: #fdf3c9; --selection: #f5e6a3;
+    --ink-button: #1f232a; --ink-button-hover: #343a44; --on-ink-button: #fbf8f2; --marker: #f6d84e; --pick: #c98a0b; --cloze: #a63a12; --cloze-wash: #fbe2d4;
+    --falling: rgba(120, 92, 40, 0.11);
+    --lift: 0 1px 2px rgba(70, 52, 20, 0.06), 0 10px 26px rgba(70, 52, 20, 0.08);
+    --code-head: #2b2620; --code-selection: #5c4b17; --scrollbar: #cfc6b4;
+    --bar-height: 66px; --below-bar: calc(var(--bar-height) + 24px);
+    --book: "Newsreader", Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
     --ui: system-ui, "Segoe UI", -apple-system, sans-serif;
     --code: ui-monospace, Consolas, "Cascadia Mono", monospace;
     --gutter: clamp(16px, 4vw, 48px);
     color-scheme: light;
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; scroll-padding-top: var(--below-bar); scrollbar-color: var(--scrollbar) var(--page); }
-  body { margin: 0; background: var(--page); color: var(--ink); font: 17px/1.6 var(--ui); }
+  html { scroll-behavior: smooth; scroll-padding-top: var(--below-bar); scrollbar-color: var(--scrollbar) var(--page); background: var(--page); }
+  body { margin: 0; color: var(--ink); font: 17px/1.6 var(--ui); }
   ::selection { background: var(--selection); color: var(--ink); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
   a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 1px; }
@@ -32,24 +38,26 @@
   /* The app's own header: brand, pages, and the deck controls become the page's actions. */
   .bar {
     position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px 24px;
-    padding: 12px var(--gutter); background: var(--panel); border-bottom: 1px solid var(--line);
+    padding: 12px var(--gutter); background: color-mix(in srgb, var(--page) 92%, transparent); border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(6px);
   }
-  .brand { font-weight: 700; font-size: 1.15rem; color: var(--ink); text-decoration: none; }
-  .bar nav { display: flex; gap: 20px; }
-  .bar nav a { color: var(--soft); text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; }
-  .bar nav a:hover { color: var(--ink); border-bottom-color: var(--line); }
+  .brand { display: flex; color: var(--ink); text-decoration: none; }
+  .brand .wordmark { height: 38px; width: auto; }
+  .bar nav { display: flex; gap: 4px; }
+  .bar nav a { color: var(--soft); text-decoration: none; padding: 6px 12px; border-radius: 10px; }
+  .bar nav a:hover { color: var(--ink); background: var(--hover); }
   .spacer { flex: 1; }
   .button {
     display: inline-block; font: 500 0.95rem var(--ui); color: var(--ink); background: var(--page); text-decoration: none;
-    border: 1px solid var(--line); border-radius: 6px; padding: 7px 14px; transition: background-color .15s, border-color .15s;
+    border: 1px solid var(--line); border-radius: 10px; padding: 7px 14px; transition: background-color .15s, border-color .15s;
   }
   .button:hover { background: var(--hover); border-color: var(--soft); color: var(--ink); }
-  .button.main { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
-  .button.main:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); }
+  .button.main { background: var(--ink-button); border-color: var(--ink-button); color: var(--on-ink-button); font-weight: 600; }
+  .button.main:hover { background: var(--ink-button-hover); border-color: var(--ink-button-hover); color: var(--on-ink-button); }
 
   /* The status line carries the headline, as sentmine's status line carries what just happened. */
   .status { padding: clamp(24px, 5vw, 44px) var(--gutter) clamp(20px, 3vw, 28px); border-bottom: 1px solid var(--line); }
-  .status h1 { font: 700 clamp(2rem, 4.6vw, 3.5rem)/1.08 var(--ui); letter-spacing: -0.02em; margin: 0 0 14px; max-width: 18em; text-wrap: balance; }
+  .status h1 { font: 500 clamp(2rem, 4.6vw, 3.5rem)/1.08 var(--book); letter-spacing: -0.015em; margin: 0 0 14px; max-width: 18em; text-wrap: balance; }
   .status p { color: var(--soft); font-size: clamp(1.05rem, 1.6vw, 1.25rem); max-width: 62ch; margin: 0; }
 
   /* First viewport: the book sentence is the hero, the card it made below it, the headline a confident line above. */
@@ -57,7 +65,7 @@
   .opening .status h1 { font-size: clamp(1.75rem, 3.4vw, 2.75rem); max-width: 24em; margin-bottom: 8px; }
   .opening .status p { font-size: 1.05rem; max-width: 72ch; }
   .stage { padding: 8px var(--gutter); display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-  .page-line { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: clamp(20px, 2.5vw, 32px) clamp(18px, 5vw, 64px); margin: 0; }
+  .page-line { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--lift); padding: clamp(20px, 2.5vw, 32px) clamp(18px, 5vw, 64px); margin: 0; }
   .page-line .top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 24px; margin: 0 0 10px; }
   .page-line .top p { margin: 0; }
   .page-line .hint { font: 600 0.95rem var(--ui); color: var(--accent); }
@@ -80,39 +88,48 @@
   .browser .shot img { width: 100%; }
   .browser ul { padding-left: 1.2em; margin: 0; }
   .browser li { margin-bottom: 10px; }
-  .known-card { position: relative; background: var(--panel); border-radius: 8px; padding: 10px 14px; margin-top: 4px;
+  .known-card { position: relative; background: var(--panel); border-radius: 12px; padding: 12px 16px; margin-top: 4px; font-family: var(--book);
     box-shadow: 0 10px 28px rgba(31, 35, 40, 0.16), 0 1px 3px rgba(31, 35, 40, 0.14); }
   .known-card::before { content: ""; position: absolute; top: -6px; left: var(--at, 40%); width: 12px; height: 12px;
     background: var(--panel); transform: rotate(45deg); box-shadow: -1px -1px 1px rgba(31, 35, 40, 0.08); }
   .known-card p { margin: 0; }
-  .known-card .made { font-size: 0.8rem; color: var(--soft); margin-bottom: 4px; }
+  .known-card .made { font: 0.8rem var(--ui); color: var(--soft); margin-bottom: 4px; }
+  .known-card .term { font-size: 1.3rem; margin-bottom: 4px; }
+  .known-card b { background: var(--picked); border-radius: 3px; padding: 0 2px; }
   .return .meta { font-size: 0.85rem; color: var(--soft); margin: 12px 0 0; }
   .caption { font: 0.82rem/1.5 var(--ui); color: var(--soft); margin-top: 10px; max-width: 68ch; }
   .stage > .caption { margin: 0; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px 22px; }
-  .panel-title { font-weight: 700; margin: 0 0 12px; }
-  .card .front { padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
-  .card .back { padding-top: 10px; }
-  .card .meta { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 0.85rem; color: var(--soft); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; }
+  .panel-title { font: 500 1.35rem/1.2 var(--book); margin: 0 0 12px; }
+  .card .front { font: 400 1.6rem/1.2 var(--book); margin-bottom: 8px; }
+  .card .back { font: 1.12rem/1.6 var(--book); }
+  .card .back b { font-weight: 600; background: var(--picked); border-radius: 3px; padding: 0 2px; }
+  .card .meaning { display: block; margin-top: 10px; }
+  .card .meta { margin-top: 12px; font: 0.8rem/1.5 var(--mono); color: var(--soft); }
+  .tag { font: 600 0.6875rem/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--cloze); background: var(--cloze-wash);
+    border-radius: 6px; padding: 5px 7px; margin-left: 10px; vertical-align: 0.3em; }
+  .card.is-cloze .back b { background: var(--cloze-wash); color: var(--cloze); font-weight: 500; }
   .try-line { padding: 16px var(--gutter) 40px; color: var(--soft); }
 
   section { padding: clamp(48px, 7vw, 88px) var(--gutter); border-top: 1px solid var(--line); }
-  section > h2 { font: 700 clamp(1.35rem, 2.2vw, 1.75rem)/1.2 var(--ui); letter-spacing: -0.015em; margin: 0 0 12px; max-width: 22em; text-wrap: balance; }
+  section > h2 { font: 500 clamp(1.6rem, 2.6vw, 2.1rem)/1.15 var(--book); letter-spacing: -0.01em; margin: 0 0 12px; max-width: 22em; text-wrap: balance; }
   .lede { color: var(--soft); font-size: 1.12rem; max-width: 62ch; margin-bottom: 36px; }
   .measure { max-width: 68ch; }
 
   /* Five steps: the deck panel stays in view and one card moves through the steps beside it. */
   .steps { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 24rem); gap: 40px; align-items: start; }
   .step { margin: 0 0 clamp(48px, 7vw, 80px); }
-  .step h3 { font: 700 1.3rem/1.3 var(--ui); margin: 0 0 6px; }
+  .step h3 { font: 500 1.45rem/1.25 var(--book); margin: 0 0 6px; }
   .step p { max-width: 60ch; color: var(--ink); }
   .shot a { display: block; cursor: zoom-in; }
-  .shot { width: fit-content; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(31, 35, 40, 0.06); }
+  .shot { width: fit-content; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--lift); }
   .deck { position: sticky; top: var(--below-bar); }
   .deck .state { font-size: 0.85rem; color: var(--soft); margin: 0 0 10px; min-height: 2.6em; }
   .deck .card + .card { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .deck .card .front { font-size: 1.35rem; }
+  .deck .card .back { font-size: 1.02rem; }
   .deck .meaning, .deck .cloze, .deck .sent, .deck .back-again { display: none; }
-  .gap { color: var(--accent); font-weight: 600; }
+  .gap { color: var(--cloze); font-weight: 600; }
   .sent { margin-top: 12px; font-size: 0.9rem; color: var(--soft); border-top: 1px solid var(--line); padding-top: 10px; }
   .deck[data-step="2"] .meaning, .deck[data-step="3"] .meaning, .deck[data-step="4"] .meaning, .deck[data-step="5"] .meaning { display: block; }
   .deck[data-step="3"] .cloze, .deck[data-step="4"] .cloze, .deck[data-step="5"] .cloze { display: block; }
@@ -147,6 +164,13 @@
 
   footer { padding: 32px var(--gutter) 48px; border-top: 1px solid var(--line); color: var(--soft); font-size: 0.95rem; display: flex; flex-wrap: wrap; gap: 8px 24px; }
 
+  /* falling cards: faint outlines drifting down behind the page, like cards sent to the deck */
+  .falling { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .falling span { position: absolute; top: 0; left: var(--x); width: var(--w); height: calc(var(--w) * 0.64);
+    border: 1.5px solid var(--falling); border-radius: 12px;
+    transform: translateY(-30vh) rotate(var(--r0)); animation: fall var(--d) linear var(--delay) infinite; }
+  @keyframes fall { from { transform: translateY(-30vh) rotate(var(--r0)); } to { transform: translateY(125vh) rotate(var(--r1)); } }
+
   @media (max-width: 900px) {
     .steps, .comes-back, .meetings, .browser, .film { grid-template-columns: 1fr; }
     .deck { position: static; }
@@ -161,14 +185,16 @@
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     * { animation: none !important; transition: none !important; }
+    .falling span { transform: translateY(var(--y0)) rotate(var(--r0)); }   /* still, where they lie */
   }
 </style>
 </head>
 <body>
+<div class="falling" aria-hidden="true"><span style="--x:19vw;--w:150px;--d:63s;--delay:-6s;--r0:-20deg;--r1:28deg;--y0:16vh"></span><span style="--x:74vw;--w:150px;--d:41s;--delay:-64s;--r0:-11deg;--r1:-36deg;--y0:15vh"></span><span style="--x:53vw;--w:170px;--d:42s;--delay:-30s;--r0:-19deg;--r1:30deg;--y0:58vh"></span><span style="--x:72vw;--w:110px;--d:45s;--delay:-28s;--r0:16deg;--r1:40deg;--y0:78vh"></span><span style="--x:73vw;--w:110px;--d:63s;--delay:-6s;--r0:-10deg;--r1:-35deg;--y0:75vh"></span><span style="--x:37vw;--w:130px;--d:64s;--delay:-18s;--r0:10deg;--r1:-25deg;--y0:77vh"></span><span style="--x:71vw;--w:150px;--d:49s;--delay:-13s;--r0:13deg;--r1:33deg;--y0:85vh"></span><span style="--x:47vw;--w:130px;--d:44s;--delay:-70s;--r0:21deg;--r1:-32deg;--y0:76vh"></span><span style="--x:79vw;--w:110px;--d:51s;--delay:-63s;--r0:19deg;--r1:28deg;--y0:58vh"></span><span style="--x:59vw;--w:150px;--d:67s;--delay:-46s;--r0:-5deg;--r1:-9deg;--y0:27vh"></span><span style="--x:10vw;--w:130px;--d:57s;--delay:-67s;--r0:7deg;--r1:3deg;--y0:61vh"></span><span style="--x:77vw;--w:150px;--d:42s;--delay:-15s;--r0:8deg;--r1:13deg;--y0:25vh"></span><span style="--x:19vw;--w:150px;--d:69s;--delay:-53s;--r0:-22deg;--r1:-31deg;--y0:75vh"></span><span style="--x:40vw;--w:190px;--d:59s;--delay:-44s;--r0:14deg;--r1:23deg;--y0:78vh"></span></div>
 
 <header class="bar">
-  <a class="brand" href="#top">sentmine</a>
-  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#comes-back">Comes back</a><a href="#browser">In the browser</a><a href="#try">Try it</a></nav>
+  <a class="brand" href="#top" aria-label="sentmine, to the top"><svg class="wordmark" aria-hidden="true" viewBox="-60 -125 4276 980" xmlns="http://www.w3.org/2000/svg"><path d="M-30 435 L1772 405 L1742 815 L-50 835 Z" fill="var(--marker)"/><path fill="currentColor" d="M72.60028076171875 617.8995971679688Q73.500244140625 652.7996520996094 77.45024108886719 673.2497100830078Q81.40023803710938 693.6997680664062 88.4002685546875 703.0998229980469Q95.80029296875 712.3998718261719 105.60037231445312 715.14990234375Q115.40045166015625 717.8999328613281 128.6005859375 717.8999328613281Q160.40060424804688 717.8999328613281 182.3005828857422 708.4499664306641Q204.2005615234375 699.0 215.5005340576172 680.9500732421875Q226.80050659179688 662.900146484375 226.80050659179688 637.6002502441406Q226.80050659179688 622.0002746582031 220.75050354003906 604.9503326416016Q214.70050048828125 587.900390625 200.35044860839844 566.8004608154297Q186.00039672851562 545.7005310058594 160.500244140625 517.4006042480469Q135.50009155273438 489.1006774902344 121.14999389648438 465.40069580078125Q106.79989624023438 441.7007141113281 101.04985046386719 420.50067138671875Q95.2998046875 399.3006286621094 95.2998046875 378.5005187988281Q95.2998046875 332.4003601074219 119.14985656738281 294.75022888183594Q142.99990844726562 257.10009765625 185.50006103515625 234.55001831054688Q228.00021362304688 211.99993896484375 284.1004943847656 211.99993896484375Q323.9007263183594 211.99993896484375 347.20086669921875 220.69998168945312Q370.5010070800781 229.4000244140625 380.5510711669922 244.65008544921875Q390.60113525390625 259.900146484375 390.60113525390625 280.2001953125Q390.60113525390625 297.40032958984375 382.90110778808594 309.00038146972656Q375.2010803222656 320.6004333496094 357.3509979248047 326.450439453125Q339.50091552734375 332.3004455566406 308.10076904296875 332.3004455566406Q310.10076904296875 294.7003173828125 307.5007629394531 275.5002746582031Q304.9007568359375 256.30023193359375 298.6007385253906 248.20016479492188Q292.30072021484375 240.00009155273438 282.6006622314453 237.2000732421875Q272.9006042480469 234.40005493164062 257.300537109375 234.40005493164062Q215.70050048828125 234.40005493164062 191.80055236816406 254.20001220703125Q167.90060424804688 273.9999694824219 167.90060424804688 309.9997863769531Q167.90060424804688 324.7997741699219 173.150634765625 340.4497375488281Q178.40066528320312 356.0997009277344 192.00074768066406 376.4996337890625Q205.600830078125 396.8995666503906 230.60098266601562 426.699462890625Q255.60113525390625 456.099365234375 270.1012420654297 480.0493621826172Q284.6013488769531 503.9993591308594 290.80140686035156 524.8994140625Q297.00146484375 545.7994689941406 297.00146484375 566.4995422363281Q297.00146484375 616.6995544433594 271.3013916015625 657.2996826171875Q245.601318359375 697.8998107910156 200.15115356445312 721.9499359130859Q154.70098876953125 746.0000610351562 95.50070190429688 746.0000610351562Q54.90045166015625 746.0000610351562 30.550277709960938 737.5000305175781Q6.200103759765625 729.0 -4.699981689453125 713.3499450683594Q-15.600067138671875 697.6998901367188 -15.600067138671875 676.9998168945312Q-15.600067138671875 656.2997436523438 -6.8500518798828125 643.2496948242188Q1.89996337890625 630.1996459960938 21.35003662109375 624.0496215820312Q40.80010986328125 617.8995971679688 72.60028076171875 617.8995971679688ZM672.1007690429688 235.0001220703125Q641.6009521484375 235.0001220703125 614.2510681152344 257.4499816894531Q586.9011840820312 279.89984130859375 564.3012390136719 316.899658203125Q541.7012939453125 353.89947509765625 525.101318359375 398.8493347167969Q508.5013427734375 443.7991943359375 499.5013427734375 489.3491973876953Q490.5013427734375 534.8992004394531 490.5013427734375 573.2994384765625Q490.5013427734375 625.4993896484375 509.5013427734375 648.2994079589844Q528.5013427734375 671.0994262695312 566.4014282226562 671.0994262695312Q594.8014526367188 671.0994262695312 623.4514770507812 659.0494842529297Q652.1015014648438 646.9995422363281 681.4515228271484 616.7496185302734Q710.8015441894531 586.4996948242188 740.4015502929688 532.3997497558594L746.4015808105469 533.1997375488281Q713.0015258789062 617.8999328613281 677.0014038085938 664.1999969482422Q641.0012817382812 710.5000610351562 603.2011108398438 728.2500610351562Q565.4009399414062 746.0000610351562 525.4007263183594 746.0000610351562Q479.0003967285156 746.0000610351562 447.25022888183594 728.7999420166016Q415.50006103515625 711.5998229980469 399.3000030517578 679.3496704101562Q383.0999450683594 647.0995178222656 383.0999450683594 602.3994140625Q383.0999450683594 550.5995178222656 397.6499328613281 495.94960021972656Q412.1999206542969 441.2996826171875 439.3499298095703 390.59974670410156Q466.49993896484375 339.8998107910156 504.50001525878906 299.599853515625Q542.5000915527344 259.2998962402344 589.4002685546875 235.64991760253906Q636.3004455566406 211.99993896484375 690.5007629394531 211.99993896484375Q731.7011413574219 211.99993896484375 756.0013122558594 223.94998168945312Q780.3014831542969 235.9000244140625 791.2015228271484 256.1000671386719Q802.1015625 276.30010986328125 802.1015625 300.30010986328125Q802.1015625 323.40020751953125 795.2515258789062 346.90025329589844Q788.4014892578125 370.4002990722656 773.00146484375 392.4002990722656Q754.8012390136719 402.0003356933594 721.9510955810547 414.70033264160156Q689.1009521484375 427.40032958984375 647.8008728027344 441.00030517578125Q606.5007934570312 454.60028076171875 561.1007690429688 467.95025634765625Q515.7007446289062 481.30023193359375 472.0007629394531 492.2002258300781L475.0007629394531 475.7001647949219Q532.8007202148438 456.6001281738281 573.95068359375 438.85009765625Q615.1006469726562 421.1000671386719 642.3506164550781 403.4500427246094Q669.6005859375 385.8000183105469 685.2005615234375 367.5500030517578Q700.800537109375 349.29998779296875 707.3005218505859 329.6499786376953Q713.8005065917969 309.9999694824219 713.8005065917969 288.4999694824219Q713.8005065917969 271.5999755859375 708.800537109375 259.50001525878906Q703.8005676269531 247.40005493164062 694.5506286621094 241.20008850097656Q685.3006896972656 235.0001220703125 672.1007690429688 235.0001220703125ZM828.7998352050781 431.6000671386719 823.1998291015625 429.00006103515625Q857.5998229980469 346.5 888.9498596191406 299.24998474121094Q920.2998962402344 251.99996948242188 953.0000152587891 232.2999725341797Q985.7001342773438 212.5999755859375 1023.9003601074219 212.5999755859375Q1038.4004821777344 212.5999755859375 1049.4505615234375 213.7999725341797Q1060.5006408691406 214.99996948242188 1070.8007202148438 217.5499725341797Q1081.1007995605469 220.0999755859375 1092.8009338378906 224.19998168945312L1024.1007995605469 442.400390625H1017.4008483886719Q1061.2007751464844 368.70025634765625 1095.500747680664 323.2001647949219Q1129.8007202148438 277.7000732421875 1158.3007354736328 253.6500244140625Q1186.8007507324219 229.5999755859375 1212.5008239746094 220.79995727539062Q1238.2008972167969 211.99993896484375 1264.301025390625 211.99993896484375Q1312.9012145996094 211.99993896484375 1333.5513305664062 234.1500244140625Q1354.2014465332031 256.30010986328125 1354.2014465332031 287.7002258300781Q1354.2014465332031 305.3002624511719 1348.6514434814453 327.0503387451172Q1343.1014404296875 348.8004150390625 1323.5014038085938 396.3005065917969L1203.5016174316406 690.8999938964844L1182.4010009765625 672.499755859375Q1199.5011291503906 675.5997314453125 1224.4011840820312 668.5497741699219Q1249.3012390136719 661.4998168945312 1284.1012725830078 637.8998565673828Q1318.9013061523438 614.2998962402344 1364.4013671875 567.8998718261719L1369.2013854980469 571.7998962402344Q1324.9013366699219 634.2999572753906 1285.501235961914 672.6499938964844Q1246.1011352539062 711.0000305175781 1212.1509857177734 728.5000457763672Q1178.2008361816406 746.0000610351562 1149.6006469726562 746.0000610351562Q1113.5003967285156 746.0000610351562 1100.2503204345703 730.9499206542969Q1087.000244140625 715.8997802734375 1100.0002746582031 684.2997131347656L1216.2998352050781 402.600830078125Q1231.4999084472656 365.9006652832031 1236.8499145507812 350.7506408691406Q1242.1999206542969 335.6006164550781 1242.1999206542969 326.8006286621094Q1242.1999206542969 311.3006591796875 1231.699966430664 303.2506866455078Q1221.2000122070312 295.2007141113281 1199.400146484375 295.2007141113281Q1171.5003356933594 295.2007141113281 1142.800521850586 314.05059814453125Q1114.1007080078125 332.9004821777344 1088.4008483886719 361.8003387451172Q1062.7009887695312 390.7001953125 1044.0010528564453 420.9501037597656Q1025.3011169433594 451.20001220703125 1017.10107421875 473.9000549316406L929.10107421875 735.0H825.0997009277344L966.99951171875 313.7005920410156Q970.3995361328125 304.0005187988281 968.5995330810547 296.70050048828125Q966.7995300292969 289.4004821777344 957.7994995117188 289.4004821777344Q946.9994812011719 289.4004821777344 928.9995269775391 300.70042419433594Q910.9995727539062 312.0003662109375 886.149658203125 342.6502685546875Q861.2997436523438 373.3001708984375 828.7998352050781 431.6000671386719ZM1457.6998291015625 251.30014038085938 1465.7998352050781 223.0H1777.1015930175781L1770.3015747070312 251.30014038085938ZM1548.5018310546875 592.8984680175781Q1543.2017211914062 608.9987487792969 1540.3016662597656 619.4989166259766Q1537.401611328125 629.9990844726562 1536.401596069336 636.4991760253906Q1535.4015808105469 642.999267578125 1535.4015808105469 647.79931640625Q1535.4015808105469 657.6993408203125 1541.3015899658203 661.8993530273438Q1547.2015991210938 666.099365234375 1558.3016052246094 666.099365234375Q1570.6016235351562 666.099365234375 1588.601577758789 658.4493865966797Q1606.6015319824219 650.7994079589844 1633.3014526367188 627.9494781494141Q1660.0013732910156 605.0995483398438 1697.3013000488281 559.9996948242188L1702.5013427734375 564.0997314453125Q1663.30126953125 623.7998657226562 1631.1011810302734 659.9499359130859Q1598.9010925292969 696.1000061035156 1572.3509979248047 714.7500305175781Q1545.8009033203125 733.4000549316406 1523.9508056640625 739.7000579833984Q1502.1007080078125 746.0000610351562 1484.0006103515625 746.0000610351562Q1458.9004211425781 746.0000610351562 1441.000244140625 731.3999633789062Q1423.1000671386719 716.7998657226562 1423.1000671386719 681.4995727539062Q1423.1000671386719 669.9994812011719 1426.5501098632812 648.999267578125Q1430.0001525878906 627.9990539550781 1444.4002685546875 584.2987976074219L1605.9002685546875 92.89956665039062H1712.7017211914062Z"/><path fill="currentColor" d="M1958.8037719726562 308.1511535644531V706.099853515625L2026.40234375 721.1998901367188V735.0H1785.4501647949219V721.1998901367188L1854.09912109375 705.9497985839844V312.90216064453125Q1846.0491027832031 307.2519226074219 1831.1990661621094 296.8765106201172Q1816.3490295410156 286.5010986328125 1784.1496887207031 265.1511535644531V255.40087890625L1955.6533508300781 207.55001831054688H1958.8037719726562ZM2264.2042846679688 365.3994140625V706.099853515625L2331.8028564453125 721.1998901367188V735.0H2091.4510803222656V721.1998901367188L2159.4996337890625 706.099853515625V379.2508239746094Q2159.4996337890625 349.201171875 2149.2748260498047 329.5514831542969Q2139.050018310547 309.90179443359375 2117.900421142578 299.9770050048828Q2096.7508239746094 290.0522155761719 2063.50146484375 290.0522155761719Q2030.1022338867188 290.0522155761719 1998.777847290039 299.2019958496094Q1967.4534606933594 308.3517761230469 1945.3534240722656 319.3517761230469L1939.9536437988281 306.2519226074219Q1977.003662109375 276.6511535644531 2003.9786529541016 258.3007507324219Q2030.9536437988281 239.95034790039062 2052.003662109375 230.0251922607422Q2073.053680419922 220.10003662109375 2092.3037719726562 216.55001831054688Q2111.5538635253906 213.0 2133.2041015625 213.0Q2178.9039916992188 213.0 2207.8040466308594 229.27500915527344Q2236.7041015625 245.55001831054688 2250.4541931152344 279.2248992919922Q2264.2042846679688 312.8997802734375 2264.2042846679688 365.3994140625ZM2569.6047973632812 365.3994140625V705.9497985839844L2638.2037353515625 721.1998901367188V735.0H2396.851593017578V721.1998901367188L2464.900146484375 706.099853515625V379.2508239746094Q2464.900146484375 349.201171875 2454.675338745117 329.5514831542969Q2444.4505310058594 309.90179443359375 2423.3009338378906 299.9770050048828Q2402.151336669922 290.0522155761719 2368.9019775390625 290.0522155761719Q2335.5027465820312 290.0522155761719 2304.1783599853516 299.2019958496094Q2272.853973388672 308.3517761230469 2250.753936767578 319.3517761230469L2245.3541564941406 306.2519226074219Q2282.4041748046875 276.6511535644531 2309.379165649414 258.3007507324219Q2336.3541564941406 239.95034790039062 2357.4041748046875 230.0251922607422Q2378.4541931152344 220.10003662109375 2397.7042846679688 216.55001831054688Q2416.954376220703 213.0 2438.6046142578125 213.0Q2507.1544494628906 213.0 2538.379623413086 249.72499084472656Q2569.6047973632812 286.4499816894531 2569.6047973632812 365.3994140625ZM3249.8037719726562 308.6513366699219V706.099853515625L3317.9025268554688 721.1998901367188V735.0H3076.450164794922V721.1998901367188L3145.09912109375 705.9497985839844V312.90216064453125Q3137.049102783203 307.2519226074219 3122.1990661621094 296.8765106201172Q3107.3490295410156 286.5010986328125 3075.149688720703 265.1511535644531V255.40087890625L3246.653350830078 207.55001831054688H3249.8037719726562ZM3401.3006591796875 721.1998901367188 3469.849395751953 706.099853515625V387.10076904296875Q3469.849395751953 354.5511169433594 3458.6495971679688 332.97645568847656Q3447.4497985839844 311.40179443359375 3424.6002197265625 300.7270050048828Q3401.7506408691406 290.0522155761719 3365.601318359375 290.0522155761719Q3328.4021606445312 290.0522155761719 3294.4528198242188 300.17698669433594Q3260.5034790039062 310.3017578125 3236.8034057617188 321.8517761230469L3230.953643798828 311.5518493652344Q3269.9036254882812 280.5511169433594 3298.478561401367 261.02574157714844Q3327.053497314453 241.5003662109375 3349.5034790039062 231.07521057128906Q3371.9534606933594 220.65005493164062 3392.2535705566406 216.8250274658203Q3412.553680419922 213.0 3435.803955078125 213.0Q3508.6537170410156 213.0 3541.6038818359375 252.1249542236328Q3574.5540466308594 291.2499084472656 3574.5540466308594 374.499267578125V705.9497985839844L3643.1529846191406 721.1998901367188V735.0H3401.3006591796875ZM3936.8008422851562 212.49981689453125Q3991.00146484375 212.49981689453125 4030.851776123047 234.72499084472656Q4070.7020874023438 256.9501647949219 4094.0272064208984 299.92543029785156Q4117.352325439453 342.90069580078125 4121.90234375 405.5509338378906H3789.701904296875V374.90032958984375H4063.701171875L4018.4989013671875 395.6506042480469Q4013.7990112304688 340.50018310546875 4001.749267578125 305.9501647949219Q3989.6995239257812 271.400146484375 3969.9498901367188 254.9752655029297Q3950.2002563476562 238.55038452148438 3921.500732421875 238.55038452148438Q3883.2015380859375 238.55038452148438 3855.827133178711 260.89996337890625Q3828.4527282714844 283.2495422363281 3813.8780670166016 326.9741668701172Q3799.3034057617188 370.69879150390625 3799.3034057617188 434.6489562988281Q3799.3034057617188 517.1986083984375 3820.5282135009766 568.6733245849609Q3841.7530212402344 620.1480407714844 3882.4027099609375 643.7729034423828Q3923.0523986816406 667.3977661132812 3981.552032470703 667.3977661132812Q4009.0020141601562 667.3977661132812 4035.0518493652344 660.0978393554688Q4061.1016845703125 652.7979125976562 4084.2266387939453 637.9479675292969Q4107.351593017578 623.0980224609375 4124.751922607422 600.4479675292969L4133.402160644531 606.6982421875Q4101.751922607422 658.2489929199219 4069.876693725586 688.6494140625Q4038.00146484375 719.0498352050781 4003.0512084960938 732.2750091552734Q3968.1009521484375 745.5001831054688 3926.650604248047 745.5001831054688Q3860.2000732421875 745.5001831054688 3807.3248443603516 716.0501098632812Q3754.4496154785156 686.6000366210938 3724.0245513916016 629.2249908447266Q3693.5994873046875 571.8499450683594 3693.5994873046875 488.2000732421875Q3693.5994873046875 413.6500549316406 3722.1245880126953 350.97499084472656Q3750.649688720703 288.2999267578125 3805.1749725341797 250.39987182617188Q3859.7002563476562 212.49981689453125 3936.8008422851562 212.49981689453125Z"/><g transform="translate(2853 435) rotate(-9)"><path d="M0 -360 L0 290" stroke="currentColor" stroke-width="88" stroke-linecap="round"/><path d="M-265 -300 C-205 -520 205 -520 265 -300 C200 -410 -200 -410 -265 -300 Z" fill="var(--pick)"/><rect x="-60" y="-445" width="120" height="120" rx="28" fill="var(--pick)"/></g></svg></a>
+  <nav aria-label="Sections"><a href="#how">How it works</a><a href="#comes-back">Comes back</a><a href="#pictures">Formulas</a><a href="#browser">In the browser</a><a href="#try">Try it</a></nav>
   <span class="spacer"></span>
   <a class="button" href="https://github.com/esst-prog2/Sentmine">GitHub</a>
   <a class="button main" href="#try">Install</a>
@@ -192,21 +218,22 @@
       <div class="meetings">
       <aside class="panel card hero-card" aria-label="The card sentmine made" aria-live="polite">
         <p class="panel-title">Cards</p>
-        <div class="front">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</div>
-        <div class="back"><span class="word">simultaneously</span><span class="meaning"><br>Two things happening at the same time.</span></div>
-        <div class="meta">Word card · the meaning came from Suggest meaning (step 2)</div>
+        <div class="front">simultaneously</div>
+        <div class="back"><span class="sentence">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</span><span class="meaning">At the same time; without waiting for one to finish before the other.</span></div>
+        <div class="meta">p. 13 · the meaning came from Suggest meaning (step 2)</div>
       </aside>
       <aside class="panel return" aria-label="The same word, twelve pages later">
         <p class="panel-title">Page 25, twelve pages later</p>
         <p class="return-line">… a certain fatal syndrome Z, which <span class="known" aria-describedby="known-card">simultaneously</span> makes it uncomfortable for them to take a life-prolonging drug X.</p>
         <div class="known-card" id="known-card">
-          <p class="made">Your card from 2026-11-14</p>
+          <p class="made">Your card from 2026-11-18</p>
+          <p class="term">simultaneously</p>
           <p>Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</p>
         </div>
         <p class="meta">The word is underlined because you already have a card; pointing at it shows the card. From the same real run (step 5).</p>
       </aside>
       </div>
-      <p class="caption">The card is made with sentmine’s own rules, its base form included as sentmine’s word list gives it, which is not always right (<i>least</i> gives <i>less</i>).</p>
+      <p class="caption">The card is made with sentmine’s own rules: the word (with its base form, as sentmine’s word list gives it, which is not always right: <i>least</i> gives <i>less</i>) on the front, its sentence on the back.</p>
     </div>
     <p class="try-line">Runs on your own computer, with Python 3.10 or newer. Reads PDFs that have selectable text, not scans. <a href="#try">How to install</a></p>
   </div>
@@ -236,38 +263,39 @@
       <div>
         <article class="step" data-step="1">
           <h3>Click a word on the page</h3>
-          <p>You read the PDF as it looks. Clicking <i>simultaneously</i> marks it yellow and makes a card from the sentence it came from.</p>
-          <div class="shot"><a href="img/1-click-a-word.png" title="Open the full screenshot"><img src="img/step-1-click.png" width="1217" height="389" alt="sentmine showing page 13 of the book with 'simultaneously' marked yellow and a new card in the cards panel."></a></div>
+          <p>You read the PDF as it looks. Clicking <i>simultaneously</i> marks it yellow and makes its card: the word on the front, the sentence it came from on the back, and where it came from.</p>
+          <div class="shot"><a href="img/1-click-a-word.png" title="Open the full screenshot"><img src="img/step-1-click.png" width="1217" height="389" alt="sentmine showing page 13 of the book with 'simultaneously' marked yellow; the new card has simultaneously on its front and the sentence below, the word marked."></a></div>
         </article>
         <article class="step" data-step="2">
           <h3>Ask what it means</h3>
-          <p>Suggest meaning sends the word and its sentence to the small model <code>gpt-5-nano</code> and writes a short meaning on the back, for you to check and edit.</p>
-          <div class="shot"><a href="img/2-suggest-meaning.png" title="Open the full screenshot"><img src="img/step-2-meaning.png" width="450" height="227" loading="lazy" alt="The same card now has a meaning on its back: Two things happening at the same time."></a></div>
+          <p>Suggest meaning sends the word and its sentence to the small model <code>gpt-5-nano</code> and writes a short meaning under the sentence, for you to check and edit.</p>
+          <div class="shot"><a href="img/2-suggest-meaning.png" title="Open the full screenshot"><img src="img/step-2-meaning.png" width="438" height="309" loading="lazy" alt="The same card with a meaning under its sentence: At the same time; without waiting for one to finish before the other."></a></div>
         </article>
         <article class="step" data-step="3">
-          <h3>Drag over a term, then its definition</h3>
+          <h3>Drag over a term</h3>
           <p>Drag over <i>Simpson’s reversal</i>: the card comes at once, with the sentence that explains it; in <b>Edit</b>, a click on the next sentence puts it in too. The term is inside its own definition, so <b>Make it cloze</b> hides it.</p>
-          <div class="shot"><a href="img/3-cloze-card.png" title="Open the full screenshot"><img src="img/step-3-cloze.png" width="1217" height="443" loading="lazy" alt="A cloze card: Strangely, the experimental data revealed a [...]: although the drug proved beneficial, with Simpson's reversal in bold on the back."></a></div>
+          <div class="shot"><a href="img/3-cloze-card.png" title="Open the full screenshot"><img src="img/step-3-cloze.png" width="1217" height="443" loading="lazy" alt="The card for Simpson's reversal, tagged CLOZE, with its sentence below and the term marked in it."></a></div>
         </article>
         <article class="step" data-step="4">
           <h3>Send it to Anki</h3>
-          <p>With Anki open and the AnkiConnect add-on installed, one click puts the cards in your deck. Without Anki, Download gives you a deck file to import.</p>
+          <p>With Anki open and the AnkiConnect add-on installed, one click puts the cards in your deck. Without Anki, Download gives you a deck file to import. (This screenshot is from the 14 November run, before the app’s new look.)</p>
           <div class="shot"><a href="img/4-send-to-anki.png" title="Open the full screenshot"><img src="img/step-4-send.png" width="1411" height="99" loading="lazy" alt="The status line: Sent to the deck 'sentmine demo' in Anki: 2 cards added. Now in My cards too."></a></div>
         </article>
         <article class="step" data-step="5">
           <h3>Meet the word again</h3>
           <p>On page 25 the word comes up again, in another study question. Clicking it makes no duplicate: sentmine shows the card you already have, and you can skip it.</p>
-          <div class="shot"><a href="img/5-already-has-a-card.png" title="Open the full screenshot"><img src="img/step-5-again.png" width="792" height="382" loading="lazy" alt="'simultaneously' already has a card from 2026-11-14, with the earlier card and the buttons Skip and Make it anyway."></a></div>
+          <div class="shot"><a href="img/5-already-has-a-card.png" title="Open the full screenshot"><img src="img/step-5-again.png" width="820" height="220" loading="lazy" alt="'simultaneously' already has a card from 2026-11-18, with the earlier card and the buttons Skip and Make it anyway."></a></div>
         </article>
       </div>
       <aside class="deck panel" data-step="1" aria-label="The deck, step by step">
         <p class="state">Step 1: a word card from its sentence.</p>
         <div class="card lit">
-          <div class="front">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.</div>
-          <div class="back">simultaneously<span class="meaning">Two things happening at the same time.</span></div>
+          <div class="front">simultaneously</div>
+          <div class="back">Two fair coins are flipped <b>simultaneously</b> to determine the payoffs of two players in the town’s casino.<span class="meaning">At the same time; without waiting for one to finish before the other.</span></div>
         </div>
-        <div class="card cloze">
-          <div class="front">Strangely, the experimental data revealed a <span class="gap">[...]</span>: Although the drug proved beneficial to the population as a whole…</div>
+        <div class="card cloze is-cloze">
+          <div class="front">Simpson’s reversal<span class="tag">Cloze</span></div>
+          <div class="back">Strangely, the experimental data revealed a <b>Simpson’s reversal</b>: Although the drug proved beneficial to the population as a whole…</div>
         </div>
         <div class="sent">Sent to the deck ‘sentmine demo’ in Anki: 2 cards added.</div>
         <div class="back-again">Page 25: <span>simultaneously</span> already has this card.</div>
@@ -278,7 +306,7 @@
   <section id="comes-back" aria-labelledby="back-title">
     <h2 id="back-title">Your cards come back while you read</h2>
     <div class="comes-back">
-      <div class="shot"><a href="img/6-cards-come-back.png" title="Open the full screenshot"><img src="img/6-cards-come-back.png" width="938" height="228" loading="lazy" alt="On a later page, Simpson's reversal has a solid blue line under it and a blue dot in the margin beside its lines; pointing at it shows the card made earlier."></a></div>
+      <div class="shot"><a href="img/6-cards-come-back.png" title="Open the full screenshot"><img src="img/6-cards-come-back.png" width="1074" height="278" loading="lazy" alt="On a later page, Simpson's reversal is underlined in blue with blue dots in the margin; pointing at it shows the card made earlier, from 2026-11-18."></a></div>
       <div class="measure">
         <p>When you open the next chapter, every word and term you already have a card for is <span class="underline-demo">underlined in blue</span>, with a blue dot in the page's margin beside its line and a count at the page's corner, so you see them while you scroll. Point at one, or reach it with the keyboard, and your own card appears, with the day you made it.</p>
         <ul>
@@ -290,10 +318,27 @@
     </div>
   </section>
 
+  <section id="pictures" aria-labelledby="pictures-title">
+    <h2 id="pictures-title">Formulas and graphs on the card</h2>
+    <div class="comes-back">
+      <div class="shot"><a href="img/8-formula-in-edit.png" title="Open the full screenshot"><img src="img/step-8-formula.png" width="423" height="461" loading="lazy" alt="A card open in Edit: the term correlation coefficient, its sentence, and under it a formula cut from the PDF page."></a></div>
+      <div class="measure">
+        <p>Press <b>Edit</b> on a card, click where you want something, and add it there:</p>
+        <ul>
+          <li>on a PDF, drag a box around a formula or a graph: it is cut from the PDF itself, so it stays sharp;</li>
+          <li>paste a screenshot or a copied picture;</li>
+          <li>click a sentence in the text, or right-click text or an image on a web page.</li>
+        </ul>
+        <p>Undo takes back the last step. The pictures go to Anki where you put them.</p>
+        <p class="caption">From page 13 of the solution manual to Pearl, Glymour and Jewell, <cite>Causal Inference in Statistics: A Primer</cite>.</p>
+      </div>
+    </div>
+  </section>
+
   <section id="browser" aria-labelledby="browser-title">
     <h2 id="browser-title">Cards from web pages, too</h2>
     <div class="browser">
-      <figure class="shot" style="margin:0"><img src="img/7-side-panel.png" width="400" height="780" loading="lazy" alt="sentmine's side panel beside a web page: a definition clip and a sentence clip from Wikipedia, with the word etiology marked yellow, the two cards below, and Download and Send to Anki at the bottom."></figure>
+      <figure class="shot" style="margin:0"><img src="img/7-side-panel.png" width="400" height="780" loading="lazy" alt="sentmine's side panel with two cards from Wikipedia: Causal inference, with its defining sentence, and etiology, with its sentence; Download and Send to Anki at the bottom."></figure>
       <div class="measure">
         <p>A browser extension for Edge and Chrome brings sentmine to what you read online.</p>
         <ul>
@@ -301,7 +346,7 @@
           <li><b>Right-click what you selected:</b> <i>Make a card from this</i>. A rough selection is enough: sentmine takes the whole sentences. Its card is made at once: what you selected is the term, the whole sentences around it are the passage, and a panel beside the page shows it.</li>
           <li>It reads a tab only when you press its button or right-click in it, and sends what it read nowhere but sentmine on your computer.</li>
         </ul>
-        <p class="caption">The two clips are from Wikipedia’s article <cite>Causal inference</cite> (CC BY-SA 4.0).</p>
+        <p class="caption">The two cards are from Wikipedia’s article <cite>Causal inference</cite> (CC BY-SA 4.0).</p>
       </div>
     </div>
   </section>
@@ -320,7 +365,7 @@
     <ul class="facts">
       <li><span>Ten cards: about 30 seconds to download and import the deck, about 5 seconds with Send to Anki. One timing by hand.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/blob/dfe10afdcc6e1eec5e9f5a93d729f12544c38b96/PLANNING_LOG.md?plain=1#L167">Planning log, 4 November 2026</a></li>
       <li><span>On four real PDFs of 10 to 166 pages, sentmine found the printed place of 99.9 to 100% of the words it read from them, so those words can be clicked on the page itself.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/blob/dfe10afdcc6e1eec5e9f5a93d729f12544c38b96/PLANNING_LOG.md?plain=1#L177">Planning log, 6 November 2026</a></li>
-      <li><span>579 automated tests passed on 14 November 2026. To check, install with <code>pip install -e ".[dev]"</code> (it adds pytest), then run <code>python -m pytest</code> in the sentmine folder.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/tree/26e81d7d965b79801ca8e3e7a3f4363fc6933ffb/tests">The tests, as of that day</a></li>
+      <li><span>667 automated tests passed on 18 November 2026. To check, install with <code>pip install -e ".[dev]"</code> (it adds pytest), then run <code>python -m pytest</code> in the sentmine folder.</span><a class="source" href="https://github.com/esst-prog2/Sentmine/tree/a5cbe568556062f181d7d4baf03e4f47d20cd7b2/tests">The tests, as of that day</a></li>
     </ul>
     </div>
   </section>
@@ -371,7 +416,7 @@ sentmine</code></pre>
 </main>
 
 <footer>
-  <span>Planned next (<a href="https://github.com/esst-prog2/Sentmine/blob/main/PLANNING_LOG.md?plain=1#L210">planning log</a>): formulas and graphs on cards.</span>
+  <span>Next (<a href="https://github.com/esst-prog2/Sentmine/blob/main/PLANNING_LOG.md">planning log</a>): a week of real reading with it, then cutting what was not used.</span>
   <span>sentmine, a project for Advanced Programming at ELTE.</span>
   <a href="https://github.com/esst-prog2/Sentmine">Source on GitHub</a>
 </footer>
@@ -379,7 +424,7 @@ sentmine</code></pre>
 <script>
   // The deck beside the steps follows the step in view; without JavaScript it simply shows step 1.
   // The opening's sentence: a click on any word rebuilds the card the way sentmine makes it,
-  // the word in bold in its sentence and, on the back, the word with its base form.
+  // the word with its base form on the front, its sentence on the back with the word marked.
   const sentences = [
     "Two fair coins are flipped simultaneously to determine the payoffs of two players in the town’s casino.",
     "Player 1 wins a dollar if and only if at least one coin lands on head.",
@@ -407,14 +452,14 @@ sentmine</code></pre>
       // the nth place of the word as a whole word, so "a" is never the "a" inside "Player"
       const whole = new RegExp("(?<![A-Za-z’])" + pick.textContent + "(?![A-Za-z’])", "g");
       const at = [...sentence.matchAll(whole)][nth].index;
-      const front = heroCard.querySelector(".front");
-      front.replaceChildren(sentence.slice(0, at), Object.assign(document.createElement("b"), { textContent: pick.textContent }), sentence.slice(at + pick.textContent.length));
-      heroCard.querySelector(".word").textContent = pick.dataset.back;
+      heroCard.querySelector(".front").textContent = pick.dataset.back;   // the word, with its base form
+      heroCard.querySelector(".sentence").replaceChildren(sentence.slice(0, at),
+        Object.assign(document.createElement("b"), { textContent: pick.textContent }), sentence.slice(at + pick.textContent.length));
       const real = pick.textContent === "simultaneously";
       heroCard.querySelector(".meaning").hidden = !real;
       heroCard.querySelector(".meta").textContent = real
-        ? "Word card · the meaning came from Suggest meaning (step 2)"
-        : "Word card · a preview on this page; in sentmine, Suggest meaning can add a meaning";
+        ? "p. 13 · the meaning came from Suggest meaning (step 2)"
+        : "p. 13 · a preview on this page; in sentmine, Suggest meaning can add a meaning";
       if (phone.matches) heroCard.scrollIntoView({ block: "nearest" });   // on a phone the card is below the sentence
     });
   });

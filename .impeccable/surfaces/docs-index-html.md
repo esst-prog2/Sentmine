@@ -25,3 +25,5 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 
 AMENDED 2026-11-14 after critique 2 and the finish review (decided by the user): THESIS, FIRST VIEWPORT and the Scope action now describe the shipped page; the earlier wording promised the cropped real page and the install command in the first viewport.
+
+AMENDED 2026-11-18 (decided by the user): OWN-WORLD is now sentmine's new look: warm paper #f3eee4, cream panels #fbf8f2 with #e2dbcc hairlines, ink #23201b, link blue #2d6f8e, picked yellow #f8df7a, cloze rust #a63a12; Newsreader for the book, cards and headings, system UI for the interface; the wordmark (sent italic on a yellow marker, mine with a pickaxe i) in a light header; a dark ink Install button; faint card outlines falling slowly behind the page. The cards on the page have today's shape (term on the front, its sentence on the back) and the screenshots are from the 2026-11-18 run, with a new section on formulas and graphs.
