@@ -60,7 +60,7 @@ html = f"""<!doctype html>
       #s-title .page {{ position: absolute; left: 160px; top: 560px; width: 1600px; background: #fff; border: 2px solid var(--line);
         border-radius: 20px; padding: 34px 42px; box-shadow: 0 2px 4px rgba(70, 52, 20, .08), 0 24px 60px rgba(70, 52, 20, .16); }}
       #s-title .page img {{ display: block; width: 1516px; height: auto; }}
-      #s-title .page .mark {{ position: absolute; left: calc(42px + 1516px * 0.285); top: calc(34px + 1516px * 0.0465); width: calc(1516px * 0.142);
+      #s-title .page .mark {{ position: absolute; left: calc(42px + 1516px * 0.285); top: calc(34px + 1516px * 0.0465); width: calc(1516px * 0.152);
         height: calc(1516px * 0.026); background: rgba(248, 223, 122, 0.55); border-radius: 6px; mix-blend-mode: multiply; }}
       #s-title .credit {{ position: absolute; left: 160px; top: 930px; font: 28px/1.3 var(--ui); color: var(--soft); }}
     </style>
