@@ -83,6 +83,9 @@
     box-shadow: 0 2px 10px rgba(31, 35, 40, 0.06); }
   .film .caption { margin-top: 0; }
   .said { padding-left: 1.2em; margin: 8px 0 0; }
+  .ext-line { display: flex; gap: 14px; align-items: center; }
+  .ext-icon { flex: none; display: block; border-radius: 10px; box-shadow: var(--lift); }
+  .ext-icon.small { display: inline-block; border-radius: 6px; box-shadow: none; vertical-align: -5px; margin-right: 8px; }
   .said-box summary { cursor: pointer; color: var(--soft); font-size: 0.9rem; }
   .said li { margin-bottom: 6px; }
   .known-card { position: relative; background: var(--panel); border-radius: 12px; padding: 12px 16px; margin-top: 4px; font-family: var(--book);
@@ -282,7 +285,7 @@
           <p>On Wikipedia, select <i>Simpson’s paradox</i> and right-click: <i>Make a card from this</i>. Its card comes at once in the side panel, with the sentence that explains it, and joins the same deck as your book’s cards. The term is inside its own definition, so <b>Make it cloze</b> hides it. In a PDF, drag over a term for the same card.</p>
           <div class="shot"><a href="img/3-web-clip.png" title="Open the full screenshot"><img src="img/step-3-web.png" width="1215" height="417" loading="lazy" alt="Wikipedia's Simpson's paradox with the term selected; beside it, sentmine's side panel with the card for Simpson's paradox, tagged CLOZE, from Simpson's paradox – Wikipedia."></a></div>
           <p class="caption">From Wikipedia’s article <cite>Simpson’s paradox</cite> (CC BY-SA 4.0).</p>
-          <p>The extension (Edge, Chrome) can also open a whole page or a Canvas PDF in sentmine. It reads a tab only when you ask.</p>
+          <p class="ext-line"><img class="ext-icon" src="img/extension-icon.svg" width="40" height="40" alt="The sentmine extension's icon: a pickaxe on cream."><span>Its toolbar button also opens the page, a PDF or a Canvas PDF in sentmine. It reads a tab only when you ask.</span></p>
         </article>
         <article class="step" data-step="4">
           <h3>Send it to Anki</h3>
@@ -390,7 +393,7 @@ sentmine</code></pre>
     <p class="measure"><b>What opens:</b> sentmine’s reading page, in your browser, at <code>http://127.0.0.1:8000</code> (or the next free port up to 8010). Paste a text, or open a PDF that has selectable text. Scanned PDFs cannot be read yet.</p>
     <p class="measure"><b>If the terminal says it cannot find <code>sentmine</code></b>, the virtual environment is not active: run the activate line again, then <code>sentmine</code>.</p>
     <details class="optional">
-      <summary>Optional: the browser extension</summary>
+      <summary><img class="ext-icon small" src="img/extension-icon.svg" width="22" height="22" alt="">Optional: the browser extension</summary>
       <ul class="options">
         <li>In Edge open <code>edge://extensions</code> (in Chrome <code>chrome://extensions</code>), switch on <b>Developer mode</b>, choose <b>Load unpacked</b> and pick the <code>extension</code> folder inside Sentmine.</li>
         <li>sentmine must be running for the button and the right-click to reach it.</li>

@@ -318,5 +318,6 @@ The falling cards (above); **settle** (`.5s cubic-bezier(.16, 1, .3, 1)`), a fad
 - `docs/video/sentmine-story.mp4` (not on the page): real screens recorded on 2026-11-18: sentmine in headless Edge, and Anki's own window asking the card, recorded with Windows' PrintWindow; the days in it are the story's (said in the film and its caption).
 - `docs/video/sentmine-web.mp4` (not on the page): real screens recorded on 2026-11-18: Wikipedia's *Simpson's paradox* (CC BY-SA 4.0) in headless Edge beside sentmine's side-panel view, and the book in sentmine; the browser's right-click menu is named in a caption, not shown.
 - The opening card's meanings: gpt-5-nano's answers through sentmine's Suggest meaning on 2026-11-18, uncorrected.
+- `docs/img/extension-icon.svg`: the browser extension's own icon (`extension/icons/sentmine.svg`), shown beside step 3's line about the extension and in Try it.
 - `docs/fonts/`: Newsreader by Production Type, SIL Open Font License (`OFL.txt` beside it), subset to WOFF.
 - No generated, stock or AI-made images.
