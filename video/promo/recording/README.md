@@ -31,3 +31,12 @@ solution manual to Pearl, Glymour and Jewell, which is not in the repo (copyrigh
 `record_tour2.py` records the take at 3840×2160 (1280×720 drawn at 3×; the PDF pages then come at 2400 pixels) and
 logs where each thing happens. `make_tour3.py` writes `../index.html` from that: a title card with a real crop of
 page 13, the take trimmed 0.9 s and played 1.12× faster, a camera that follows the logged places, and the end card.
+
+## The tour, book and web (`record_tour3.py`, `make_tour4.py`), since 2026-11-19
+
+Three takes from one real run: A the book (a word, Suggest meaning); B Wikipedia's *Simpson's paradox* and
+sentmine's side-panel view recorded side by side at the same moments (the term selected, its card arriving,
+Make it cloze clicked in the panel); C the book again (Send to Anki, page 48 where the Wikipedia card comes back).
+Before clicking in the panel, the recorder checks that the element under the pointer is the button it means:
+an earlier take clicked the panel's Send to Anki by mistake, under its bottom bar. `make_tour4.py` writes
+`../index.html`: the title card, the takes joined by a dip through paper, the camera, captions and the end card.

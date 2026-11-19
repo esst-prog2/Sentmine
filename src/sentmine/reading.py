@@ -191,6 +191,9 @@ def _sentence_spans(text: str) -> list[tuple[int, int]]:
     return spans
 
 
+_BLOCK_BREAK = re.compile(r"\n[^\S\n]*\n\s*")   # a blank line: where one block of a page ends
+
+
 def whole_sentences(selected: str, before: str = "", after: str = "") -> tuple[str, str]:
     """A selection made loosely, as whole sentences: the sentences it touches, with `before` and `after` the text
     around it on the page. A single word comes back as its sentence and the word, else the word is ""."""
@@ -199,13 +202,19 @@ def whole_sentences(selected: str, before: str = "", after: str = "") -> tuple[s
     raw = before + selected + after
     first = len(before) + len(selected) - len(selected.lstrip())   # the selection without the spaces around it
     last = len(before) + len(selected.rstrip())
+    # a blank line is a block of the page (a paragraph, a list item, a heading): the passage stays inside the blocks
+    # the selection is in, even where a block has no full stop ("Responsibilities")
+    breaks = list(_BLOCK_BREAK.finditer(raw))
+    begin = max([m.end() for m in breaks if m.end() <= first], default=0)
+    stop = min([m.start() for m in breaks if m.start() >= last], default=len(raw))
+    raw, first, last = raw[begin:stop], first - begin, last - begin
     text = _ANY_SPACE.sub(" ", raw)   # spaces made one; a prefix collapses to a prefix of the same length
     start, end = len(_ANY_SPACE.sub(" ", raw[:first])), len(_ANY_SPACE.sub(" ", raw[:last]))
     middle = text[start:end]
     chosen = [text[a:b] for a, b in _sentence_spans(text) if a < end and b > start]
     passage = " ".join(chosen) if chosen else middle
     word = middle.strip(".,;:!?\"'()[]")
-    single = len(clickable_words(word)) == 1 and clickable_words(word)[0].text == word
+    single = len(clickable_words(word)) == 1 and clickable_words(word)[0].text == word.replace("’", "'").lower()   # as sentmine keeps a word
     return passage, word if single and passage != word else ""
 
 
@@ -333,7 +342,8 @@ class Session:
         number = len(self.sentences) - len(self.paragraphs[-1])
         if word:
             for index, sentence in enumerate(self.paragraphs[-1]):
-                found = [at for at, one in enumerate(clickable_words(sentence)) if one.text == word]
+                # as sentmine keeps a word: lower case, straight apostrophes ("Settlement" is "settlement")
+                found = [at for at, one in enumerate(clickable_words(sentence)) if one.text == word.replace("’", "'").lower()]
                 if found:
                     return self.pick_word(number + index, found[0])
         words = " ".join(whole_words(selected.strip(), before + selected[: len(selected) - len(selected.lstrip())],

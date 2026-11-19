@@ -126,6 +126,11 @@ function aroundSelection() {
   const textOf = (part) => {   // as the reader sees it: a page's <style> inside a paragraph is not text
     const copy = part.cloneContents();
     copy.querySelectorAll("style, script, noscript, template, annotation").forEach((hidden) => hidden.remove());   // annotation: a formula's source
+    // each block of the page (a paragraph, a list item, a heading, a line break) ends with a blank line, so
+    // "counterparty.</li><li>The" is two sentences, not "counterparty.The"
+    copy.querySelectorAll("br").forEach((brk) => brk.replaceWith("\n\n"));
+    copy.querySelectorAll("p, div, li, dt, dd, h1, h2, h3, h4, h5, h6, blockquote, pre, tr, td, th, section, article, header, footer, figcaption")
+      .forEach((block) => { block.before("\n\n"); block.after("\n\n"); });
     return copy.textContent;
   };
   return { selected: selection.toString(), before: textOf(head), after: textOf(tail) };
