@@ -83,6 +83,7 @@
     box-shadow: 0 2px 10px rgba(31, 35, 40, 0.06); }
   .film .caption { margin-top: 0; }
   .said { padding-left: 1.2em; margin: 8px 0 0; }
+  .said-box summary { cursor: pointer; color: var(--soft); font-size: 0.9rem; }
   .said li { margin-bottom: 6px; }
   .known-card { position: relative; background: var(--panel); border-radius: 12px; padding: 12px 16px; margin-top: 4px; font-family: var(--book);
     box-shadow: 0 10px 28px rgba(31, 35, 40, 0.16), 0 1px 3px rgba(31, 35, 40, 0.14); }
@@ -234,7 +235,7 @@
         <p class="meta">The word is underlined because you already have a card; pointing at it shows the card. From the same real run (step 5).</p>
       </aside>
       </div>
-      <p class="caption">The card is made with sentmine’s own rules: the word (with its base form, as sentmine’s word list gives it, which is not always right: <i>least</i> gives <i>less</i>) on the front, its sentence on the back. Suggest meaning shows the answer <code>gpt-5-nano</code> gave for that word on 18 November 2026, asked ahead and not corrected (some are wrong: check it, as in sentmine).</p>
+      <p class="caption">Meanings are <code>gpt-5-nano</code>’s real answers, uncorrected: some are wrong, so check them, as in sentmine.</p>
     </div>
     <p class="try-line">Runs on your own computer, with Python 3.10 or newer. Reads PDFs that have selectable text, not scans. <a href="#try">How to install</a></p>
   </div>
@@ -246,7 +247,8 @@
         <source src="video/sentmine-tour.mp4" type="video/mp4">
       </video>
       <div class="measure">
-        <p class="caption">No sound. Real screens from one run of sentmine on 19 November 2026: the book, then Wikipedia’s <cite>Simpson’s paradox</cite> (CC BY-SA 4.0) beside sentmine’s side panel, then the book again (the pointer is drawn in; only the wait for the AI meaning is shortened; the browser’s right-click menu is named in a caption, not shown). The camera follows what happens; captions added with HyperFrames. What it says:</p>
+        <p class="caption">Real screens, no sound. Only the AI’s wait is shortened; the right-click menu is named, not shown. Wikipedia’s <cite>Simpson’s paradox</cite>, CC BY-SA 4.0.</p>
+        <details class="said-box"><summary>What it says</summary>
         <ol class="said">
           <li>Click a word: a card, with its sentence.</li>
           <li>Ask what it means. You check it.</li>
@@ -255,6 +257,7 @@
           <li>Both go to Anki in one click.</li>
           <li>Pages later, your card from the web comes back.</li>
         </ol>
+        </details>
       </div>
     </div>
   </section>
@@ -279,7 +282,7 @@
           <p>On Wikipedia, select <i>Simpson’s paradox</i> and right-click: <i>Make a card from this</i>. Its card comes at once in the side panel, with the sentence that explains it, and joins the same deck as your book’s cards. The term is inside its own definition, so <b>Make it cloze</b> hides it. In a PDF, drag over a term for the same card.</p>
           <div class="shot"><a href="img/3-web-clip.png" title="Open the full screenshot"><img src="img/step-3-web.png" width="1215" height="417" loading="lazy" alt="Wikipedia's Simpson's paradox with the term selected; beside it, sentmine's side panel with the card for Simpson's paradox, tagged CLOZE, from Simpson's paradox – Wikipedia."></a></div>
           <p class="caption">From Wikipedia’s article <cite>Simpson’s paradox</cite> (CC BY-SA 4.0).</p>
-          <p>This is sentmine’s extension for Edge and Chrome. Its other button opens a whole web page, without its menus, or the PDF behind a Canvas file page, in sentmine’s reading view. It reads a tab only when you press its button or right-click in it, and sends what it read nowhere but sentmine on your computer.</p>
+          <p>The extension (Edge, Chrome) can also open a whole page or a Canvas PDF in sentmine. It reads a tab only when you ask.</p>
         </article>
         <article class="step" data-step="4">
           <h3>Send it to Anki</h3>
