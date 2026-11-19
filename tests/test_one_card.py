@@ -139,3 +139,17 @@ def test_the_picture_route_names_the_picture_it_added():
 def test_a_selection_inside_a_word_is_widened_to_the_whole_word(selected, before, after, term):
     from sentmine.reading import whole_words
     assert whole_words(selected, before, after) == term
+
+
+def test_a_paragraph_break_on_the_page_ends_the_passage():
+    # a job post's blocks, as the extension now sends them: a blank line between them, even without a full stop
+    before = "The Analyst supports clearing houses.\n\nResponsibilities\n\nCoordinate daily operational tasks to ensure seamless "
+    after = ".\n\nExecute corporate actions."
+    passage, word = whole_sentences("settlement", before, after)
+    assert passage == "Coordinate daily operational tasks to ensure seamless settlement." and word == "settlement"
+
+
+def test_a_word_selected_with_a_capital_makes_a_word_card():
+    session = Session()
+    result, card = session.add_clip("Settlement", "The Clearing and ", " Analyst supports clearing houses.", "Job", "https://example.org")
+    assert card.kind == "word" and card.word.lower() == "settlement"   # a word card, so Suggest meaning is offered
