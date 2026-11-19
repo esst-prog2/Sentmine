@@ -226,10 +226,10 @@ Supporting tokens: `--code-head` `#2b2620` (install-block header), `--code-selec
 
 Full-bleed bands with a fluid side gutter (`gutter`, 16 to 48px); sections separated by a 1px hairline top border and `section-y` vertical padding. Content is left-aligned; prose is held to a measure.
 
-- **Section order as shipped:** opening; video (the tour); One card, five steps; Your cards come back while you read; Formulas and graphs on the card; Cards from web pages, too; Why I built it; Measured, with sources; Try it; footer.
+- **Section order as shipped:** opening; video (the tour); One card, five steps; Your cards come back while you read; Formulas and graphs on the card; Why I built it; Measured, with sources; Try it; footer.
 - **Opening:** headline and one line, then the book-sentence frame full width, then two equal columns (the card it made; the same word twelve pages later), then a caption.
 - **How it works:** steps `minmax(0, 1fr)` beside a sticky deck `minmax(0, 24rem)`. The deck is sticky at `top: var(--below-bar)`.
-- **Comes back / Formulas:** the picture's column as wide as the picture (`fit-content(62%)`), the text beside it from its top. **Browser:** the side panel picture beside its text.
+- **Comes back / Formulas:** the picture's column as wide as the picture (`fit-content(62%)`), the text beside it from its top.
 - **Anchors:** `scroll-padding-top: var(--below-bar)`; `--below-bar` is `--bar-height` (66px) plus 24px.
 
 **Breakpoints.** At 900px and below every two-column grid becomes one column, the deck stops being sticky and shows its final state. At 640px and below the header keeps only the wordmark and Install.
@@ -314,7 +314,6 @@ The falling cards (above); **settle** (`.5s cubic-bezier(.16, 1, .3, 1)`), a fad
 - `docs/img/3-web-clip.png` and its crop `step-3-web.png`: the last frames of the tour's web take on 2026-11-19, Wikipedia's *Simpson's paradox* (CC BY-SA 4.0) at 880 px and sentmine's side-panel view at 400 px set side by side as Edge shows them, the card made cloze in the panel; in the crop the panel side starts at that card.
 - `docs/img/4-send-to-anki.png` and its crop `step-4-send.png`: a frame of the tour's recording on 2026-11-19 (a real run with Anki open; the pointer in it is the recorder's drawn pointer), right after Send to Anki.
 - `docs/img/6-cards-come-back-full.png` and its crop `6-cards-come-back.png`: a frame of the same recording, page 48 of the book with the card made from Wikipedia shown on pointing.
-- `docs/img/7-side-panel.png`: the extension's side panel at 400 px in a real run on 2026-11-18, with two cards made from Wikipedia's *Causal inference* article (CC BY-SA 4.0), credited on the page.
 - `docs/video/sentmine-tour.mp4`: one continuous take of a real run of sentmine on 2026-11-18, recorded at 3840×2160 in headless Edge with a drawn pointer, trimmed 0.9 s and played 1.12× faster; only the wait for the AI meaning is shortened (said in its caption). It opens on a title card with a real crop of page 13 (`video/promo/assets/tour/page13-sentence.png`), which is also its poster.
 - `docs/video/sentmine-story.mp4` (not on the page): real screens recorded on 2026-11-18: sentmine in headless Edge, and Anki's own window asking the card, recorded with Windows' PrintWindow; the days in it are the story's (said in the film and its caption).
 - `docs/video/sentmine-web.mp4` (not on the page): real screens recorded on 2026-11-18: Wikipedia's *Simpson's paradox* (CC BY-SA 4.0) in headless Edge beside sentmine's side-panel view, and the book in sentmine; the browser's right-click menu is named in a caption, not shown.

@@ -40,10 +40,10 @@ The name is `sentmine`, written in lower case. No author name on the promo page:
 
 ## Evidence on Hand
 
-- Seven screenshots from real runs: six from one run on the course book's solution manual, cropped: `docs/img/1-click-a-word.png` to `docs/img/6-cards-come-back.png`. The manual is copyrighted: only small parts appear, with a caption naming it.
+- A 30-second video and screenshots from real runs (`docs/video/`, `docs/img/`): the course book's solution manual and a Wikipedia page. The manual is copyrighted: only small parts appear, with a caption naming it.
 - Measurements, each in `PLANNING_LOG.md`: 10 cards, Download and import 30 s against Send to Anki 5 s (one timing by hand, 2026-11-03); 99.9 to 100% of words found on four real PDFs (2026-11-06); the first design's 103 cards, of which 4 were really new (Homework 4).
-- 579 automated tests (pytest, 2026-11-14).
-- The side panel screenshot `docs/img/7-side-panel.png`: two clips from Wikipedia's *Causal inference* article (CC BY-SA 4.0), credited on the page.
+- 678 automated tests (pytest, 2026-11-19).
+- The web in step 3 (`docs/img/3-web-clip.png`): Wikipedia's *Simpson's paradox* (CC BY-SA 4.0) beside sentmine's side panel, credited on the page.
 - No users besides the author, no testimonials, no download counts: none may be invented.
 
 ## Product Principles
