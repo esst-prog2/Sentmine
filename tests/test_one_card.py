@@ -119,8 +119,9 @@ def test_a_longer_selection_is_the_term_and_its_whole_sentences_the_passage(sele
 
 
 def test_the_picture_route_names_the_picture_it_added():
-    from sentmine.app import create_app
     import base64
+
+    from sentmine.app import create_app
     client = create_app().test_client()
     client.post("/api/text", json={"text": TEXT})
     card = client.post("/api/word", json={"sentence": 1, "word": 2}).get_json()["cards"][0]
@@ -151,5 +152,5 @@ def test_a_paragraph_break_on_the_page_ends_the_passage():
 
 def test_a_word_selected_with_a_capital_makes_a_word_card():
     session = Session()
-    result, card = session.add_clip("Settlement", "The Clearing and ", " Analyst supports clearing houses.", "Job", "https://example.org")
+    _result, card = session.add_clip("Settlement", "The Clearing and ", " Analyst supports clearing houses.", "Job", "https://example.org")
     assert card.kind == "word" and card.word.lower() == "settlement"   # a word card, so Suggest meaning is offered

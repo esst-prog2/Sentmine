@@ -55,7 +55,7 @@ def test_a_card_from_a_pdf_says_its_file_and_page(client, tmp_path):
     assert card["origin"] == "primer.pdf, p. 2"
     deck = client.get("/api/deck?name=d")
     (tmp_path / "d.apkg").write_bytes(deck.data)
-    (_, front, back), = read_notes(tmp_path / "d.apkg", tmp_path)[0]
+    (_, _front, back), = read_notes(tmp_path / "d.apkg", tmp_path)[0]
     assert back.startswith("Outliers can <b>skew</b>") and "Source: primer.pdf, p. 2</div>" in back
     remembered = client.get("/api/memory").get_json()
     assert remembered["cards"][0]["source"] == "primer.pdf, p. 2"
@@ -82,7 +82,7 @@ def test_a_pasted_text_has_no_source_line(client, tmp_path):
     card = click(client, "", "skew")["cards"][-1]
     assert card["origin"] == ""
     (tmp_path / "d.apkg").write_bytes(client.get("/api/deck?name=d").data)
-    (_, front, back), = read_notes(tmp_path / "d.apkg", tmp_path)[0]
+    (_, _front, back), = read_notes(tmp_path / "d.apkg", tmp_path)[0]
     assert back == "Outliers can <b>skew</b> the mean."
 
 

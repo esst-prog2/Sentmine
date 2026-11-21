@@ -2,7 +2,6 @@
 web page waits for it, and its editor puts it at the cursor."""
 
 import pytest
-from reading_helper import place_of
 
 from sentmine.app import create_app
 from sentmine.reading import Problem, Session

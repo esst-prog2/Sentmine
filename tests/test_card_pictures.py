@@ -15,7 +15,7 @@ from sentmine.anki import send_notes
 from sentmine.app import create_app
 from sentmine.deck import Note, write_notes
 from sentmine.pages import PART_SCALE, locate, part
-from sentmine.reading import Problem, Session
+from sentmine.reading import Session
 
 TEXT = [["Outliers can skew the mean considerably.", "The median resists outliers."]]
 PNG = b"\x89PNG\r\n\x1a\n" + b"a picture"
@@ -176,7 +176,7 @@ def test_the_deck_file_contains_the_picture(tmp_path):
         media = json.loads(z.read("media"))
         assert list(media.values()) == ["sentmine-ab.png"]
         assert z.read(next(iter(media))) == PNG
-    (_, front, back), = read_notes(tmp_path / "deck.apkg", tmp_path)[0]
+    (_, _front, back), = read_notes(tmp_path / "deck.apkg", tmp_path)[0]
     assert 'src="sentmine-ab.png"' in back
 
 

@@ -22,7 +22,7 @@ def client(tmp_path):
 
 
 def first_data(page: bytes) -> dict:
-    found = re.findall(rb'<script type="application/json" id="first-data">(.*?)</script>', page, re.S)
+    found = re.findall(rb'<script type="application/json" id="first-data">(.*?)</script>', page, re.DOTALL)
     assert len(found) == 1
     return json.loads(found[0])
 

@@ -38,6 +38,7 @@ _CARDS_PAGE = Path(__file__).parent / "web" / "cards.html"
 _FONTS = Path(__file__).parent / "web" / "fonts"   # Newsreader (SIL OFL 1.1), served from this computer
 _FONT_FILES = {"Newsreader.woff", "Newsreader-Italic.woff"}
 _DATA_MARK = "<!-- first data -->"  # where a page gets the data it first shows
+_OWN_HOST_NAMES = {HOST, "localhost", "[::1]"}   # the names this computer goes by; any port
 _EXTENSION_ORIGINS = ("chrome-extension://", "extension://", "moz-extension://")  # the browser extension
 _NOT_IN_A_FILE_NAME = re.compile(r"[^\w \-]+")
 
@@ -290,6 +291,16 @@ def create_app(
     @app.errorhandler(AnkiProblem)
     def problem(error: Exception):
         return jsonify(error=str(error)), 400
+
+    @app.before_request
+    def only_this_computer():
+        """Every request must be addressed to this computer by name (Host). A website that points its own name at
+        127.0.0.1 ("DNS rebinding") would otherwise look like sentmine's own page, and could read and change things."""
+        host = request.host.lower()
+        name = host[: host.find("]") + 1] if host.startswith("[") else host.split(":", 1)[0]
+        if name not in _OWN_HOST_NAMES:
+            return jsonify(error="sentmine answers only to this computer's own address."), 403
+        return None
 
     @app.before_request
     def only_own_pages_change_things():

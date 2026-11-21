@@ -1,6 +1,5 @@
 """memory-database: the My cards page and its API."""
 
-from datetime import date
 
 import pytest
 from reading_helper import place_of

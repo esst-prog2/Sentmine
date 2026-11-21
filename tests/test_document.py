@@ -125,7 +125,7 @@ def test_one_page_in_the_singular():
 
 
 def test_a_text_file():
-    assert read_file("notes.txt", "﻿Plain text, café.".encode("utf-8")) == ("Plain text, café.", "Read the text file.")
+    assert read_file("notes.txt", "﻿Plain text, café.".encode()) == ("Plain text, café.", "Read the text file.")
 
 
 @pytest.mark.parametrize(
