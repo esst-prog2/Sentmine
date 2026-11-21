@@ -6,7 +6,7 @@ Let the reader ask for a suggested meaning of a word or term in its sentence, ke
 ## Requirements
 
 ### Requirement: Suggesting a meaning
-When an API key is available, each word card in the preview SHALL have a Suggest meaning button. Pressing it SHALL ask the model `gpt-5-nano` for a short plain English explanation of the word as it is used in the card's sentence. The explanation SHALL go on the back of the card, on its own line under the word. Pressing the button again SHALL replace it with a new explanation. Definition cards SHALL NOT have the button.
+When an API key is available, each word card in the preview SHALL have a Suggest meaning button. Pressing it SHALL ask the model `gpt-6-luna` for a short plain English explanation of the word as it is used in the card's sentence. The explanation SHALL go on the back of the card, on its own line under the word. Pressing the button again SHALL replace it with a new explanation. Definition cards SHALL NOT have the button.
 
 #### Scenario: A meaning for a word
 - **WHEN** the card for `skew` has the front `Outliers can skew it considerably.` and the reader presses Suggest meaning

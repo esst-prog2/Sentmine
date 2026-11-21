@@ -27,15 +27,14 @@ back:   Two fair coins are flipped simultaneously to determine the
         (simultaneously in bold)
 ```
 
-I press **Suggest meaning** on the card. The small model `gpt-5-nano` gets
+I press **Suggest meaning** on the card. The small model `gpt-6-luna` gets
 the word and its sentence, and puts the meaning under the sentence:
 
 ```
 back:   Two fair coins are flipped simultaneously to determine the
         payoffs of two players in the town’s casino.
 
-        At the same time; the two coin flips occur together, not one
-        after the other.
+        at the same time
 ```
 
 The model also names the few words of the sentence that show that meaning,
@@ -283,7 +282,7 @@ Running heads and page numbers are removed and hyphenated words rejoined;
 formulas and tables come out as they are, and scanned PDFs cannot be read yet.
 
 With an OpenAI API key, each word card gets a **Suggest meaning** button: it
-sends that word and its sentence to the small model `gpt-5-nano` and puts a
+sends that word and its sentence to the small model `gpt-6-luna` and puts a
 short English explanation on the back, for you to check and edit. Put the key
 in `.env` in the same user folder, as the line `OPENAI_API_KEY=...`, or in the
 variable of that name. Without a key the button is not shown and everything

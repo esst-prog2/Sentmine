@@ -1,7 +1,8 @@
 """A short explanation of a word in its sentence, from a small OpenAI model.
 
-The model was chosen by the spike in spike/meanings/ (planning log, 2026-11-02):
-19 of 20 right, judged blind by the reader, and the cheaper of the two that passed.
+The model was first chosen by the spike in spike/meanings/ (planning log, 2026-11-02). OpenAI shuts that one,
+gpt-5-nano, down on 11 December 2026; its named replacement was judged blind against it in spike/meanings-luna/
+(planning log, 2026-11-22): 20 of 20 right, against 17 of 20.
 """
 
 import json
@@ -13,7 +14,8 @@ from collections.abc import Callable
 
 from sentmine.memory import default_folder
 
-MODEL = "gpt-5-nano"
+MODEL = "gpt-6-luna"
+REASONING_EFFORT = "none"  # its lowest; it refuses "minimal", which gpt-5-nano was asked with
 URL = "https://api.openai.com/v1/chat/completions"
 TIMEOUT_SECONDS = 30
 KEY_NAME = "OPENAI_API_KEY"
@@ -97,7 +99,7 @@ def suggest_meaning(word: str, sentence: str, key: str, post: Callable[[dict, st
     body = {
         "model": MODEL,
         "messages": [{"role": "user", "content": PROMPT.format(word=word, sentence=sentence)}],
-        "reasoning_effort": "minimal",
+        "reasoning_effort": REASONING_EFFORT,
         "max_completion_tokens": 300,
     }
     answer = post(body, key)

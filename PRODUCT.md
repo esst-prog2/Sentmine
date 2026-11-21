@@ -28,7 +28,7 @@ The reader works on a desktop computer with course PDFs, Anki open with the Anki
 
 ## Capabilities and Constraints
 
-- Runs only on the reader's computer (`127.0.0.1`). The text stays there, except that Suggest meaning sends the word and its sentence to OpenAI (`gpt-5-nano`), only with the reader's own key (`OPENAI_API_KEY`, or `.env` in sentmine's user folder).
+- Runs only on the reader's computer (`127.0.0.1`). The text stays there, except that Suggest meaning sends the word and its sentence to OpenAI (`gpt-6-luna`), only with the reader's own key (`OPENAI_API_KEY`, or `.env` in sentmine's user folder).
 - Installed from the repository with Python 3.10 or newer (`pip install .`); there is no online version and no package release.
 - Anki with AnkiConnect is optional: Download writes an `.apkg` deck instead.
 - Scanned PDFs cannot be read yet.

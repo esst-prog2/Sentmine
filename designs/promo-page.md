@@ -50,7 +50,7 @@ Page content, in order. The wording below is the draft the look is built around;
 1. **Opening.** Headline: "Read the real page. Click a word. It's an Anki card." One line under it: "sentmine is a reading app for students who read English course books. It turns the words and terms you meet into Anki cards, and brings those cards back when you meet them again." Screenshot 1.
 2. **Five steps, one screenshot and one sentence each.**
    1. Click a word on the PDF page: a card with the sentence it came from (`docs/img/1-click-a-word.png`).
-   2. Suggest meaning: a short meaning from `gpt-5-nano`, for you to check (`docs/img/2-suggest-meaning.png`).
+   2. Suggest meaning: a short meaning from `gpt-6-luna`, for you to check (`docs/img/2-suggest-meaning.png`).
    3. Drag over a term, then its definition: a cloze card that hides the term (`docs/img/3-cloze-card.png`).
    4. Send to Anki: in your deck in about 5 seconds (screenshot 4, to take with Anki open).
    5. Meet the word again: clicking `simultaneously` in a later study question shows sentmine's own notice `'simultaneously' already has a card from DATE`, with your earlier card, Skip and Make it anyway (screenshot 5, to take; not Anki's duplicate message).
