@@ -1,0 +1,102 @@
+Mark each answer R (right) or W (wrong): does it fit the word in THAT sentence, and would you understand it?
+Write the letter at the start of the line, in place of the _. [the words in brackets would be underlined]
+
+1. paraphrasing
+   Sentence: Paraphrasing is rewriting a passage, sentence, or thought in your own words while keeping the original meaning.
+R 1a: Paraphrasing means expressing someone else’s words or ideas in your own words without changing their meaning.  [in your own words]
+R 1b: Restating someone else’s idea in your own words without changing the meaning.  [in your own words]
+
+2. paraphraser
+   Sentence: • ZeroGPT AI Paraphraser: Features quick and deep-thinking rephrasing with multilingual support.
+R 2a: A person or tool that rewrites text in different words.  [Features quick and deep-thinking rephrasing]
+R 2b: A paraphraser is a tool that rewrites text using different words.  [AI Paraphraser]
+
+3. signed
+   Sentence: The word signed can be a verb or an adjective with several different meanings depending on the context:
+R 3a: The sentence says that “signed” has different meanings depending on how it is used.  [several different meanings]
+W 3b: Agreed or written with a signature, showing authorization or agreement.  []
+
+4. mandate
+   Sentence: Almost a third of voters said an in-out referendum would be needed first, while more than one in six felt that a general election mandate would be sufficient, and the same proportion thought parliament could make the decision.
+R 4a: A mandate is authority or permission given by voters through an election.  [general election mandate]
+R 4b: An order or authority given to do something.  [that a general election mandate would be sufficient]
+
+5. constituencies
+   Sentence: However, there are nerves among some Labour MPs, especially those with constituencies that voted for Brexit, that even testing out public support for the move would be fraught with political risk and a potential boost to Reform.
+R 5a: Areas represented by MPs in Parliament; the voters in those districts.  [constituencies that voted for Brexit]
+R 5b: Areas represented by members of parliament.  [constituencies that voted for Brexit]
+
+6. restoke
+   Sentence: One cabinet minister told the Guardian: “Brexit clearly hasn’t worked and the promises made haven’t been kept so Andy is right to open up the question of what the future relationship looks like. But he definitely needs to proceed with caution because we don’t want to restoke division”.
+R 6a: To restoke means to cause division to grow again.  [restoke division]
+R 6b: To rekindle or provoke again (a bad feeling or conflict).  [restoke division]
+
+7. constituents
+   Sentence: A second said: “Andy is right to say we need some clarity around our long-term relationship. Security and trade cooperation are higher up the agenda than they were 10 years ago. But whether that adds up to a real desire for big change in the population I don’t know. My constituents will be cautious.”
+R 7a: People in a politician’s area who they represent.  [My constituents]
+R 7b: The people who vote for the speaker; the voters in the speaker’s district.  [My constituents will be cautious]
+
+8. seats
+   Sentence: Two-thirds of cabinet ministers, including Burnham himself, his first secretary, Louise Haigh, chancellor, John Healey, and foreign secretary, Ed Miliband, represent seats that backed Brexit, and previously said they would respect the 2016 vote.
+W 8a: Seats here means positions in Parliament that they hold as elected representatives.  [seats that backed Brexit]
+R 8b: “Seats” means electoral areas represented by a politician.  [represent seats that backed Brexit]
+
+9. backed
+   Sentence: Two-thirds of cabinet ministers, including Burnham himself, his first secretary, Louise Haigh, chancellor, John Healey, and foreign secretary, Ed Miliband, represent seats that backed Brexit, and previously said they would respect the 2016 vote.
+R 9a: supported or voted for in favor of  [backed Brexit, and previously said they would respect]
+R 9b: Voted for or supported.  [seats that backed Brexit]
+
+10. swing
+   Sentence: “Against this background these results show that Europe as an issue has a unique ability to unite the left and grow the Labour vote share among swing voters. The bolder the stance towards rejoin, the bigger Labour’s reward.”
+R 10a: In this sentence, swing refers to voters who can shift support between parties.  [the Labour vote share among swing voters]
+R 10b: voters who could choose either major party  [swing voters]
+
+11. shifted
+   Sentence: However, public opinion has shifted.
+R 11a: changed over time  [opinion has shifted]
+R 11b: Changed or moved in a new direction or stance.  []
+
+12. boost
+   Sentence: The poll by the Messina Group (TMG) found that renegotiating the UK’s relationship with the EU could boost Labour’s vote share by as much as seven points, if the prime minister offered a fresh referendum in which he campaigned to re-enter the bloc.
+R 12a: Increase or raise.  [could boost Labour’s vote share]
+R 12b: To boost Labour’s vote share means to increase the percentage of votes Labour receives.  [boost Labour’s vote share]
+
+13. divides
+   Sentence: Andy Burnham’s personal preference to rejoin the European Union after the next election is supported by almost half of all voters, a new megapoll has found, although cabinet ministers concerned about reopening Brexit divides are privately urging him to proceed with caution.
+W 13a: Causes a group to disagree or split into opposing sides.  []
+R 13b: Disagreements or divisions between people caused by Brexit.  [reopening Brexit divides]
+
+14. stance
+   Sentence: “Against this background these results show that Europe as an issue has a unique ability to unite the left and grow the Labour vote share among swing voters. The bolder the stance towards rejoin, the bigger Labour’s reward.”
+R 14a: A position or attitude a person or group takes on an issue.  []
+R 14b: “Stance” means a position or opinion about whether Britain should rejoin Europe.  [bolder the stance towards rejoin]
+
+15. bolster
+   Sentence: Exclusive: Findings will bolster those in No 10 who want to negotiate on re-entry but some senior figures remain wary
+R 15a: To boost or strengthen.  []
+R 15b: To bolster means to support or strengthen someone’s position.  [bolster those in No 10]
+
+16. wary
+   Sentence: Exclusive: Findings will bolster those in No 10 who want to negotiate on re-entry but some senior figures remain wary
+R 16a: Being cautious and careful about potential risks or downsides.  [but some senior figures remain wary]
+R 16b: Cautious because they do not fully trust or feel confident about something.  [remain wary]
+
+17. fraught
+   Sentence: However, there are nerves among some Labour MPs, especially those with constituencies that voted for Brexit, that even testing out public support for the move would be fraught with political risk and a potential boost to Reform.
+R 17a: Difficult and full of danger or risk.  []
+R 17b: Fraught means involving a lot of risk or difficulty.  [fraught with political risk]
+
+18. sovereignty
+   Sentence: However, it also found that Brexit arguments over immigration control and sovereignty still resonated.
+R 18a: Sovereignty means a country's ruling authority or power to govern itself.  [arguments over immigration control and sovereignty]
+R 18b: A country’s sovereignty is its power to govern itself and make its own decisions.  [immigration control and sovereignty]
+
+19. resonated
+   Sentence: However, it also found that Brexit arguments over immigration control and sovereignty still resonated.
+R 19a: continued to feel important and persuasive to people  [arguments over immigration control and sovereignty still resonated]
+R 19b: To resonate means to strongly connect with or be felt by people; it struck a chord.  [arguments over immigration control and sovereignty still resonated]
+
+20. skew
+   Sentence: Outliers can skew it considerably.
+R 20a: To influence or distort the overall result by pulling it off center.  [it considerably]
+R 20b: Make it uneven or biased.  [skew it considerably]

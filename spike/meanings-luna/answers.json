@@ -1,0 +1,322 @@
+[
+ {
+  "model": "gpt-5-nano",
+  "word": "paraphrasing",
+  "answer": "Restating someone else’s idea in your own words without changing the meaning.",
+  "key": "in your own words",
+  "input_tokens": 122,
+  "output_tokens": 30
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "paraphrasing",
+  "answer": "Paraphrasing means expressing someone else’s words or ideas in your own words without changing their meaning.",
+  "key": "in your own words",
+  "input_tokens": 122,
+  "output_tokens": 30
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "paraphraser",
+  "answer": "A person or tool that rewrites text in different words.",
+  "key": "Features quick and deep-thinking rephrasing",
+  "input_tokens": 120,
+  "output_tokens": 31
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "paraphraser",
+  "answer": "A paraphraser is a tool that rewrites text using different words.",
+  "key": "AI Paraphraser",
+  "input_tokens": 120,
+  "output_tokens": 25
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "signed",
+  "answer": "Agreed or written with a signature, showing authorization or agreement.",
+  "key": "",
+  "input_tokens": 116,
+  "output_tokens": 41
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "signed",
+  "answer": "The sentence says that “signed” has different meanings depending on how it is used.",
+  "key": "several different meanings",
+  "input_tokens": 116,
+  "output_tokens": 25
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "mandate",
+  "answer": "An order or authority given to do something.",
+  "key": "that a general election mandate would be sufficient",
+  "input_tokens": 139,
+  "output_tokens": 28
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "mandate",
+  "answer": "A mandate is authority or permission given by voters through an election.",
+  "key": "general election mandate",
+  "input_tokens": 139,
+  "output_tokens": 21
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "constituencies",
+  "answer": "Areas represented by MPs in Parliament; the voters in those districts.",
+  "key": "constituencies that voted for Brexit",
+  "input_tokens": 141,
+  "output_tokens": 31
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "constituencies",
+  "answer": "Areas represented by members of parliament.",
+  "key": "constituencies that voted for Brexit",
+  "input_tokens": 141,
+  "output_tokens": 18
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "restoke",
+  "answer": "To rekindle or provoke again (a bad feeling or conflict).",
+  "key": "restoke division",
+  "input_tokens": 155,
+  "output_tokens": 27
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "restoke",
+  "answer": "To restoke means to cause division to grow again.",
+  "key": "restoke division",
+  "input_tokens": 155,
+  "output_tokens": 19
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "constituents",
+  "answer": "The people who vote for the speaker; the voters in the speaker’s district.",
+  "key": "My constituents will be cautious",
+  "input_tokens": 160,
+  "output_tokens": 33
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "constituents",
+  "answer": "People in a politician’s area who they represent.",
+  "key": "My constituents",
+  "input_tokens": 160,
+  "output_tokens": 17
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "seats",
+  "answer": "Seats here means positions in Parliament that they hold as elected representatives.",
+  "key": "seats that backed Brexit",
+  "input_tokens": 150,
+  "output_tokens": 29
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "seats",
+  "answer": "“Seats” means electoral areas represented by a politician.",
+  "key": "represent seats that backed Brexit",
+  "input_tokens": 150,
+  "output_tokens": 21
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "backed",
+  "answer": "supported or voted for in favor of",
+  "key": "backed Brexit, and previously said they would respect",
+  "input_tokens": 150,
+  "output_tokens": 28
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "backed",
+  "answer": "Voted for or supported.",
+  "key": "seats that backed Brexit",
+  "input_tokens": 150,
+  "output_tokens": 15
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "swing",
+  "answer": "In this sentence, swing refers to voters who can shift support between parties.",
+  "key": "the Labour vote share among swing voters",
+  "input_tokens": 142,
+  "output_tokens": 34
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "swing",
+  "answer": "voters who could choose either major party",
+  "key": "swing voters",
+  "input_tokens": 142,
+  "output_tokens": 16
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "shifted",
+  "answer": "Changed or moved in a new direction or stance.",
+  "key": "",
+  "input_tokens": 104,
+  "output_tokens": 28
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "shifted",
+  "answer": "changed over time",
+  "key": "opinion has shifted",
+  "input_tokens": 104,
+  "output_tokens": 12
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "boost",
+  "answer": "Increase or raise.",
+  "key": "could boost Labour’s vote share",
+  "input_tokens": 153,
+  "output_tokens": 22
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "boost",
+  "answer": "To boost Labour’s vote share means to increase the percentage of votes Labour receives.",
+  "key": "boost Labour’s vote share",
+  "input_tokens": 153,
+  "output_tokens": 26
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "divides",
+  "answer": "Causes a group to disagree or split into opposing sides.",
+  "key": "",
+  "input_tokens": 146,
+  "output_tokens": 36
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "divides",
+  "answer": "Disagreements or divisions between people caused by Brexit.",
+  "key": "reopening Brexit divides",
+  "input_tokens": 146,
+  "output_tokens": 19
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "stance",
+  "answer": "A position or attitude a person or group takes on an issue.",
+  "key": "",
+  "input_tokens": 142,
+  "output_tokens": 39
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "stance",
+  "answer": "“Stance” means a position or opinion about whether Britain should rejoin Europe.",
+  "key": "bolder the stance towards rejoin",
+  "input_tokens": 142,
+  "output_tokens": 29
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "bolster",
+  "answer": "To boost or strengthen.",
+  "key": "",
+  "input_tokens": 121,
+  "output_tokens": 29
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "bolster",
+  "answer": "To bolster means to support or strengthen someone’s position.",
+  "key": "bolster those in No 10",
+  "input_tokens": 121,
+  "output_tokens": 22
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "wary",
+  "answer": "Being cautious and careful about potential risks or downsides.",
+  "key": "but some senior figures remain wary",
+  "input_tokens": 121,
+  "output_tokens": 29
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "wary",
+  "answer": "Cautious because they do not fully trust or feel confident about something.",
+  "key": "remain wary",
+  "input_tokens": 121,
+  "output_tokens": 22
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "fraught",
+  "answer": "Difficult and full of danger or risk.",
+  "key": "",
+  "input_tokens": 141,
+  "output_tokens": 42
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "fraught",
+  "answer": "Fraught means involving a lot of risk or difficulty.",
+  "key": "fraught with political risk",
+  "input_tokens": 141,
+  "output_tokens": 21
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "sovereignty",
+  "answer": "Sovereignty means a country's ruling authority or power to govern itself.",
+  "key": "arguments over immigration control and sovereignty",
+  "input_tokens": 114,
+  "output_tokens": 31
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "sovereignty",
+  "answer": "A country’s sovereignty is its power to govern itself and make its own decisions.",
+  "key": "immigration control and sovereignty",
+  "input_tokens": 114,
+  "output_tokens": 25
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "resonated",
+  "answer": "To resonate means to strongly connect with or be felt by people; it struck a chord.",
+  "key": "arguments over immigration control and sovereignty still resonated",
+  "input_tokens": 115,
+  "output_tokens": 39
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "resonated",
+  "answer": "continued to feel important and persuasive to people",
+  "key": "arguments over immigration control and sovereignty still resonated",
+  "input_tokens": 115,
+  "output_tokens": 23
+ },
+ {
+  "model": "gpt-5-nano",
+  "word": "skew",
+  "answer": "To influence or distort the overall result by pulling it off center.",
+  "key": "it considerably",
+  "input_tokens": 104,
+  "output_tokens": 27
+ },
+ {
+  "model": "gpt-6-luna",
+  "word": "skew",
+  "answer": "Make it uneven or biased.",
+  "key": "skew it considerably",
+  "input_tokens": 104,
+  "output_tokens": 14
+ }
+]

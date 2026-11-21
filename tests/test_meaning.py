@@ -45,7 +45,8 @@ def test_only_the_word_and_the_sentence_are_sent():
 
     assert suggest_meaning("skew", SKEW_SENTENCE, "test-key", post) == MEANING
     assert sent["key"] == "test-key"
-    assert sent["body"]["model"] == MODEL == "gpt-5-nano"
+    assert sent["body"]["model"] == MODEL == "gpt-6-luna"
+    assert sent["body"]["reasoning_effort"] == "none"   # gpt-6-luna refuses "minimal"
     text = sent["body"]["messages"][0]["content"]
     assert "Word: skew" in text and SKEW_SENTENCE in text
     assert "Some more text" not in text

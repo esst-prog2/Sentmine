@@ -1,11 +1,13 @@
-"""Spike: count the reader's marks in to_judge.txt per model. Run from the repository root."""
+"""Spike: count the reader's marks in to_judge.txt per model. Run from the repository root;
+another spike's folder may be given: python spike/meanings/count_marks.py spike/meanings-luna"""
 
 import json
 import re
+import sys
 from collections import Counter
 from pathlib import Path
 
-FOLDER = Path("spike/meanings")
+FOLDER = Path(sys.argv[1] if len(sys.argv) > 1 else "spike/meanings")
 key = json.loads((FOLDER / "key.json").read_text(encoding="utf-8"))
 marks = {}
 for line in (FOLDER / "to_judge.txt").read_text(encoding="utf-8").splitlines():
