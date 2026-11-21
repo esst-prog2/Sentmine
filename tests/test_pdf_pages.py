@@ -45,7 +45,7 @@ def two_pages():
 
 
 def test_every_word_is_found(two_pages):
-    session, found = two_pages
+    _session, found = two_pages
     placed = {(box[0], box[1]) for page in found.boxes for box in page}
     assert placed == set(found.words)
 
@@ -90,7 +90,7 @@ def test_numbers_between_words_do_not_lose_the_place():
 
 
 def test_the_same_words_twice_are_each_found_where_they_are():
-    session, found = located([["Assuming that there are twice as many tables."], ["Assuming that there are twice as many tables."]])
+    _session, found = located([["Assuming that there are twice as many tables."], ["Assuming that there are twice as many tables."]])
     pages_of_first = {page for page, page_boxes in enumerate(found.boxes) for box in page_boxes if box[0] == 0}
     pages_of_second = {page for page, page_boxes in enumerate(found.boxes) for box in page_boxes if box[0] == 1}
     assert (pages_of_first, pages_of_second) == ({0}, {1})

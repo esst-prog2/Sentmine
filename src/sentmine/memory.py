@@ -3,8 +3,7 @@
 import os
 import shutil
 import sqlite3
-from collections.abc import Iterable
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from datetime import date, timedelta

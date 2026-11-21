@@ -235,3 +235,4 @@ Append-only. One line per decision: date, what was decided, who decided it. Neve
 - 2026-11-18: The promo page shows one video, the tour (Homework 10 asks for one); "One word, one week" and "Your book and the web" stay in the repo, off the page. Decided by user.
 - 2026-11-19: The tour video and the promo page's steps show the book and the web in one story: a word in the book, a term from Wikipedia made cloze in the side panel, both sent to Anki, the Wikipedia card coming back in the book. Decided by user.
 - 2026-11-19: The promo page's "Cards from web pages, too" section is folded into step 3 (the extension's other button and its privacy line); the menu loses "In the browser". Decided by user.
+- 2026-11-22: sentmine answers only requests addressed to this computer (127.0.0.1, localhost, [::1]); other host names get 403, against DNS rebinding. Decided by user (after Claude's review).

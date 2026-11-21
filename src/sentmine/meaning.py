@@ -10,7 +10,6 @@ import re
 import urllib.error
 import urllib.request
 from collections.abc import Callable
-from pathlib import Path
 
 from sentmine.memory import default_folder
 

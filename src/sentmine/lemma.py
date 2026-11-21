@@ -4,12 +4,12 @@ The reading app and its history use this; the first design's command-line tool k
 the stem rules in stem.py, so that its numbers from the Homework 4 spike do not change.
 """
 
-from functools import lru_cache
+from functools import cache
 
 import simplemma
 
 
-@lru_cache(maxsize=None)  # a book has tens of thousands of words, and the page asks for all of them on every answer
+@cache  # a book has tens of thousands of words, and the page asks for all of them on every answer
 def base_form(word: str) -> str:
     """`sighed` -> `sigh`, `ran` -> `run`, `children` -> `child`.
 

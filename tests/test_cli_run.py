@@ -1,7 +1,6 @@
 import socket
 from pathlib import Path
 
-import pytest
 from apkg_helper import read_notes
 
 from sentmine.cli import main

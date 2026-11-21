@@ -42,6 +42,22 @@ def test_another_website_cannot_send_a_file(client, origin):
     assert "first" in reading(client) and "somewhere" not in reading(client)
 
 
+@pytest.mark.parametrize("host", ["evil.example:8000", "evil.example", "127.0.0.1.evil.example:8000"])
+def test_a_website_pointing_its_name_at_this_computer_is_refused(client, host):
+    # DNS rebinding: the page and the request share the site's name, so Origin alone would let it through
+    client.post("/api/text", json={"text": "The first text stays."})
+    origin = "http://" + host
+    response = client.post("/api/text", json={"text": "A text from somewhere else."}, headers={"Host": host, "Origin": origin})
+    assert response.status_code == 403
+    assert client.get("/api/memory", headers={"Host": host}).status_code == 403   # nor can it read the cards
+    assert "first" in reading(client) and "somewhere" not in reading(client)
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1:8000", "localhost:8003", "LOCALHOST", "[::1]:8000"])
+def test_this_computer_by_any_of_its_names_is_answered(client, host):
+    assert client.get("/api/state", headers={"Host": host}).status_code == 200
+
+
 def test_reading_requests_are_never_refused(client):
     # GET is never refused: the browser's own rules keep other sites from reading the answer.
     assert client.get("/", headers={"Origin": "https://evil.example"}).status_code == 200

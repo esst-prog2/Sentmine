@@ -157,8 +157,8 @@ network    the app runs only on my own computer, and the text stays
 
 ## 4. How we would know it works
 
-The checks are automated: `pip install -e ".[dev]"`, then `pytest` (676
-tests on 18 November 2026). Some of them:
+The checks are automated: `pip install -e ".[dev]"`, then `pytest` (685
+tests on 22 November 2026). Some of them:
 
 - Given the text `Outliers can skew it considerably.`, clicking `skew`
   makes a card whose front is `skew` and whose back is exactly that
