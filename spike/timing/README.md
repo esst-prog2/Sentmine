@@ -52,3 +52,6 @@ Send these numbers back. The slide shows the two averages, and this file is what
 Five cards by hand: **60 seconds** in all. Five cards with sentmine: **30 seconds** in all. Timed by the reader with
 a stopwatch; the time for each card was not written down, only the total for each way. Every sentmine card also
 carries its source (the file and the page); the cards made by hand did not.
+
+Not comparable: the cards by hand in this first run had no meaning looked up, while the sentmine cards had
+Suggest meaning. The reader will time both ways again with the full procedure above.
