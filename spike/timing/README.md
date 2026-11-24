@@ -46,3 +46,9 @@ Date: ____________ · Anki version: ____________ · sentmine: commit ___________
 Average by hand: ______ s · average with sentmine: ______ s
 
 Send these numbers back. The slide shows the two averages, and this file is what it cites.
+
+## Measured (24 November 2026)
+
+Five cards by hand: **60 seconds** in all. Five cards with sentmine: **30 seconds** in all. Timed by the reader with
+a stopwatch; the time for each card was not written down, only the total for each way. Every sentmine card also
+carries its source (the file and the page); the cards made by hand did not.
