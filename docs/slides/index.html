@@ -180,7 +180,6 @@
         <figure class="shot"><img src="../img/step-1-click.png" alt="The word simultaneously clicked on page 13 of the PDF; its card, with the sentence, appears on the right." width="2434" height="778"></figure>
       </div>
     </div>
-    <aside class="notes">Promise first: in five minutes you will see a word I didn’t know go from a book or the web into Anki, and come back to me. Who it is for: people who read in English that is not their first language: students like me reading their course, or anyone practising reading comprehension. [click] By hand, every card is five steps, and I lose my place in the book. [click] In sentmine I click the word, and the card has it inside its real sentence.</aside>
     </div>
   </section>
 
@@ -191,7 +190,6 @@
     <div class="camera" id="camera"></div>
     <span class="fragment" data-fragment-index="0"></span><span class="fragment" data-fragment-index="1"></span><span class="fragment" data-fragment-index="2"></span><span class="fragment" data-fragment-index="3"></span>
     <div class="caption-bar"><span class="num" id="cap-num">1</span><span class="text" id="cap-text"></span><span class="pips" id="pips"></span></div>
-    <aside class="notes">One click per step, one sentence each. 1: I click “simultaneously” on page 13; the card has its sentence. 2: Suggest meaning; I check it. 3: on Wikipedia I select “Simpson’s paradox” and right-click; in the side panel I make it a cloze card. 4: both cards go to Anki in one click. 5: pages later, the term I took from the web is underlined in my book, with my card. That is “and back”.</aside>
     </div>
   </section>
 
@@ -228,7 +226,6 @@
       </div>
     </div>
     <p class="note-line" data-step="0">Timing: spike/timing/ · judging: spike/meanings-luna/ · every decision is a line in PLANNING_LOG.md</p>
-    <aside class="notes">How I know it works: I used it, and checked it, not the agent. [click] I timed it: five cards from a newspaper I read, The Budapest Times, by hand in Anki, with a meaning looked up: four and a half minutes. Five with sentmine and its browser extension: fifty seconds, more than five times faster. And by hand the card does not say where the word came from; every sentmine card does: the article, or the book and the page. [click] And the AI: OpenAI shuts down the model behind Suggest meaning on 11 December. The agent found the replacement, but I judged 40 answers blind before anything changed: 17 of 20 against 20 of 20.</aside>
     </div>
   </section>
 
@@ -250,7 +247,6 @@
       </div>
     </div>
     <p class="note-line" data-step="0">Homework 4 spike, every card marked by hand · direction changed on 9 October 2026</p>
-    <aside class="notes">One concrete moment from the repository. My first design guessed which words were new to me. [click] From one news article it made 103 cards. I marked every one by hand: [click] 64 I already knew, 35 were names or junk, [click] and only 4 were really new. [click] That number changed the project: sentmine stopped guessing, and I choose while I read.</aside>
     </div>
   </section>
 
@@ -264,7 +260,6 @@
       <span class="planned">Planned</span>
       <p class="reading">…there are nerves among some Labour MPs, especially those with <span class="forgot">constituencies<span class="forgot-note">You forgot this <b>3 times</b> in Anki.</span></span> that voted for Brexit…</p>
     </div>
-    <aside class="notes">What’s next is one thing. Every day Anki asks me my cards, and I press Again when I forgot one, so Anki knows which words I keep forgetting. sentmine does not know that yet. [click] Next, it will ask Anki, and when one of those words comes up in my reading, it is marked, with how often I forgot it. The reminder comes when I meet the word for real.</aside>
     </div>
   </section>
 
@@ -276,15 +271,13 @@
       <div class="qr"><img src="qr.svg" alt="QR code for esst-prog2.github.io/Sentmine"></div>
       <p class="link">esst-prog2.github.io/Sentmine<small>The page, a 30-second video, and how to install it on your own computer.</small></p>
     </div>
-    <aside class="notes">Thank you. The link has the video and the install steps.</aside>
     </div>
   </section>
 
 </div></div>
-<div id="help">← → or click · F full screen · S speaker notes</div>
+<div id="help">← → or click · F full screen</div>
 
 <script src="reveal/reveal.js"></script>
-<script src="reveal/notes.js"></script>
 <script>
 (() => {
   // ---- the stopwatch test (spike/timing/): seconds for five cards each way; null until measured
@@ -393,7 +386,6 @@
     center: false, controls: false, progress: true, slideNumber: "c/t",
     hash: true, fragmentInURL: true,   // #/2/0/1 opens the third slide at its second click
     transition: "fade", transitionSpeed: "fast",
-    plugins: [RevealNotes],            // S opens the speaker view, with the notes of each slide
   }).then(() => {
     render();
     for (const event of ["slidechanged", "fragmentshown", "fragmenthidden"]) Reveal.on(event, () => requestAnimationFrame(render));
