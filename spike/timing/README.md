@@ -58,6 +58,7 @@ Suggest meaning. The reader will time both ways again with the full procedure ab
 
 ## Measured again (28 November 2026), with the full procedure
 
-Five cards by hand, a meaning looked up for each: **4 min 34.10 s** (274.10 s) in all, about 55 s a card. Five cards
+Words from articles in *The Budapest Times*, an English-language newspaper, read in the browser (sentmine through its
+extension), not from the course book as planned above. Five cards by hand, a meaning looked up for each: **4 min 34.10 s** (274.10 s) in all, about 55 s a card. Five cards
 with sentmine, Suggest meaning for each: **49.69 s** in all, about 10 s a card. Timed by the reader with a
 stopwatch, totals only. This is the run slide 3 shows.

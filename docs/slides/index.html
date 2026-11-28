@@ -195,7 +195,7 @@
           <div class="label"><span>With sentmine</span><span class="val" id="sm-val"></span></div>
           <div class="bar" id="sm-bar"><span class="fast" style="--bd:.9s"></span></div>
         </div>
-        <p class="source-too" data-step="1" style="--d:2s">And each sentmine card says where it came from: <span>the book and the page.</span></p>
+        <p class="source-too" data-step="1" style="--d:2s">And each sentmine card says where it came from: <span>the article, or the book and the page.</span></p>
       </div>
       <div class="check" data-step="2">
         <h3>The AI, judged blind</h3>
@@ -211,7 +211,7 @@
       </div>
     </div>
     <p class="note-line" data-step="0">Timing: spike/timing/ · judging: spike/meanings-luna/ · every decision is a line in PLANNING_LOG.md</p>
-    <aside class="notes">How I know it works: I used it, and checked it, not the agent. [click] I timed it: five cards from my course book by hand in Anki, with a meaning looked up: four and a half minutes. Five with sentmine: fifty seconds, more than five times faster. And by hand the card does not say where the word came from; every sentmine card does: the book and the page. [click] And the AI: OpenAI shuts down the model behind Suggest meaning on 11 December. The agent found the replacement, but I judged 40 answers blind before anything changed: 17 of 20 against 20 of 20.</aside>
+    <aside class="notes">How I know it works: I used it, and checked it, not the agent. [click] I timed it: five cards from a newspaper I read, The Budapest Times, by hand in Anki, with a meaning looked up: four and a half minutes. Five with sentmine and its browser extension: fifty seconds, more than five times faster. And by hand the card does not say where the word came from; every sentmine card does: the article, or the book and the page. [click] And the AI: OpenAI shuts down the model behind Suggest meaning on 11 December. The agent found the replacement, but I judged 40 answers blind before anything changed: 17 of 20 against 20 of 20.</aside>
   </section>
 
   <!-- 4 · What I learned -->
@@ -328,7 +328,7 @@
   {
     const measured = TIMING.byHand && TIMING.withSentmine;
     document.getElementById("timing-how").textContent = measured
-      ? "Five cards from my course book each way, with a stopwatch."
+      ? "Five cards from a newspaper, The Budapest Times, each way, with a stopwatch."
       : "The same card, by hand and with sentmine, with a stopwatch.";
     for (const [id, seconds] of [["hand", TIMING.byHand], ["sm", TIMING.withSentmine]]) {
       const value = document.getElementById(id + "-val");
