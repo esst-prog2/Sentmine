@@ -241,3 +241,4 @@ Append-only. One line per decision: date, what was decided, who decided it. Neve
 - 2026-11-24: Demo-day slides: every slide builds on click; the demo is five steps from the real screenshots, not the video; slide 3 adds a stopwatch test the user runs (spike/timing/), beside the blind judging; slide 5 is one item, reading Anki reviews back. Decided by user.
 - 2026-11-28: Slide 3's timing: five cards each way with the full procedure, 274.10 s by hand against 49.69 s with sentmine (spike/timing/). Measured by user.
 - 2026-11-28: Suggest meaning is offered for term cards of up to four words as well as word cards (a headline's "red lines" has no definition on the page); longer terms still have none. Decided by user.
+- 2026-11-28: The demo-day slides are made with reveal.js 5.1.0 (kept in docs/slides/reveal/), as the assignment asks; content and look unchanged. Decided by user.
