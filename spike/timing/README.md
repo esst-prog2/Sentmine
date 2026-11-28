@@ -55,3 +55,9 @@ carries its source (the file and the page); the cards made by hand did not.
 
 Not comparable: the cards by hand in this first run had no meaning looked up, while the sentmine cards had
 Suggest meaning. The reader will time both ways again with the full procedure above.
+
+## Measured again (28 November 2026), with the full procedure
+
+Five cards by hand, a meaning looked up for each: **4 min 34.10 s** (274.10 s) in all, about 55 s a card. Five cards
+with sentmine, Suggest meaning for each: **49.69 s** in all, about 10 s a card. Timed by the reader with a
+stopwatch, totals only. This is the run slide 3 shows.

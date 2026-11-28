@@ -211,7 +211,7 @@
       </div>
     </div>
     <p class="note-line" data-step="0">Timing: spike/timing/ · judging: spike/meanings-luna/ · every decision is a line in PLANNING_LOG.md</p>
-    <aside class="notes">How I know it works, and that I was in control. [click] I timed it myself: five cards from my course book by hand in Anki, one minute; five with sentmine, thirty seconds, half the time. And by hand the card does not say where the word came from; every sentmine card does: the book and the page. [click] And the AI: OpenAI shuts down the model behind Suggest meaning on 11 December. The agent found the replacement, but I judged 40 answers blind before anything changed: 17 of 20 against 20 of 20.</aside>
+    <aside class="notes">How I know it works, and that I was in control. [click] I timed it myself: five cards from my course book by hand in Anki, with a meaning looked up: four and a half minutes. Five with sentmine: fifty seconds, more than five times faster. And by hand the card does not say where the word came from; every sentmine card does: the book and the page. [click] And the AI: OpenAI shuts down the model behind Suggest meaning on 11 December. The agent found the replacement, but I judged 40 answers blind before anything changed: 17 of 20 against 20 of 20.</aside>
   </section>
 
   <!-- 4 · What I learned -->
@@ -273,7 +273,7 @@
 <script>
 (() => {
   // ---- the stopwatch test (spike/timing/): seconds for five cards each way; null until measured
-  const TIMING = { byHand: 60, withSentmine: 30, words: 5 };   // seconds for all five cards, measured 24 November 2026
+  const TIMING = { byHand: 274.1, withSentmine: 49.69, words: 5 };   // seconds for all five cards, measured 28 November 2026
 
   // ---- the demo: one real screenshot per step (18–19 November 2026), and where the camera goes
   //      x, y: the point to centre, as a share of the picture's width and height; zoom: how close
@@ -333,7 +333,7 @@
     for (const [id, seconds] of [["hand", TIMING.byHand], ["sm", TIMING.withSentmine]]) {
       const value = document.getElementById(id + "-val");
       if (measured) {
-        value.textContent = `${Math.round(seconds)} s`;
+        value.textContent = seconds >= 60 ? `${Math.floor(seconds / 60)} min ${Math.round(seconds % 60)} s` : `${Math.round(seconds)} s`;
         document.querySelector(`#${id}-bar span`).dataset.width = `${Math.max(3, (seconds / Math.max(TIMING.byHand, TIMING.withSentmine)) * 100)}%`;
       } else {
         value.textContent = "to measure";
