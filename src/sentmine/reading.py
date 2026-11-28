@@ -29,6 +29,9 @@ _SPACES = re.compile(r"[^\S\n]+")  # spaces and tabs, but not line breaks
 _NEWLINES = re.compile(r"\s*\n\s*")
 
 
+MOST_WORDS_FOR_MEANING = 4  # a term this short ("red lines") may have no definition on the page, so it may ask for a meaning
+
+
 class Problem(ValueError):
     """Something the reader asked for cannot be done; the message says why."""
 
@@ -44,8 +47,8 @@ class Flashcard:
     place: tuple[int, int] | None = None  # word cards: the sentence and word that were clicked
     earlier: str = ""  # made anyway: the date of the earlier card in the memory
     sentence: str = ""  # word cards: the sentence the word was clicked in, for Suggest meaning
-    meaning: str = ""  # word cards: the suggested meaning last put on the back, so a new one replaces it
-    key_part: str = ""  # word cards: the words of the sentence that show the suggested meaning, underlined on the back
+    meaning: str = ""  # word and short term cards: the suggested meaning last put on the back, so a new one replaces it
+    key_part: str = ""  # word and short term cards: the words of the sentence that show the suggested meaning, underlined on the back
     old_layout: bool = False  # a word card remembered before 2026-11-18: the sentence on the front, the word on the back
     cloze: bool = False  # the passage with the term hidden, instead of term -> passage
     pictures: list[tuple[str, bytes]] = field(default_factory=list)  # parts of a page, on the back: (file name, PNG)
@@ -66,6 +69,13 @@ class Flashcard:
         if self.kind == WORD and self.word and not self.old_layout:
             return self.word
         return without_pictures(self.front)
+
+    @property
+    def can_suggest(self) -> bool:
+        """A word, or a term of a few words, can ask for a meaning; a longer term's passage is its definition."""
+        if self.old_layout:
+            return False
+        return self.kind == WORD or 1 <= len(self.term.split()) <= MOST_WORDS_FOR_MEANING
 
     @property
     def can_cloze(self) -> bool:
@@ -564,13 +574,14 @@ class Session:
     def suggest(self, card_id: int, ask: Callable[[str, str], str]) -> Flashcard:
         """Put a meaning from `ask(word, sentence)` at the end of the back, replacing the one suggested before."""
         card = self._card(card_id)
-        if card.kind != WORD or card.old_layout:
-            raise Problem("Only a card made from one word gets a suggested meaning: its passage is your definition.")
-        sentence = card.sentence or without_pictures(card.back)
-        meaning = ask(card.word, sentence)
+        if not card.can_suggest:
+            raise Problem(f"A meaning is suggested for a word or a term of up to {MOST_WORDS_FOR_MEANING} words; "
+                          "a longer term's passage is its definition.")
         back = card.back
         if card.meaning and ("\n\n" + card.meaning) in back:
             back = back.replace("\n\n" + card.meaning, "", 1)
+        sentence = card.sentence or without_pictures(back)   # a term card: its passage, without the meaning asked before
+        meaning = ask(card.word if card.kind == WORD else card.term, sentence)
         card.back, card.meaning = back.rstrip() + "\n\n" + meaning, str(meaning)
         card.key_part = key_in(sentence, getattr(meaning, "key", ""))   # only words that really are in the sentence
         return card

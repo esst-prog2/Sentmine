@@ -138,11 +138,37 @@ def test_pressing_again_replaces_the_meaning(session):
     assert card.back == SKEW_SENTENCE + "\n\nA second try."
 
 
-def test_a_definition_card_gets_no_meaning(session):
-    _, card = session.add_definition("variance", "How spread out values are.")
-    with pytest.raises(Problem, match="one word"):
+def test_a_short_term_gets_a_meaning_from_its_passage(session):
+    # a headline gives "red lines" no definition, so the reader may ask for one (2026-11-28)
+    _, card = session.add_definition("red lines", "Magyar draws red lines: no cuts, no new burdens, no deal")
+    asked = []
+    session.suggest(card.id, lambda term, sentence: asked.append((term, sentence)) or MEANING)
+    assert asked == [("red lines", "Magyar draws red lines: no cuts, no new burdens, no deal")]
+    assert card.back == "Magyar draws red lines: no cuts, no new burdens, no deal\n\n" + MEANING
+    assert card.can_suggest
+
+
+def test_asking_again_for_a_term_sends_its_passage_without_the_first_meaning(session):
+    _, card = session.add_definition("red lines", "Magyar draws red lines.")
+    session.suggest(card.id, fake_ask)
+    asked = []
+    session.suggest(card.id, lambda term, sentence: asked.append(sentence) or "A second try.")
+    assert asked == ["Magyar draws red lines."]
+    assert card.back == "Magyar draws red lines.\n\nA second try."
+
+
+@pytest.mark.parametrize("term, can", [("variance", True), ("the law of total probability", False),
+                                        ("red lines", True), ("a b c d", True), ("a b c d e", False)])
+def test_a_term_of_up_to_four_words_can_ask_for_a_meaning(session, term, can):
+    _, card = session.add_definition(term, "A passage about " + term + ".")
+    assert card.can_suggest is can
+
+
+def test_a_long_term_gets_no_meaning(session):
+    _, card = session.add_definition("the law of total probability", "P(A) is the sum of P(A|B) P(B).")
+    with pytest.raises(Problem, match="up to 4 words"):
         session.suggest(card.id, fake_ask)
-    assert card.back == "How spread out values are."
+    assert card.back == "P(A) is the sum of P(A|B) P(B)."
 
 
 def test_a_failed_request_leaves_the_card_as_it_was(session):
