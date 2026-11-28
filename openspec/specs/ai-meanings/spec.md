@@ -6,7 +6,7 @@ Let the reader ask for a suggested meaning of a word or term in its sentence, ke
 ## Requirements
 
 ### Requirement: Suggesting a meaning
-When an API key is available, each word card in the preview SHALL have a Suggest meaning button. Pressing it SHALL ask the model `gpt-6-luna` for a short plain English explanation of the word as it is used in the card's sentence. The explanation SHALL go on the back of the card, on its own line under the word. Pressing the button again SHALL replace it with a new explanation. Definition cards SHALL NOT have the button.
+When an API key is available, each word card in the preview, and each term card whose term has at most four words, SHALL have a Suggest meaning button. Pressing it SHALL ask the model `gpt-6-luna` for a short plain English explanation of the word as it is used in the card's sentence. The explanation SHALL go on the back of the card, on its own line under the word. Pressing the button again SHALL replace it with a new explanation. A term card whose term has more than four words SHALL NOT have the button: its passage is its definition. For a term card the model gets the term and the card's passage, without a meaning suggested before.
 
 #### Scenario: A meaning for a word
 - **WHEN** the card for `skew` has the front `Outliers can skew it considerably.` and the reader presses Suggest meaning
@@ -16,9 +16,13 @@ When an API key is available, each word card in the preview SHALL have a Suggest
 - **WHEN** the card already has a suggested meaning and the reader presses Suggest meaning again
 - **THEN** the back shows the word and only the new explanation
 
-#### Scenario: A definition card
-- **WHEN** the card is a definition card
-- **THEN** it has no Suggest meaning button
+#### Scenario: A short term from a headline
+- **WHEN** the reader makes a card for `red lines` from `Magyar draws red lines: no cuts, no new burdens, no deal` and presses Suggest meaning
+- **THEN** the model gets `red lines` and that passage, and the meaning goes on the back under it
+
+#### Scenario: A long term
+- **WHEN** the term has more than four words
+- **THEN** its card has no Suggest meaning button
 
 ### Requirement: The reader stays in charge of the meaning
 The suggested meaning SHALL be shown in the preview before anything is saved, and SHALL be editable there like any other text on the card. The deck and the card memory SHALL hold the back as the preview shows it. No meaning SHALL be requested unless the reader presses the button.

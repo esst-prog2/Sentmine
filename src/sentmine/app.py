@@ -76,6 +76,7 @@ def _card_json(card: Flashcard, prefix: str = "") -> dict:
         "earlier": card.earlier,
         "cloze": card.cloze,
         "can_cloze": card.can_cloze,
+        "can_suggest": card.can_suggest,   # a word, or a short term: Suggest meaning is shown (with an API key)
         # the address carries the picture's name, which comes from its content, so the browser never shows an old one
         "pictures": {name: f"{address}{name}" for name, _ in card.pictures},  # for the editor: where each picture is served
         "source": card.source,  # "read" or "clip"

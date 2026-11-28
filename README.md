@@ -281,9 +281,11 @@ Instead of pasting, you can open a PDF that contains text, or a `.txt` file.
 Running heads and page numbers are removed and hyphenated words rejoined;
 formulas and tables come out as they are, and scanned PDFs cannot be read yet.
 
-With an OpenAI API key, each word card gets a **Suggest meaning** button: it
-sends that word and its sentence to the small model `gpt-6-luna` and puts a
-short English explanation on the back, for you to check and edit. Put the key
+With an OpenAI API key, each word card, and each term card of up to four
+words (such as *red lines* in a headline), gets a **Suggest meaning** button:
+it sends that word or term and its sentence to the small model `gpt-6-luna`
+and puts a short English explanation on the back, for you to check and edit.
+A longer term has none: its passage is its definition. Put the key
 in `.env` in the same user folder, as the line `OPENAI_API_KEY=...`, or in the
 variable of that name. Without a key the button is not shown and everything
 else works. Keep the key out of this repository and out of OneDrive.

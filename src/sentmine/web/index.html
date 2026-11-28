@@ -977,7 +977,7 @@ function drawCard(card) {
     other.addEventListener("click", () => call("PUT", API + "/cards/" + card.id + "/cloze", { cloze: !card.cloze }));
     buttons.append(other);
   }
-  if (card.kind === "word" && state.can_suggest) {
+  if (card.can_suggest && state.can_suggest) {   // a word, or a term of a few words
     const suggest = element("button", "small", "Suggest meaning");
     suggest.addEventListener("click", async () => {
       suggest.disabled = true;

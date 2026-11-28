@@ -76,6 +76,13 @@ def test_one_selected_word_makes_its_card_from_the_sentence_around_it(client):
 def test_a_few_words_make_their_card_with_their_sentence(client):
     state = card_from(client, "can skew the", before="Outliers ", after=" mean considerably.")
     assert state["count"] == 1 and (state["cards"][0]["front"], state["cards"][0]["back"]) == ("can skew the", SENTENCE)
+    assert state["cards"][0]["can_suggest"]   # three words: the panel offers Suggest meaning
+
+
+def test_a_long_selection_offers_no_meaning(client):
+    state = card_from(client, "founder is a variable that influences both the treatment and the outcome. Another",
+                      before="Read this. A con", after=" sentence. Last one.")
+    assert not state["cards"][0]["can_suggest"]   # its passage is the definition
 
 
 def test_a_selection_across_two_sentences_is_the_term_and_both_whole_sentences_the_passage(client):
